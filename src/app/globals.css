@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  
+  --color-primary: var(--primary);
+  --color-ai: var(--ai);
+  --color-forecast: var(--forecast);
+  --color-positive: var(--positive);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+  
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-foreground-muted: var(--foreground-muted);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-manrope), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  /* Light Theme */
+  --background: #F6F8FC;
+  --sidebar: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-elevated: #F8FAFC;
+  --surface-hover: #F1F5F9;
+  --border: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --primary: #4F7CFF;
+  --ai: #8B5CF6;
+  --forecast: #06B6D4;
+  --positive: #10B981;
+  --warning: #F59E0B;
+  --critical: #EF4444;
+  --foreground: #0F172A;
+  --foreground-secondary: #64748B;
+  --foreground-muted: #94A3B8;
 }
 
+.dark {
+  /* Dark Theme */
+  --background: #070A12;
+  --sidebar: #090D17;
+  --surface: #0E1421;
+  --surface-elevated: #131B2B;
+  --surface-hover: #182235;
+  --border: #1E293B;
+  --border-strong: #334155;
+  --primary: #4F7CFF;
+  --ai: #8B5CF6;
+  --forecast: #06B6D4;
+  --positive: #10B981;
+  --warning: #F59E0B;
+  --critical: #EF4444;
+  --foreground: #F8FAFC;
+  --foreground-secondary: #94A3B8;
+  --foreground-muted: #64748B;
+}
+
+/* Base Body Styles */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Webkit Scrollbars for Premium Look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Focus States for Keyboard Navigation Accessibility */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Hide Spin Buttons in Number Input fields */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
