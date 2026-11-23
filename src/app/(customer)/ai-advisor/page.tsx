@@ -201,12 +201,14 @@ export default function AiAdvisorPage() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
 
-  // Scroll ref for chat log
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  // Keep chat scrolling inside its message pane so it cannot move the whole page.
+  const chatLogRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const chatLog = chatLogRef.current;
+    if (!chatLog) return;
+    chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: "smooth" });
   }, [messages, isLoading]);
 
   // Hydrate user financial metrics from backend
@@ -416,7 +418,7 @@ export default function AiAdvisorPage() {
   ];
 
   return (
-    <PageContainer className="pb-24 flex flex-col h-[calc(100vh-140px)] min-h-[500px]">
+    <PageContainer className="p-3 md:p-4 gap-3 md:gap-4 flex flex-col h-full min-h-0">
       
       {/* MOBILE OPTIMIZED TABS TOOLBAR */}
       <div className="flex justify-between items-center bg-surface border border-border p-2.5 rounded-sm select-none lg:hidden mb-4">
@@ -438,7 +440,7 @@ export default function AiAdvisorPage() {
       </div>
 
       {/* CORE WORKSPACE EXPERIENCE */}
-      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-12 grid-rows-[minmax(0,1fr)] gap-3 md:gap-6 min-h-0 overflow-hidden">
         
         {/* COLUMN 1: CONVERSATION HISTORY (DESKTOP - 3 COLS) */}
         <div className="hidden lg:block lg:col-span-3 bg-surface border border-border/80 rounded-sm p-4 flex flex-col justify-between select-none">
@@ -481,7 +483,7 @@ export default function AiAdvisorPage() {
         </div>
 
         {/* COLUMN 2: AI CONVERSATION WORKSPACE (50% / 6 COLS) */}
-        <div className="col-span-12 lg:col-span-6 bg-surface border border-border/80 rounded-sm flex flex-col overflow-hidden relative">
+        <div className="col-span-12 lg:col-span-6 bg-surface border border-border/80 rounded-sm flex flex-col overflow-hidden relative min-h-0">
           
           {/* Engine & Status Banner */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface-elevated/40 text-[10px]">
@@ -497,7 +499,7 @@ export default function AiAdvisorPage() {
           </div>
 
           {/* Scrollable Message stream area */}
-          <div className="flex-1 p-4 md:p-5 overflow-y-auto space-y-5 scrollbar-none min-h-0">
+          <div ref={chatLogRef} className="flex-1 p-4 md:p-5 overflow-y-auto space-y-5 scrollbar-none min-h-0">
             {messages.map((msg) => {
               const isAssistant = msg.sender === "assistant";
               return (
@@ -651,11 +653,10 @@ export default function AiAdvisorPage() {
               </div>
             )}
 
-            <div ref={chatEndRef} />
           </div>
 
           {/* COMPOSER INPUT DRAWER (BOTTOM AREA) */}
-          <div className="border-t border-border/80 bg-surface-elevated/45 p-4.5 space-y-4">
+          <div className="shrink-0 border-t border-border/80 bg-surface-elevated/45 p-3 md:p-4 space-y-3 md:space-y-4">
             
             {/* Pill-shaped prompt buttons */}
             <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1.5 border-b border-border/30 select-none">

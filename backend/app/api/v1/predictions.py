@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.user import User
 from app.models.ml import RiskScore, FraudAlert, CustomerSegment
+from app.models.financial import Transaction
 from app.core.dependencies import get_current_user
 from app.schemas.ml import (
     RiskScoreOut,
@@ -17,30 +18,35 @@ from app.schemas.ml import (
 )
 from app.services.prediction_service import evaluate_customer_credit_risk, get_latest_risk_score
 from app.services.fraud_service import scan_user_transactions_for_fraud
+from app.services.feature_engineering_service import compute_20_financial_features
 
 router = APIRouter(prefix="/predictions", tags=["Predictions & Risk Intelligence"])
 
 
 @router.post("/credit-risk", response_model=CreditRiskEvaluationResponse)
 def run_credit_risk_scoring(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Trigger credit risk stacking ensemble evaluation for current customer."""
-    result = evaluate_customer_credit_risk(db, current_user.id)
+    ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
+    result = evaluate_customer_credit_risk(db, current_user.id, ids)
     return result
 
 
 @router.get("/credit-risk/latest", response_model=RiskScoreOut)
 def get_latest_credit_score(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get most recent credit risk score."""
+    ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
     score = get_latest_risk_score(db, current_user.id)
     if not score:
         # Run first evaluation automatically
-        evaluate_customer_credit_risk(db, current_user.id)
+        evaluate_customer_credit_risk(db, current_user.id, ids)
         score = get_latest_risk_score(db, current_user.id)
     return score
 
@@ -59,11 +65,13 @@ def get_credit_score_history(
 
 @router.post("/fraud/scan")
 def trigger_fraud_scan(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Run unsupervised Isolation Forest scan on transaction history."""
-    alerts = scan_user_transactions_for_fraud(db, current_user.id)
+    ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
+    alerts = scan_user_transactions_for_fraud(db, current_user.id, ids)
     return {
         "user_id": current_user.id,
         "scanned_at": datetime.now(timezone.utc),
@@ -75,11 +83,15 @@ def trigger_fraud_scan(
 @router.get("/fraud/alerts", response_model=List[FraudAlertOut])
 def list_fraud_alerts(
     alert_status: Optional[str] = None,
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """List fraud alerts detected for the customer."""
     query = db.query(FraudAlert).filter(FraudAlert.user_id == current_user.id)
+    if document_ids is not None:
+        ids = [value.strip() for value in document_ids.split(",") if value.strip()]
+        query = query.join(Transaction, FraudAlert.transaction_id == Transaction.id).filter(Transaction.document_id.in_(ids)) if ids else query.filter(False)
     if alert_status:
         query = query.filter(FraudAlert.status == alert_status.lower())
     return query.order_by(FraudAlert.created_at.desc()).all()
@@ -108,26 +120,46 @@ def update_fraud_alert_status(
 
 @router.get("/segment", response_model=CustomerSegmentOut)
 def get_customer_segment(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get customer's behavioral persona segment from KMeans clustering."""
+    ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
     seg = db.query(CustomerSegment).filter(CustomerSegment.user_id == current_user.id).first()
-    if not seg:
+    if document_ids is not None or not seg:
         # Run evaluation to cluster customer
-        evaluate_customer_credit_risk(db, current_user.id)
+        evaluate_customer_credit_risk(db, current_user.id, ids)
         seg = db.query(CustomerSegment).filter(CustomerSegment.user_id == current_user.id).first()
     return seg
 
 
 @router.get("/financial-health-score", response_model=FinancialHealthScoreOut)
 def get_financial_health_score(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Get composite 0-100 financial health score across income, savings, debt, and stability."""
-    score_record = get_latest_risk_score(db, current_user.id)
-    raw_score = float(score_record.financial_health_score) if score_record else 80.0
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if document_ids is not None:
+        ids = [value.strip() for value in document_ids.split(",") if value.strip()]
+        query = query.filter(Transaction.document_id.in_(ids)) if ids else query.filter(False)
+    transactions = query.all()
+    features = compute_20_financial_features([
+        {
+            "transaction_date": txn.transaction_date,
+            "amount": float(txn.amount),
+            "transaction_type": txn.transaction_type,
+            "category": txn.category,
+            "description": txn.description,
+        }
+        for txn in transactions
+    ])
+    if not features:
+        raise HTTPException(status_code=400, detail="Upload a statement with parsed transactions before requesting a financial health score.")
+
+    raw_score = float(features["financial_health_score"])
 
     if raw_score >= 80:
         rating = "Excellent"
@@ -143,10 +175,13 @@ def get_financial_health_score(
         score=raw_score,
         rating=rating,
         components={
-            "savings_rate_score": 25.0,
-            "cash_flow_buffer_score": 22.5,
-            "income_stability_score": 18.0,
-            "expense_discipline_score": 14.5
+            "monthly_income_avg": float(features["monthly_income_avg"]),
+            "monthly_expense_avg": float(features["monthly_expense_avg"]),
+            "net_monthly_cash_flow": float(features["net_monthly_cash_flow"]),
+            "savings_rate": float(features["savings_rate"]),
+            "income_stability_score": float(features["income_stability_score"]),
+            "discretionary_spending_ratio": float(features["discretionary_spending_ratio"]),
+            "emergency_fund_months": float(features["emergency_fund_months"]),
         },
         evaluated_at=datetime.now(timezone.utc)
     )

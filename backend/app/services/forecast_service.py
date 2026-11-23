@@ -1,27 +1,35 @@
-import random
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.models.financial import Transaction
 from app.models.ml import Forecast
 from app.services.feature_engineering_service import compute_20_financial_features
 
 
-def generate_cash_flow_forecast(db: Session, user_id: str, horizon: str = "30d") -> Dict[str, Any]:
+def generate_cash_flow_forecast(db: Session, user_id: str, horizon: str = "30d", document_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Generate time-series cash flow projections with upper/lower uncertainty bounds.
     Horizons supported: 7d, 30d, 180d.
     """
-    txns = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+    query = db.query(Transaction).filter(Transaction.user_id == user_id)
+    if document_ids is not None:
+        query = query.filter(Transaction.document_id.in_(document_ids)) if document_ids else query.filter(False)
+    txns = query.all()
     txn_dicts = [
         {"transaction_date": t.transaction_date, "amount": float(t.amount), "transaction_type": t.transaction_type, "category": t.category, "description": t.description}
         for t in txns
     ]
     features = compute_20_financial_features(txn_dicts)
-    daily_income_avg = (features.get("monthly_income_avg", 80000.0) / 30.0)
-    daily_expense_avg = (features.get("monthly_expense_avg", 50000.0) / 30.0)
-    current_balance = max(features.get("total_income", 150000.0) - features.get("total_expenses", 100000.0), 45000.0)
+    if not features:
+        raise HTTPException(status_code=400, detail="Upload a statement with parsed transactions before generating a cash-flow forecast.")
+
+    daily_income_avg = features["monthly_income_avg"] / 30.0
+    daily_expense_avg = features["monthly_expense_avg"] / 30.0
+    # The upload parser does not read opening/current account balances. This is a
+    # cumulative net-flow estimate, not a verified bank balance.
+    current_balance = features["total_income"] - features["total_expenses"]
 
     # Determine projection points based on horizon
     if horizon == "7d":
@@ -48,10 +56,10 @@ def generate_cash_flow_forecast(db: Session, user_id: str, horizon: str = "30d")
         if horizon in ["7d", "30d"]:
             is_payday = pt_date.day == 1
             projected_inc = round(daily_income_avg * 30.0, 2) if is_payday else 0.0
-            projected_exp = round(daily_expense_avg * random.uniform(0.75, 1.35), 2)
+            projected_exp = round(daily_expense_avg, 2)
         else:  # Monthly steps
-            projected_inc = round(daily_income_avg * 30.0 * random.uniform(0.95, 1.05), 2)
-            projected_exp = round(daily_expense_avg * 30.0 * random.uniform(0.90, 1.15), 2)
+            projected_inc = round(daily_income_avg * 30.0, 2)
+            projected_exp = round(daily_expense_avg * 30.0, 2)
 
         simulated_balance += (projected_inc - projected_exp)
 
@@ -63,7 +71,7 @@ def generate_cash_flow_forecast(db: Session, user_id: str, horizon: str = "30d")
             "projected_income": projected_inc,
             "projected_expense": projected_exp,
             "projected_balance": round(simulated_balance, 2),
-            "lower_bound": round(max(simulated_balance - uncertainty, 0.0), 2),
+            "lower_bound": round(simulated_balance - uncertainty, 2),
             "upper_bound": round(simulated_balance + uncertainty, 2)
         })
 
@@ -73,7 +81,7 @@ def generate_cash_flow_forecast(db: Session, user_id: str, horizon: str = "30d")
         horizon=horizon,
         forecast_type="cash_flow",
         data=data_points,
-        model_version="tft_forecaster_v1.0",
+        model_version="average_net_flow_v1.0",
         created_at=datetime.now(timezone.utc)
     )
     db.add(forecast_record)

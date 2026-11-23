@@ -4,6 +4,21 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+const ACTIVE_DOCUMENTS_KEY = "arthdrishti_active_documents";
+
+function scopeQuery(endpoint: string, documentIds?: string[]): string {
+  const ids = documentIds ?? (typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem(ACTIVE_DOCUMENTS_KEY) || "null") as string[] | null
+    : null);
+  if (!ids?.length) return endpoint;
+  const separator = endpoint.includes("?") ? "&" : "?";
+  return `${endpoint}${separator}document_ids=${encodeURIComponent(ids.join(","))}`;
+}
+
+function activeDocumentIds(): string[] | undefined {
+  if (typeof window === "undefined") return undefined;
+  return JSON.parse(localStorage.getItem(ACTIVE_DOCUMENTS_KEY) || "null") as string[] | undefined;
+}
 
 export interface AuthUser {
   id: string;
@@ -77,9 +92,10 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
   const token = getAccessToken();
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(!isFormData && options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers as Record<string, string>),
   };
 
@@ -109,6 +125,7 @@ export async function apiRequest<T>(
     throw new ApiError(response.status, message, errorData);
   }
 
+  if (response.status === 204) return undefined as T;
   return response.json();
 }
 
@@ -179,20 +196,51 @@ export const authApi = {
  * Risk & Prediction APIs
  */
 export const riskApi = {
-  async evaluateCreditRisk(): Promise<any> {
-    return apiRequest("/predictions/credit-risk", { method: "POST" });
+  async evaluateCreditRisk(documentIds?: string[]): Promise<any> {
+    return apiRequest(scopeQuery("/predictions/credit-risk", documentIds), { method: "POST" });
   },
   async getLatestRiskScore(): Promise<any> {
-    return apiRequest("/predictions/credit-risk/latest");
+    return apiRequest(scopeQuery("/predictions/credit-risk/latest"));
   },
   async getScoreHistory(): Promise<any[]> {
     return apiRequest("/predictions/credit-risk/history");
   },
   async getCustomerSegment(): Promise<any> {
-    return apiRequest("/predictions/segment");
+    return apiRequest(scopeQuery("/predictions/segment"));
   },
   async getFinancialHealthScore(): Promise<any> {
-    return apiRequest("/predictions/financial-health-score");
+    return apiRequest(scopeQuery("/predictions/financial-health-score"));
+  },
+};
+
+/**
+ * Uploaded statement documents
+ */
+export interface UploadedDocument {
+  id?: string;
+  document_id?: string;
+  file_name?: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  error_message?: string | null;
+}
+
+export const documentsApi = {
+  async list(): Promise<UploadedDocument[]> {
+    return apiRequest<UploadedDocument[]>("/documents");
+  },
+  async upload(file: File): Promise<UploadedDocument> {
+    const body = new FormData();
+    body.append("file", file);
+    return apiRequest<UploadedDocument>("/documents/upload", {
+      method: "POST",
+      body,
+    });
+  },
+  async getStatus(documentId: string): Promise<UploadedDocument> {
+    return apiRequest<UploadedDocument>(`/documents/${encodeURIComponent(documentId)}/status`);
+  },
+  async delete(documentId: string): Promise<void> {
+    return apiRequest<void>(`/documents/${encodeURIComponent(documentId)}`, { method: "DELETE" });
   },
 };
 
@@ -200,11 +248,11 @@ export const riskApi = {
  * Fraud Intelligence APIs
  */
 export const fraudApi = {
-  async triggerScan(): Promise<any> {
-    return apiRequest("/predictions/fraud/scan", { method: "POST" });
+  async triggerScan(documentIds?: string[]): Promise<any> {
+    return apiRequest(scopeQuery("/predictions/fraud/scan", documentIds), { method: "POST" });
   },
   async listAlerts(status?: string): Promise<any[]> {
-    return apiRequest(`/predictions/fraud/alerts${status ? `?alert_status=${status}` : ""}`);
+    return apiRequest(scopeQuery(`/predictions/fraud/alerts${status ? `?alert_status=${status}` : ""}`));
   },
   async updateAlertStatus(alertId: string, status: string): Promise<any> {
     return apiRequest(`/predictions/fraud/alerts/${alertId}`, {
@@ -219,7 +267,7 @@ export const fraudApi = {
  */
 export const xaiApi = {
   async getExplanation(predictionId: string = "latest"): Promise<any> {
-    return apiRequest(`/explainability/${predictionId}`);
+    return apiRequest(scopeQuery(`/explainability/${predictionId}`));
   },
   async simulateWhatIf(params: { income_delta?: number; expense_delta?: number; debt_delta?: number; loan_amount?: number }): Promise<any> {
     return apiRequest("/explainability/what-if", {
@@ -233,10 +281,11 @@ export const xaiApi = {
  * Cash Flow Forecasting APIs
  */
 export const forecastApi = {
-  async generateForecast(horizon: "7d" | "30d" | "180d" = "30d"): Promise<any> {
+  async generateForecast(horizon: "7d" | "30d" | "180d" = "30d", documentIds?: string[]): Promise<any> {
+    const ids = documentIds ?? activeDocumentIds();
     return apiRequest("/forecast/generate", {
       method: "POST",
-      body: JSON.stringify({ horizon }),
+      body: JSON.stringify({ horizon, ...(ids ? { document_ids: ids } : {}) }),
     });
   },
   async getForecast(horizon: "7d" | "30d" | "180d" = "30d"): Promise<any> {
@@ -284,16 +333,17 @@ export const reportsApi = {
  * Transactions APIs
  */
 export const transactionsApi = {
-  async list(params?: { skip?: number; limit?: number; category?: string; transaction_type?: string }): Promise<any[]> {
+  async list(params?: { skip?: number; limit?: number; category?: string; transaction_type?: string; documentIds?: string[] }): Promise<any[]> {
     const query = new URLSearchParams();
     if (params?.skip) query.set("skip", String(params.skip));
     if (params?.limit) query.set("limit", String(params.limit));
     if (params?.category) query.set("category", params.category);
     if (params?.transaction_type) query.set("transaction_type", params.transaction_type);
     const qs = query.toString();
-    return apiRequest(`/transactions${qs ? `?${qs}` : ""}`);
+    return apiRequest(scopeQuery(`/transactions${qs ? `?${qs}` : ""}`, params?.documentIds));
   },
-  async getSummary(): Promise<{
+  async getSummary(documentIds?: string[]): Promise<{
+    transaction_count: number;
     total_income: number;
     total_expenses: number;
     net_cash_flow: number;
@@ -301,7 +351,16 @@ export const transactionsApi = {
     category_breakdown: Array<{ category: string; amount: number; percentage: number; count: number }>;
     monthly_trend: Array<{ month: string; income: number; expenses: number; net_savings: number }>;
   }> {
-    return apiRequest("/transactions/summary");
+    return apiRequest(scopeQuery("/transactions/summary", documentIds));
+  },
+  async getFeatures(documentIds?: string[]): Promise<{ user_id: string; features: Record<string, number>; feature_count: number; computed_at: string }> {
+    return apiRequest(scopeQuery("/transactions/features", documentIds));
+  },
+  async update(id: string, data: { category?: string; is_flagged?: boolean }): Promise<any> {
+    return apiRequest(`/transactions/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
   },
 };
 

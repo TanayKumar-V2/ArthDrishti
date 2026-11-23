@@ -15,7 +15,7 @@ class ExplanationOut(BaseModel):
     prediction_type: str
     default_probability: float
     risk_band: str
-    base_value: float
+    base_value: Optional[float] = None
     explanation: List[FeatureContributionItem]
     model_version: str
     created_at: datetime
@@ -53,6 +53,7 @@ class ForecastDataPoint(BaseModel):
 class ForecastGenerateRequest(BaseModel):
     horizon: str = Field("30d", description="7d, 30d, 180d")
     forecast_type: str = "cash_flow"
+    document_ids: Optional[List[str]] = None
 
 
 class ForecastOut(BaseModel):

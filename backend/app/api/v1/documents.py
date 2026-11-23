@@ -1,3 +1,5 @@
+import logging
+from pathlib import Path
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -9,8 +11,11 @@ from app.core.dependencies import get_current_user
 from app.schemas.financial import DocumentOut, DocumentUploadResponse
 from app.services.document_processing_service import save_uploaded_file, parse_document_file
 from app.services.feature_engineering_service import compute_and_update_customer_profile
+from app.models.ml import FraudAlert
+from app.core.config import settings
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
+logger = logging.getLogger(__name__)
 
 
 def run_document_processing_pipeline(document_id: str, file_path: str, file_type: str, user_id: str, db_factory):
@@ -52,6 +57,8 @@ def run_document_processing_pipeline(document_id: str, file_path: str, file_type
 
         # Compute 20+ financial features & update customer profile
         compute_and_update_customer_profile(db, user_id, parsed_txns)
+        from app.services.recommendation_service import generate_smart_recommendations
+        generate_smart_recommendations(db, user_id, [document_id])
 
         doc.status = "completed"
         db.commit()
@@ -169,6 +176,24 @@ def delete_document(
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
 
+    stored_file = None
+    try:
+        upload_root = Path(settings.LOCAL_STORAGE_DIR).resolve()
+        candidate = Path(doc.file_path).resolve()
+        candidate.relative_to(upload_root)
+        stored_file = candidate
+    except (OSError, ValueError):
+        logger.warning("Skipping uploaded file cleanup for document %s: path is outside upload storage", document_id)
+
+    transaction_ids = [row[0] for row in db.query(Transaction.id).filter(Transaction.document_id == doc.id).all()]
+    if transaction_ids:
+        db.query(FraudAlert).filter(FraudAlert.transaction_id.in_(transaction_ids)).delete(synchronize_session=False)
+
     db.delete(doc)
     db.commit()
+    if stored_file and stored_file.is_file():
+        try:
+            stored_file.unlink()
+        except OSError:
+            logger.exception("Could not remove uploaded file for deleted document %s", document_id)
     return None

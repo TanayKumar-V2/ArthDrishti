@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
@@ -7,15 +7,18 @@ from app.models.ml import FraudAlert
 from app.ml.inference.model_loader import model_registry
 
 
-def scan_user_transactions_for_fraud(db: Session, user_id: str) -> List[Dict[str, Any]]:
+def scan_user_transactions_for_fraud(db: Session, user_id: str, document_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
     """
     Scan all transactions for user through the Isolation Forest anomaly detector.
     Flags high-anomaly transactions and logs `FraudAlert` records.
     """
-    txns = db.query(Transaction).filter(
+    query = db.query(Transaction).filter(
         Transaction.user_id == user_id,
         Transaction.transaction_type == "debit"
-    ).all()
+    )
+    if document_ids is not None:
+        query = query.filter(Transaction.document_id.in_(document_ids)) if document_ids else query.filter(False)
+    txns = query.all()
 
     if not txns:
         return []

@@ -1,218 +1,138 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import {
-  Database,
-  Upload,
-  RefreshCw,
-  Trash2
-} from "lucide-react";
-import { toast } from "sonner";
-
+import { useCallback, useEffect, useState } from "react";
+import { Database, FileUp, RefreshCw, Trash2 } from "lucide-react";
 import PageContainer from "@/components/ui/PageContainer";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { documentsApi, type UploadedDocument } from "@/lib/api";
 
-interface DataConnection {
-  id: string;
-  name: string;
-  type: string;
-  status: "Synced" | "Delayed" | "Disconnected";
-  lastSync: string;
-}
+const ACTIVE_DOCUMENTS_KEY = "arthdrishti_active_documents";
 
 export default function DataSourcesPage() {
-  // Connections list state
-  const [connections, setConnections] = useState<DataConnection[]>([
-    { id: "ds1", name: "ICICI Checking Account Ledger", type: "Bank Statement API", status: "Synced", lastSync: "10 mins ago" },
-    { id: "ds2", name: "HDFC Premium Card Statements", type: "Credit API Feed", status: "Delayed", lastSync: "Yesterday" },
-    { id: "ds3", name: "Razorpay Business Merchant Gateway", type: "API Webhook", status: "Synced", lastSync: "1 hour ago" }
-  ]);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeDocumentId, setActiveDocumentId] = useState("");
+  const [deletingDocumentId, setDeletingDocumentId] = useState("");
 
-  // Upload states
-  const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Sync actions
-  const handleSyncSource = useCallback((id: string, name: string) => {
-    toast.info(`Triggering handshake sync with "${name}"...`);
-    setTimeout(() => {
-      setConnections((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: "Synced", lastSync: "Just Now" } : c))
-      );
-      toast.success(`Synced successfully: "${name}"`);
-    }, 800);
-  }, []);
-
-  const handleRemoveSource = useCallback((id: string) => {
-    setConnections((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Disconnected data source.");
-  }, []);
-
-  // Upload file mock handler
-  const handleUploadFile = useCallback(() => {
-    if (!selectedFile) {
-      toast.error("Please drag or select a ledger statement file to upload.");
-      return;
+  const loadDocuments = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      setDocuments(await documentsApi.list());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load uploaded document status.");
+    } finally {
+      setLoading(false);
     }
-    setUploading(true);
-    toast.info(`Ingesting document: "${selectedFile.name}"...`);
+  }, []);
 
-    setTimeout(() => {
-      setUploading(false);
-      const newSource: DataConnection = {
-        id: `ds_${Date.now()}`,
-        name: selectedFile.name,
-        type: selectedFile.name.endsWith(".csv") ? "CSV Ledger Upload" : "PDF Statement Upload",
-        status: "Synced",
-        lastSync: "Just Now"
-      };
-      setConnections((prev) => [...prev, newSource]);
-      setSelectedFile(null);
-      toast.success(`Successfully ingested statement data from "${selectedFile.name}" into credit model.`);
-    }, 1500);
-  }, [selectedFile]);
+  useEffect(() => { void loadDocuments(); }, [loadDocuments]);
+
+  useEffect(() => {
+    const ids = JSON.parse(localStorage.getItem(ACTIVE_DOCUMENTS_KEY) || "[]") as string[];
+    setActiveDocumentId(ids[0] || "");
+  }, []);
+
+  const activateDocument = (id: string) => {
+    localStorage.setItem(ACTIVE_DOCUMENTS_KEY, JSON.stringify([id]));
+    setActiveDocumentId(id);
+  };
+
+  const deleteDocument = async (document: UploadedDocument) => {
+    const id = document.id || document.document_id;
+    if (!id || !window.confirm(`Delete “${document.file_name || "this statement"}” and its imported transactions? This cannot be undone.`)) return;
+
+    setDeletingDocumentId(id);
+    setError("");
+    try {
+      await documentsApi.delete(id);
+      const remaining = documents.filter((item) => (item.id || item.document_id) !== id);
+      setDocuments(remaining);
+
+      const selectedIds = JSON.parse(localStorage.getItem(ACTIVE_DOCUMENTS_KEY) || "[]") as string[];
+      const remainingSelectedIds = selectedIds.filter((selectedId) => selectedId !== id);
+      if (remainingSelectedIds.length) {
+        localStorage.setItem(ACTIVE_DOCUMENTS_KEY, JSON.stringify(remainingSelectedIds));
+        setActiveDocumentId(remainingSelectedIds[0]);
+      } else if (activeDocumentId === id || selectedIds.includes(id)) {
+        const next = remaining.find((item) => item.status === "completed" && !item.error_message && (item.id || item.document_id));
+        const nextId = next?.id || next?.document_id;
+        if (nextId) {
+          localStorage.setItem(ACTIVE_DOCUMENTS_KEY, JSON.stringify([nextId]));
+          setActiveDocumentId(nextId);
+        } else {
+          localStorage.removeItem(ACTIVE_DOCUMENTS_KEY);
+          setActiveDocumentId("");
+        }
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete this uploaded statement.");
+    } finally {
+      setDeletingDocumentId("");
+    }
+  };
 
   return (
-    <PageContainer className="pb-24 text-xs select-none">
-      
-      {/* HEADER */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-3.5 border-b border-border/60">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold font-sans tracking-tight text-foreground flex items-center gap-2.5">
-            <Database className="h-6.5 w-6.5 text-primary" /> Data Connections Center
-          </h1>
-          <p className="text-xs text-foreground-secondary font-sans">
-            Integrate bank ledgers, statements files, and credit APIs to feed the AI diagnostics models.
-          </p>
+    <PageContainer className="pb-20">
+      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Uploaded data sources</h1>
+          <p className="mt-2 max-w-2xl text-sm text-foreground-secondary">This account has no live bank integrations. Statements uploaded here are parsed and saved as transaction records for analysis.</p>
         </div>
-      </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => void loadDocuments()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />Refresh status</Button>
+          <Button variant="primary" onClick={() => window.location.assign("/onboarding/upload")}><FileUp className="mr-2 h-4 w-4" />Upload statement</Button>
+        </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-        
-        {/* ACTIVE CONNECTIONS LIST (LEFT - 7 COLS) */}
-        <div className="lg:col-span-7 space-y-4">
-          <Card className="border border-border p-5 space-y-4.5">
-            <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest block border-b border-border/40 pb-2.5">
-              Active ledger connections ({connections.length})
-            </span>
+      {error && <div role="alert" className="mt-5 rounded-md border border-critical/30 bg-critical/5 p-4 text-sm text-critical">{error}</div>}
 
-            {connections.length === 0 ? (
-              <div className="text-center border border-border border-dashed p-8 rounded-sm bg-surface">
-                <Database className="h-8 w-8 text-foreground-muted mx-auto mb-2" />
-                <h3 className="text-xs font-bold text-foreground">No active connections</h3>
-                <p className="text-[10px] text-foreground-secondary mt-1">Upload a financial statement document on the right to sync accounts.</p>
+      <Card className="mt-6">
+        <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Database className="h-4 w-4 text-primary" />Uploaded statements</CardTitle></CardHeader>
+        <CardContent>
+          {documents.some((document) => document.status === "completed" && !document.error_message) && (
+            <div className="mb-4 rounded border border-border p-3">
+              <p className="mb-2 text-xs text-foreground-secondary">Choose which statement drives the analytics pages. Older uploads remain saved.</p>
+              <div className="flex flex-wrap gap-2">
+                {documents.filter((document) => document.status === "completed" && !document.error_message).map((document) => {
+                  const id = document.id || document.document_id || "";
+                  const active = id === activeDocumentId;
+                  return id ? <Button key={id} size="sm" variant={active ? "primary" : "outline"} onClick={() => activateDocument(id)}>{active ? "Selected · " : "Analyze · "}{document.file_name || id.slice(0, 8)}</Button> : null;
+                })}
               </div>
-            ) : (
-              <div className="space-y-3">
-                {connections.map((c) => (
-                  <div
-                    key={c.id}
-                    className="bg-surface-elevated/40 border border-border p-4 rounded-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                  >
-                    <div className="space-y-0.5">
-                      <span className="text-[8px] font-sans font-bold text-foreground-muted uppercase tracking-wider block">
-                        {c.type}
-                      </span>
-                      <h4 className="font-bold text-foreground">
-                        {c.name}
-                      </h4>
-                      <span className="text-[9.5px] font-mono text-foreground-muted block">
-                        Last sync handshake: {c.lastSync}
-                      </span>
+            </div>
+          )}
+
+          {loading ? <p className="text-sm text-foreground-secondary">Loading document records…</p> : documents.length ? (
+            <div className="divide-y divide-border/70">
+              {documents.map((document) => {
+                const id = document.id || document.document_id || "";
+                const isDeleting = deletingDocumentId === id;
+                const cannotDeleteWhileProcessing = document.status === "pending" || document.status === "processing";
+                return (
+                  <div key={id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{document.file_name || "Uploaded statement"}</p>
+                      <p className="mt-1 break-all font-mono text-[10px] text-foreground-muted">ID: {id}</p>
+                      {document.error_message && <p className="mt-1 text-xs text-critical">{document.error_message}</p>}
                     </div>
-
-                    <div className="flex gap-2.5 items-center">
-                      <span className={cn(
-                        "text-[8px] font-sans font-bold px-2 py-0.5 rounded-xs uppercase tracking-wider border",
-                        c.status === "Synced"
-                          ? "text-positive bg-positive/10 border-positive/15"
-                          : "text-warning bg-warning/10 border-warning/15"
-                      )}>
-                        {c.status}
-                      </span>
-
-                      <button
-                        onClick={() => handleSyncSource(c.id, c.name)}
-                        className="p-1.5 rounded-xs border border-border hover:bg-surface-hover text-foreground-secondary cursor-pointer"
-                        title="Sync Handshake"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleRemoveSource(c.id)}
-                        className="p-1.5 rounded-xs border border-border hover:bg-critical/5 hover:text-critical text-foreground-secondary cursor-pointer"
-                        title="Remove Connection"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-fit rounded-sm border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${document.status === "completed" ? "border-positive/20 bg-positive/10 text-positive" : document.status === "failed" ? "border-critical/20 bg-critical/10 text-critical" : "border-warning/20 bg-warning/10 text-warning"}`}>{document.status}</span>
+                      <Button size="sm" variant="destructive" disabled={!id || cannotDeleteWhileProcessing || isDeleting} onClick={() => void deleteDocument(document)}>
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />{isDeleting ? "Deleting" : "Delete"}
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-          </Card>
-        </div>
-
-        {/* UPLOAD STATEMENTS ZONE (RIGHT - 5 COLS) */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card className="border border-border p-5 space-y-4">
-            <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest block border-b border-border/40 pb-2.5">
-              Upload bank statements ledger file
-            </span>
-
-            {/* Dropzone mock */}
-            <div className="border border-dashed border-border/80 rounded-sm p-6 text-center bg-surface-elevated/25 relative hover:bg-surface-elevated/40 transition-colors">
-              <input
-                type="file"
-                accept=".pdf,.csv"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setSelectedFile(e.target.files[0]);
-                  }
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              
-              <Upload className="h-8 w-8 text-foreground-muted mx-auto mb-2" />
-              <span className="font-bold text-foreground block">
-                {selectedFile ? selectedFile.name : "Select Ledger File"}
-              </span>
-              <span className="text-[10px] text-foreground-secondary block mt-1">
-                Drag and drop or click to choose PDF bank statements or CSV logs
-              </span>
+                );
+              })}
             </div>
+          ) : <p className="text-sm text-foreground-secondary">No statements have been uploaded to this account yet.</p>}
+        </CardContent>
+      </Card>
 
-            {selectedFile && (
-              <div className="bg-surface border border-border p-3.5 rounded-xs flex justify-between items-center text-xs font-mono select-none">
-                <span className="text-foreground truncate max-w-[200px]">{selectedFile.name}</span>
-                <span className="text-foreground-muted font-bold">{(selectedFile.size / 1024).toFixed(1)} KB</span>
-              </div>
-            )}
-
-            <Button
-              onClick={handleUploadFile}
-              disabled={uploading || !selectedFile}
-              className="w-full text-[10px] uppercase font-sans font-extrabold gap-1.5 cursor-pointer py-2.5"
-            >
-              {uploading ? (
-                <>
-                  <RefreshCw className="h-4.5 w-4.5 animate-spin" /> Ingesting file...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4.5 w-4.5" /> Upload & Parse Document
-                </>
-              )}
-            </Button>
-
-          </Card>
-        </div>
-
-      </div>
-
+      <p className="mt-4 text-xs leading-5 text-foreground-muted">Supported formats: CSV, Excel, and PDF. CSV parsing works best with Date, Description, Credit, and Debit columns. Only upload statements you are authorized to use.</p>
     </PageContainer>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { 
   Database, 
   FileSpreadsheet, 
@@ -14,7 +14,10 @@ import { TrendIndicator } from "@/components/ui/Badge";
 
 export function FinancialNetwork() {
   const prefersReducedMotion = useReducedMotion();
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(mouseY, (value) => -value * 0.4);
+  const rotateY = useTransform(mouseX, (value) => value * 0.4);
   const [mounted, setMounted] = useState(false);
   const [scale, setScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +26,13 @@ export function FinancialNetwork() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      mouseX.set(0);
+      mouseY.set(0);
+    }
+  }, [prefersReducedMotion, mouseX, mouseY]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -44,11 +54,13 @@ export function FinancialNetwork() {
     const rect = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left - rect.width / 2) / 45; // subtle tilt
     const y = (e.clientY - rect.top - rect.height / 2) / 45;
-    setMousePos({ x, y });
+    mouseX.set(x);
+    mouseY.set(y);
   };
 
   const handleMouseLeave = () => {
-    setMousePos({ x: 0, y: 0 });
+    mouseX.set(0);
+    mouseY.set(0);
   };
 
   // Node structures
@@ -125,14 +137,15 @@ export function FinancialNetwork() {
         }}
       >
       <motion.div
-        animate={
-          mounted && !prefersReducedMotion
-            ? { x: mousePos.x, y: mousePos.y, rotateX: -mousePos.y * 0.4, rotateY: mousePos.x * 0.4 }
-            : { x: 0, y: 0 }
-        }
-        transition={{ type: "spring", stiffness: 120, damping: 25 }}
+        style={{
+          x: mouseX,
+          y: mouseY,
+          rotateX,
+          rotateY,
+          transformStyle: "preserve-3d",
+          perspective: 1000,
+        }}
         className="relative w-full h-full"
-        style={{ transformStyle: "preserve-3d", perspective: 1000 }}
       >
         {/* Connection paths and animated pulses */}
         <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 800 480">
@@ -181,7 +194,7 @@ export function FinancialNetwork() {
           {mounted && !prefersReducedMotion && (
             <>
               {/* Inputs -> AI Engine */}
-              {inputs.map((inNode, i) => (
+              {inputs.slice(0, 2).map((inNode, i) => (
                 <motion.circle
                   key={`pulse-${inNode.id}`}
                   r={3.5}
@@ -202,7 +215,7 @@ export function FinancialNetwork() {
               ))}
 
               {/* AI Engine -> Outputs */}
-              {outputs.map((outNode, i) => (
+              {outputs.slice(0, 2).map((outNode, i) => (
                 <motion.circle
                   key={`pulse-${outNode.id}`}
                   r={3.5}
@@ -256,12 +269,10 @@ export function FinancialNetwork() {
           className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10 text-center flex flex-col items-center pointer-events-auto"
           style={{ left: "50%", top: "48%" }}
         >
-          <motion.div
-            animate={{ scale: [1, 1.04, 1] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          <div
             className="p-5 bg-surface border border-ai/30 rounded-full shadow-lg shadow-ai/10 flex flex-col items-center justify-center w-28 h-28 border-2"
           >
-            <div className="h-10 w-10 rounded-full bg-ai/10 border border-ai/20 flex items-center justify-center text-ai mb-1.5 animate-pulse">
+            <div className="h-10 w-10 rounded-full bg-ai/10 border border-ai/20 flex items-center justify-center text-ai mb-1.5">
               <Zap className="h-5 w-5" />
             </div>
             <span className="text-[9px] font-sans font-extrabold uppercase tracking-widest text-ai leading-none block">
@@ -270,7 +281,7 @@ export function FinancialNetwork() {
             <span className="text-[7px] font-sans font-semibold text-foreground-secondary tracking-wider block mt-1 uppercase">
               AI ENGINE
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* ==========================================
@@ -317,7 +328,7 @@ export function FinancialNetwork() {
                       </span>
                     )}
                     {node.badge === "Anomalies" && (
-                      <span className="text-[8px] font-sans font-bold text-critical bg-critical/10 border border-critical/25 px-1.5 py-0.25 rounded-xs uppercase tracking-wide animate-pulse">
+                      <span className="text-[8px] font-sans font-bold text-critical bg-critical/10 border border-critical/25 px-1.5 py-0.25 rounded-xs uppercase tracking-wide">
                         Threat
                       </span>
                     )}

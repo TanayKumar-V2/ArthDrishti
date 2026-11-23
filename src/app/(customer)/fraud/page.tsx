@@ -41,16 +41,18 @@ import { Button } from "@/components/ui/Button";
 import { Sheet, Tooltip } from "@/components/ui/Overlays";
 import { RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
-import { mockFraudTransactions, FraudTransaction } from "@/lib/fraudData";
-import { fraudApi } from "@/lib/api";
+import { FraudTransaction } from "@/lib/fraudData";
+import { fraudApi, reportsApi, transactionsApi } from "@/lib/api";
 
 export default function FraudIntelligencePage() {
   // ==========================================
   // STATE MANAGEMENT
   // ==========================================
-  const [transactions, setTransactions] = useState<FraudTransaction[]>(mockFraudTransactions);
+  const [transactions, setTransactions] = useState<FraudTransaction[]>([]);
+  const [scannedTransactionCount, setScannedTransactionCount] = useState(0);
+  const [loadError, setLoadError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [lastScanText, setLastScanText] = useState("2 minutes ago");
+  const [lastScanText, setLastScanText] = useState("Not run yet");
   const [searchQuery, setSearchQuery] = useState("");
   const [riskFilter, setRiskFilter] = useState<string>("ALL");
   const [anomalyFilter, setAnomalyFilter] = useState<string>("ALL");
@@ -72,51 +74,56 @@ export default function FraudIntelligencePage() {
   // Hydrate live fraud alerts from backend
   useEffect(() => {
     let isMounted = true;
-    fraudApi
-      .listAlerts()
-      .then((alerts: any) => {
-        if (!isMounted || !Array.isArray(alerts) || alerts.length === 0) return;
-        const mapped: FraudTransaction[] = alerts.map((a: any, idx: number) => {
-          const score = typeof a.risk_score === "number" ? a.risk_score : 85;
+    Promise.all([fraudApi.listAlerts(), transactionsApi.getSummary()])
+      .then(async ([alerts, summary]: any[]) => {
+        const pageCount = Math.ceil((Number(summary.transaction_count) || 0) / 500);
+        const ledgerPages = await Promise.all(Array.from({ length: pageCount }, (_, page) =>
+          transactionsApi.list({ skip: page * 500, limit: 500 })
+        ));
+        const ledger = ledgerPages.flat();
+        if (!isMounted) return;
+        const ledgerById = new Map((Array.isArray(ledger) ? ledger : []).map((txn: any) => [String(txn.id), txn]));
+        const mapped: FraudTransaction[] = (Array.isArray(alerts) ? alerts : []).map((a: any) => {
+          const txn = a.transaction_id ? ledgerById.get(String(a.transaction_id)) : null;
+          const score = Math.round(Math.max(0, Math.min(1, Number(a.anomaly_score) || 0)) * 100);
+          const apiRisk = String(a.risk_level || "Medium").toLowerCase();
           const risk: "Low" | "Medium" | "High" | "Critical" =
-            score >= 90 ? "Critical" : score >= 70 ? "High" : score >= 35 ? "Medium" : "Low";
+            apiRisk === "critical" ? "Critical" : apiRisk === "high" ? "High" : apiRisk === "low" ? "Low" : "Medium";
           const status: "completed" | "under_review" | "approved" | "rejected" =
-            a.status === "resolved" ? "approved" : a.status === "dismissed" ? "completed" : "under_review";
+            a.status === "false_positive" ? "approved" : a.status === "confirmed_fraud" ? "rejected" : "under_review";
+          const reasons = Array.isArray(a.reasons) ? a.reasons.filter((reason: unknown): reason is string => typeof reason === "string") : [];
+          const reasonText = reasons.join(" ").toLowerCase();
           const anomalyType: FraudTransaction["anomalyType"] =
-            a.anomaly_type === "Unusual Amount" ? "Unusual Amount" :
-            a.anomaly_type === "Unusual Time" ? "Unusual Time" :
-            a.anomaly_type === "Location Anomaly" ? "Location Anomaly" :
-            "Behavior Deviation";
+            reasonText.includes("amount") ? "Unusual Amount" :
+            reasonText.includes("time") || reasonText.includes("night") ? "Unusual Time" :
+            reasonText.includes("location") ? "Location Anomaly" :
+            reasonText.includes("frequency") || reasonText.includes("velocity") ? "Transaction Frequency" :
+            reasonText.includes("merchant") ? "New Merchant" : "Behavior Deviation";
 
           return {
-            id: String(a.id || `frd-${idx}`),
-            merchant: a.merchant || a.location || "Monitored Merchant Terminal",
-            amount: typeof a.amount === "number" ? a.amount : 12500,
-            date: a.created_at || new Date().toISOString(),
-            account: a.account || "HDFC Savings Account •••• 8902",
+            id: String(a.id),
+            merchant: txn?.description || "Transaction description unavailable",
+            amount: typeof txn?.amount === "number" ? Math.abs(txn.amount) : 0,
+            date: txn?.transaction_date || a.created_at,
+            account: "Uploaded statement",
             anomalyType,
             aiScore: score,
             risk,
             status,
-            location: a.location || "Online IP Gateway",
-            region: "Delhi NCR Hub" as const,
-            whyFlagged: [
-              { factor: a.anomaly_type || "Behavior Deviation", weight: 65 },
-              { factor: "Isolation Forest Anomaly Score", weight: 35 }
-            ],
-            behavioralComparison: [
-              { metric: "Risk Score Delta", historicalAverage: "14/100", currentTransaction: `${score}/100` },
-              { metric: "Verification State", historicalAverage: "Known Device", currentTransaction: "Audit Session" }
-            ]
+            location: "Not provided by statement",
+            region: "Other",
+            whyFlagged: reasons.map((factor: string) => ({ factor, weight: null })),
+            behavioralComparison: []
           };
         });
-        setTransactions((prev) => {
-          const ids = new Set(prev.map((item) => item.id));
-          const unique = mapped.filter((item) => !ids.has(item.id));
-          return [...unique, ...prev];
-        });
+        setTransactions(mapped);
+        setScannedTransactionCount(Number(summary.transaction_count) || 0);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!isMounted) return;
+        setTransactions([]);
+        setLoadError("Could not load fraud results from the backend. Check the API connection and retry.");
+      });
     return () => {
       isMounted = false;
     };
@@ -130,61 +137,52 @@ export default function FraudIntelligencePage() {
   // ==========================================
   // RUN ANALYSIS SIMULATION
   // ==========================================
-  const handleRunAnalysis = () => {
+  const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
-    toast.info("Ingesting ledger updates and executing AI fraud scoring...", {
-      description: "Analyzing 12,482 total transactions.",
-      duration: 2000
-    });
-
-    setTimeout(() => {
-      setIsAnalyzing(false);
+    try {
+      const result = await fraudApi.triggerScan();
       setLastScanText("Just now");
-      toast.success("Scan completed. No new high-risk anomalies detected.", {
-        description: "Checked against 6 core anomaly models."
+      toast.success(`Scan completed across ${scannedTransactionCount.toLocaleString()} uploaded transactions.`, {
+        description: `${Number(result.alerts_detected) || 0} new alert${Number(result.alerts_detected) === 1 ? "" : "s"} detected.`
       });
-    }, 2000);
+      window.location.reload();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "The fraud scan failed. Check the backend and retry.");
+      setIsAnalyzing(false);
+    }
   };
 
   // ==========================================
-  // DRAWER MOCK WORKFLOWS
+  // Persist alert review actions
   // ==========================================
-  const handleMarkSafe = (txnId: string) => {
-    setTransactions(prev => prev.map(t => {
-      if (t.id === txnId) {
-        return {
-          ...t,
-          risk: "Low",
-          status: "approved",
-          anomalyType: "None",
-          aiScore: Math.min(t.aiScore, 10),
-          whyFlagged: []
-        };
-      }
-      return t;
-    }));
-    toast.success(`Transaction ${txnId} marked as Safe.`, {
-      description: "Risk score updated and learning pattern feedback registered."
-    });
-    setIsDrawerOpen(false);
+  const handleMarkSafe = async (txnId: string) => {
+    try {
+      await fraudApi.updateAlertStatus(txnId, "false_positive");
+      setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: "approved" } : t));
+      toast.success("Alert marked as a false positive.", { description: "The review status was saved." });
+      setIsDrawerOpen(false);
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Could not update the alert.");
+    }
   };
 
-  const handleInvestigate = (txnId: string) => {
-    setTransactions(prev => prev.map(t => {
-      if (t.id === txnId) {
-        return { ...t, status: "under_review" };
-      }
-      return t;
-    }));
-    toast.info(`Investigation file opened for ${txnId}.`, {
-      description: "Flagged for manual operations review queue."
-    });
+  const handleInvestigate = async (txnId: string) => {
+    try {
+      await fraudApi.updateAlertStatus(txnId, "under_review");
+      setTransactions(prev => prev.map(t => t.id === txnId ? { ...t, status: "under_review" } : t));
+      toast.success("Alert marked under review.");
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Could not update the alert.");
+    }
   };
 
-  const handleGenerateReport = (txnId: string) => {
-    toast.success(`Fraud audit report generated for ${txnId}.`, {
-      description: "PDF report exported to workspace archive."
-    });
+  const handleGenerateReport = async () => {
+    try {
+      const report = await reportsApi.generate("comprehensive");
+      toast.success("Report generated from your uploaded data.", { description: `Report ${report.id} is available in Reports.` });
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : "Could not generate the report.");
+    }
   };
 
   // ==========================================
@@ -192,10 +190,10 @@ export default function FraudIntelligencePage() {
   // ==========================================
   // Total transaction metrics
   const stats = useMemo(() => {
-    const totalCount = 12482; // static total analyzed from request
+    const totalCount = scannedTransactionCount;
     const highRiskCount = transactions.filter(t => t.risk === "High" || t.risk === "Critical").length;
     const mediumRiskCount = transactions.filter(t => t.risk === "Medium").length;
-    const lowRiskCount = transactions.filter(t => t.risk === "Low").length;
+    const lowRiskCount = Math.max(0, totalCount - transactions.length);
 
     return {
       totalCount,
@@ -203,7 +201,7 @@ export default function FraudIntelligencePage() {
       mediumRiskCount,
       lowRiskCount
     };
-  }, [transactions]);
+  }, [transactions, scannedTransactionCount]);
 
   // Compute Anomaly distribution counts (Anomaly Summary)
   const anomalySummaryData = useMemo(() => {
@@ -228,12 +226,7 @@ export default function FraudIntelligencePage() {
       name: key,
       count: val,
       percentage: Math.round((val / totalFlagged) * 100),
-      description: key === "Unusual Amount" ? "Amount deviates significantly from account history threshold bounds."
-                 : key === "Unusual Time" ? "Executed during atypical operating hours for this user profile."
-                 : key === "New Merchant" ? "First transaction with a newly registered vendor gateway."
-                 : key === "Location Anomaly" ? "IP/Terminal geographical distance velocity violation."
-                 : key === "Transaction Frequency" ? "High-velocity transaction bursts within short intervals."
-                 : "Out-of-pattern spending sector or device fingerprint deviation."
+      description: "Reason returned by the fraud scan for an uploaded transaction."
     }));
   }, [transactions]);
 
@@ -259,7 +252,7 @@ export default function FraudIntelligencePage() {
 
       // 5. Timeframe filtering
       const txDate = new Date(t.date);
-      const now = new Date("2026-07-08T20:58:00Z"); // Sync with system timestamp
+      const now = new Date();
       const timeDiff = now.getTime() - txDate.getTime();
       let matchesTime = true;
       if (timeframe === "24h") {
@@ -312,14 +305,14 @@ export default function FraudIntelligencePage() {
     // Generate dates for the last 8 days
     const dates: Record<string, { display: string; count: number; totalScore: number; maxScore: number }> = {};
     for (let i = 7; i >= 0; i--) {
-      const d = new Date("2026-07-08T00:00:00Z");
+      const d = new Date();
       d.setDate(d.getDate() - i);
       const iso = d.toISOString().split("T")[0];
       const display = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       dates[iso] = { display, count: 0, totalScore: 0, maxScore: 0 };
     }
 
-    // Populate with mock transaction info
+    // Populate with uploaded alert records
     transactions.forEach(t => {
       const iso = t.date.split("T")[0];
       if (dates[iso]) {
@@ -347,39 +340,9 @@ export default function FraudIntelligencePage() {
   // ==========================================
   // GEOGRAPHIC ACTIVITY REGIONS
   // ==========================================
-  const regionalMetrics = useMemo(() => {
-    const regions: Record<string, { alerts: number; totalValue: number; riskRating: "Low" | "Medium" | "High" | "Critical" }> = {
-      "Mumbai Hub": { alerts: 0, totalValue: 0, riskRating: "Low" },
-      "Delhi NCR Hub": { alerts: 0, totalValue: 0, riskRating: "Low" },
-      "Bengaluru Hub": { alerts: 0, totalValue: 0, riskRating: "Low" },
-      "Hyderabad Hub": { alerts: 0, totalValue: 0, riskRating: "Low" },
-      "International Inbound": { alerts: 0, totalValue: 0, riskRating: "Low" },
-    };
-
-    transactions.forEach(t => {
-      if (t.region in regions) {
-        regions[t.region].totalValue += t.amount;
-        if (t.risk === "High" || t.risk === "Critical") {
-          regions[t.region].alerts += 1;
-        }
-      }
-    });
-
-    return Object.entries(regions).map(([name, data]) => {
-      let riskRating: "Low" | "Medium" | "High" | "Critical" = "Low";
-      if (data.alerts >= 2) riskRating = "Critical";
-      else if (data.alerts === 1) riskRating = "High";
-      else if (data.totalValue > 50000) riskRating = "Medium";
-
-      return {
-        name,
-        alerts: data.alerts,
-        totalValue: data.totalValue,
-        riskRating,
-        x: name === "Mumbai Hub" ? 35 : name === "Delhi NCR Hub" ? 30 : name === "Bengaluru Hub" ? 40 : name === "Hyderabad Hub" ? 50 : 80,
-        y: name === "Mumbai Hub" ? 65 : name === "Delhi NCR Hub" ? 30 : name === "Bengaluru Hub" ? 80 : name === "Hyderabad Hub" ? 70 : 40,
-      };
-    });
+  const regionalMetrics = useMemo<Array<{ name: string; x: number; y: number; riskRating: string; alerts: number; totalValue: number }>>(() => {
+    // The current statement parser does not extract transaction locations.
+    return [];
   }, [transactions]);
 
   const toggleSort = (key: "date" | "amount" | "aiScore") => {
@@ -393,26 +356,27 @@ export default function FraudIntelligencePage() {
 
   return (
     <PageContainer className="pb-24">
+      {loadError && <div role="alert" className="mb-5 rounded-md border border-critical/30 bg-critical/5 p-3 text-sm text-critical">{loadError}</div>}
       {/* ==========================================
           HEADER METRICS BLOCK
           ========================================== */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between border-b border-border/80 pb-6 gap-6 select-none">
         <div className="space-y-1">
           <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-ai bg-ai/10 border border-ai/20 px-3 py-1 rounded-xs inline-block">
-            Intrusion & Security Signals
+                Uploaded transaction review
           </span>
           <h1 className="text-3xl font-heading font-extrabold text-foreground tracking-tight mt-1.5">
             Fraud Intelligence
           </h1>
           <p className="text-xs text-foreground-secondary">
-            Continuous transaction anomaly modeling, SHAP attributions, and real-time ledger risk mitigation checks.
+            Fraud alerts returned by the backend scan of your uploaded transactions.
           </p>
         </div>
 
         {/* Operational Statistics counters */}
         <div className="flex flex-wrap items-center gap-4 bg-surface border border-border p-4 rounded-sm shadow-xs">
           <div className="pr-5 border-r border-border/70 text-left">
-            <span className="text-[9px] font-sans font-bold text-foreground-muted uppercase tracking-wider block">Analyzed Volume</span>
+            <span className="text-[9px] font-sans font-bold text-foreground-muted uppercase tracking-wider block">Uploaded transactions</span>
             <span className="text-xl font-heading font-bold text-foreground mt-0.5 block">
               {stats.totalCount.toLocaleString("en-IN")}
             </span>
@@ -438,7 +402,7 @@ export default function FraudIntelligencePage() {
 
           <div className="text-left pr-4 pl-1">
             <span className="text-[9px] font-sans font-bold text-positive uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" /> Low Risk
+              <ShieldCheck className="h-3 w-3" /> No alert
             </span>
             <span className="text-xl font-heading font-bold text-positive mt-0.5 block">
               {stats.lowRiskCount}
@@ -671,10 +635,10 @@ export default function FraudIntelligencePage() {
           <Card className="h-[430px] flex flex-col justify-between overflow-hidden">
             <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-xs uppercase tracking-widest text-foreground-muted font-bold flex items-center gap-1.5">
-                <Globe className="h-4.5 w-4.5 text-primary" /> Regional Risk Distribution
+                <Globe className="h-4.5 w-4.5 text-primary" /> Location data
               </CardTitle>
               <p className="text-[11px] text-foreground-secondary">
-                SVG alert density map matching real-time activity hubs.
+                The statement parser does not extract transaction locations.
               </p>
             </CardHeader>
             <CardContent className="pt-4 flex-1 flex flex-col justify-between">
@@ -714,6 +678,9 @@ export default function FraudIntelligencePage() {
                     </div>
                   );
                 })}
+                <div className="absolute inset-0 flex items-center justify-center bg-surface/95 p-6 text-center text-xs text-foreground-secondary">
+                  Location analytics are unavailable because uploaded statements do not include transaction locations.
+                </div>
               </div>
 
               {/* Data list matching coordinates */}
@@ -1229,7 +1196,7 @@ export default function FraudIntelligencePage() {
               </div>
             </div>
 
-            {/* 3. WHY WAS THIS FLAGGED? SHAP ATTRIBUTIONS */}
+            {/* Reasons returned by the fraud service */}
             {selectedTxn.whyFlagged && selectedTxn.whyFlagged.length > 0 && (
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -1240,14 +1207,9 @@ export default function FraudIntelligencePage() {
                     <div key={factor.factor} className="space-y-1">
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-semibold text-foreground">{factor.factor}</span>
-                        <span className="font-mono text-critical font-bold">+{factor.weight} Risk</span>
+                        {factor.weight !== null && <span className="font-mono text-critical font-bold">+{factor.weight} Risk</span>}
                       </div>
-                      <div className="w-full h-1 bg-surface-elevated rounded-full overflow-hidden">
-                        <div 
-                          style={{ width: `${(factor.weight / 60) * 100}%` }}
-                          className="h-full bg-critical rounded-full"
-                        />
-                      </div>
+                      {factor.weight !== null && <div className="w-full h-1 bg-surface-elevated rounded-full overflow-hidden"><div style={{ width: `${Math.min(100, (factor.weight / 60) * 100)}%` }} className="h-full bg-critical rounded-full" /></div>}
                     </div>
                   ))}
                 </div>
@@ -1303,7 +1265,7 @@ export default function FraudIntelligencePage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleGenerateReport(selectedTxn.id)}
+                onClick={() => void handleGenerateReport()}
                 className="text-xs py-2 font-semibold border-border hover:bg-surface-hover hover:border-border-strong text-foreground cursor-pointer"
               >
                 <FileText className="h-4 w-4 mr-1.5 text-foreground-muted" /> Generate Report

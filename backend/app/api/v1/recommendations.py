@@ -17,14 +17,16 @@ def list_recommendations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get personalized, model-grounded financial advice and action items."""
-    recs = db.query(Recommendation).filter(
+    """Return active rule-based suggestions grounded in uploaded transaction features."""
+    has_recommendations = db.query(Recommendation.id).filter(
+        Recommendation.user_id == current_user.id
+    ).first()
+    if not has_recommendations:
+        generate_smart_recommendations(db, current_user.id)
+    return db.query(Recommendation).filter(
         Recommendation.user_id == current_user.id,
         Recommendation.is_dismissed == False
     ).all()
-    if not recs:
-        recs = generate_smart_recommendations(db, current_user.id)
-    return recs
 
 
 @router.patch("/{recommendation_id}/dismiss")

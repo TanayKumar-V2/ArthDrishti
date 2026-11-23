@@ -300,18 +300,165 @@ def parse_excel_statement(file_path: str) -> List[Dict[str, Any]]:
 
 
 def parse_pdf_statement(file_path: str) -> List[Dict[str, Any]]:
-    """Parse transactions from text-based PDF bank statements using pypdf and regex line matching."""
+    """Parse text PDFs with either row-oriented or cell-per-line transaction tables."""
     from pypdf import PdfReader
 
     transactions = []
     reader = PdfReader(file_path)
 
-    # Common line regex: Date | Description | Amount | (Optional CR/DR)
-    # Examples:
-    # 2026-05-12 Amazon Marketplace 1249.00 DR
-    # 15/06/2026 Salary Credit - Infosys 85000.00 CR
+    # Some PDF extractors return one table cell per line. Supported layouts:
+    # date, description, debit, credit, balance; and
+    # date, reference, description, category, debit, credit, balance.
+    transaction_date_pattern = re.compile(
+        r"^(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}[-/ ][A-Za-z]{3,9}[-/ ]\d{4})$"
+    )
+    amount_pattern = re.compile(r"-?\d[\d,]*(?:\.\d{1,2})?")
+
+    def amount_from_cell(value: str) -> float:
+        match = amount_pattern.search(value.replace("−", "-"))
+        if not match:
+            return 0.0
+        try:
+            return abs(float(match.group(0).replace(",", "")))
+        except ValueError:
+            return 0.0
+
+    def signed_amount_from_cell(value: str) -> float:
+        match = amount_pattern.search(value.replace(chr(8722), "-"))
+        if not match:
+            return 0.0
+        try:
+            return float(match.group(0).replace(",", ""))
+        except ValueError:
+            return 0.0
+
+    balance_entries = []
+
+    for page in reader.pages:
+        text = page.extract_text() or ""
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        date_rows = [index for index, line in enumerate(lines) if transaction_date_pattern.fullmatch(line)]
+
+        # Parse statements whose extracted text preserves the table's column order.
+        for date_index, start in enumerate(date_rows):
+            end = date_rows[date_index + 1] if date_index + 1 < len(date_rows) else len(lines)
+            row = lines[start:end]
+            try:
+                txn_date = parse_date_flexible(row[0])
+            except (ValueError, TypeError):
+                continue
+
+            if len(row) >= 7:
+                description = row[2].strip()
+                debit = amount_from_cell(row[4])
+                credit = amount_from_cell(row[5])
+                if not description or (debit <= 0 and credit <= 0):
+                    continue
+
+                txn_type = "credit" if credit > 0 else "debit"
+                amount = credit if credit > 0 else debit
+                transactions.append({
+                    "transaction_date": txn_date,
+                    "amount": round(amount, 2),
+                    "transaction_type": txn_type,
+                    "category": classify_category(description, txn_type),
+                    "description": description,
+                    "is_flagged": False,
+                })
+            elif len(row) == 6 and not amount_pattern.fullmatch(row[-1]):
+                # A trailing CR/DR cell shifts amount and balance one place left.
+                description = row[1].strip()
+                amount = amount_from_cell(row[-3])
+                balance = signed_amount_from_cell(row[-2])
+                marker_text = row[-1]
+                if not description or amount <= 0:
+                    continue
+
+                transaction = {
+                    "transaction_date": txn_date,
+                    "amount": round(amount, 2),
+                    "transaction_type": "debit",
+                    "category": "Other Expenses",
+                    "description": description,
+                    "is_flagged": False,
+                }
+                transactions.append(transaction)
+                balance_entries.append((transaction, balance, description, marker_text))
+            elif len(row) >= 5:
+                # Compact statements may extract as date, narration,
+                # reference, amount, balance. The reference is numeric too,
+                # so do not interpret it as a debit or credit value.
+                description = row[-4].strip()
+                amount = amount_from_cell(row[-2])
+                balance = signed_amount_from_cell(row[-1])
+                if not description or amount <= 0:
+                    continue
+
+                transaction = {
+                    "transaction_date": txn_date,
+                    "amount": round(amount, 2),
+                    "transaction_type": "debit",
+                    "category": "Other Expenses",
+                    "description": description,
+                    "is_flagged": False,
+                }
+                transactions.append(transaction)
+                balance_entries.append((transaction, balance, description, description))
+            else:
+                continue
+
+    def marked_transaction_type(description: str):
+        marker_text = description.upper()
+        if re.search(r"\b(?:CR|CREDIT)\b", marker_text):
+            return "credit"
+        if re.search(r"\b(?:DR|DEBIT)\b", marker_text):
+            return "debit"
+        return None
+
+    # Determine statement ordering from rows with explicit CR/DR markers,
+    # then use running-balance movement for compact rows with no marker.
+    orientation_matches = {"ascending": 0, "descending": 0}
+    for index in range(1, len(balance_entries)):
+        transaction, balance, description, marker_text = balance_entries[index]
+        marker_type = marked_transaction_type(marker_text)
+        if marker_type is None:
+            continue
+
+        previous_balance = balance_entries[index - 1][1]
+        delta = balance - previous_balance
+        if abs(abs(delta) - float(transaction["amount"])) > 0.02:
+            continue
+
+        ascending_type = "credit" if delta > 0 else "debit"
+        descending_type = "credit" if delta < 0 else "debit"
+        if ascending_type == marker_type:
+            orientation_matches["ascending"] += 1
+        if descending_type == marker_type:
+            orientation_matches["descending"] += 1
+
+    ascending = orientation_matches["ascending"] >= orientation_matches["descending"]
+    for index, (transaction, balance, description, marker_text) in enumerate(balance_entries):
+        inferred_type = None
+        if index > 0:
+            previous_balance = balance_entries[index - 1][1]
+            balance_delta = balance - previous_balance if ascending else previous_balance - balance
+            if abs(abs(balance_delta) - float(transaction["amount"])) <= 0.02:
+                inferred_type = "credit" if balance_delta > 0 else "debit"
+
+        if inferred_type is None:
+            inferred_type = marked_transaction_type(marker_text)
+
+        if inferred_type:
+            transaction["transaction_type"] = inferred_type
+            transaction["category"] = classify_category(description, inferred_type)
+
+    if transactions:
+        return transactions
+
+    # Row-oriented examples: 2026-05-12 Amazon Marketplace 1249.00 DR
+    # or 15/06/2026 Salary Credit - Infosys 85000.00 CR
     pattern = re.compile(
-        r"(?P<date>\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\s+"
+        r"(?P<date>\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{4}|\d{1,2}[-/ ][A-Za-z]{3,9}[-/ ]\d{4})\s+"
         r"(?P<desc>.+?)\s+"
         r"(?P<amount>[0-9,]+(?:\.[0-9]{2})?)\s*"
         r"(?P<type>CR|DR|cr|dr|Credit|Debit)?",

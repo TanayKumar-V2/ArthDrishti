@@ -19,6 +19,7 @@
 
 # production
 /build
+/data/
 
 # misc
 .DS_Store
@@ -46,6 +47,7 @@ __pycache__/
 htmlcov/
 backend/uploads/
 uploads/
+/backend/arthdrishti.db
 
 # vercel
 .vercel

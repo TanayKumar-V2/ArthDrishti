@@ -1,9 +1,9 @@
 import math
-from typing import Dict, Any, List, Tuple
-from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models.ml import Explanation, RiskScore
+from app.models.ml import RiskScore
 from app.models.financial import Transaction
 from app.ml.inference.model_loader import model_registry
 from app.services.feature_engineering_service import compute_20_financial_features
@@ -22,11 +22,10 @@ FEATURE_DESCRIPTIONS = {
 }
 
 
-def compute_xai_contributions(features: Dict[str, Any], default_prob: float) -> List[Dict[str, Any]]:
+def compute_xai_contributions(features: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Compute local feature contributions (SHAP-style local additive attributions).
-    Positive contribution = increases risk of default.
-    Negative contribution = reduces risk of default (protective factor).
+    Estimate feature direction and relative contribution using transparent rules.
+    These are not SHAP values and do not sum to the model probability.
     """
     contributions = []
 
@@ -89,42 +88,51 @@ def compute_xai_contributions(features: Dict[str, Any], default_prob: float) -> 
     return contributions
 
 
-def get_or_generate_explanation(db: Session, prediction_id: str) -> Dict[str, Any]:
-    """Retrieve existing explanation or calculate on the fly for given risk score."""
-    risk_score = db.query(RiskScore).filter(RiskScore.id == prediction_id).first()
-    if not risk_score:
-        risk_score = db.query(RiskScore).order_by(RiskScore.created_at.desc()).first()
+def get_or_generate_explanation(db: Session, prediction_id: str, user_id: str, document_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Build a user-scoped explanation from that user's latest real prediction and ledger."""
+    query = db.query(RiskScore).filter(RiskScore.user_id == user_id)
+    if prediction_id.lower() == "latest":
+        risk_score = query.order_by(RiskScore.created_at.desc()).first()
+    else:
+        risk_score = query.filter(RiskScore.id == prediction_id).first()
 
-    default_prob = float(risk_score.default_probability) if risk_score else 0.22
-    risk_band = risk_score.risk_band if risk_score else "Medium"
-    version = risk_score.model_version if risk_score else "credit_stack_v1.0"
+    if not risk_score and prediction_id.lower() != "latest":
+        raise HTTPException(status_code=404, detail="Risk prediction not found for this account.")
+    if not risk_score:
+        from app.services.prediction_service import evaluate_customer_credit_risk
+        evaluate_customer_credit_risk(db, user_id)
+        risk_score = query.order_by(RiskScore.created_at.desc()).first()
+    if not risk_score:
+        raise HTTPException(status_code=400, detail="Upload a statement before requesting an explanation.")
+
+    default_prob = float(risk_score.default_probability)
+    risk_band = risk_score.risk_band
+    version = risk_score.model_version
 
     # Query customer features
-    user_id = risk_score.user_id if risk_score else ""
-    txns = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+    query = db.query(Transaction).filter(Transaction.user_id == user_id)
+    if document_ids is not None:
+        query = query.filter(Transaction.document_id.in_(document_ids)) if document_ids else query.filter(False)
+    txns = query.all()
     txn_dicts = [
         {"transaction_date": t.transaction_date, "amount": float(t.amount), "transaction_type": t.transaction_type, "category": t.category, "description": t.description}
         for t in txns
     ]
     features = compute_20_financial_features(txn_dicts)
     if not features:
-        features = {
-            "savings_rate": 0.35, "income_stability_score": 0.88,
-            "discretionary_spending_ratio": 0.24, "recurring_expense_ratio": 0.42,
-            "outlier_transaction_count": 1, "emergency_fund_months": 4.2
-        }
+        raise HTTPException(status_code=400, detail="No parsed transactions are available for this explanation.")
 
-    contributions = compute_xai_contributions(features, default_prob)
+    contributions = compute_xai_contributions(features)
 
     return {
-        "prediction_id": prediction_id,
+        "prediction_id": risk_score.id,
         "prediction_type": "credit_risk",
         "default_probability": default_prob,
         "risk_band": risk_band,
-        "base_value": 0.28,
+        "base_value": None,
         "explanation": contributions,
         "model_version": version,
-        "created_at": risk_score.created_at if risk_score else datetime.now(timezone.utc)
+        "created_at": risk_score.created_at
     }
 
 

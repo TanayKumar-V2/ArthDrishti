@@ -31,11 +31,15 @@ def list_transactions(
     is_flagged: Optional[bool] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """List and filter transactions with pagination."""
     query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if document_ids is not None:
+        ids = [value.strip() for value in document_ids.split(",") if value.strip()]
+        query = query.filter(Transaction.document_id.in_(ids)) if ids else query.filter(False)
 
     if category:
         query = query.filter(Transaction.category.ilike(f"%{category}%"))
@@ -53,11 +57,16 @@ def list_transactions(
 
 @router.get("/summary", response_model=TransactionSummary)
 def get_transaction_summary(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Aggregates for dashboard charts (monthly totals, category breakdowns, net cash flow)."""
-    txns = db.query(Transaction).filter(Transaction.user_id == current_user.id).all()
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if document_ids is not None:
+        ids = [value.strip() for value in document_ids.split(",") if value.strip()]
+        query = query.filter(Transaction.document_id.in_(ids)) if ids else query.filter(False)
+    txns = query.all()
 
     total_income = 0.0
     total_expenses = 0.0
@@ -114,11 +123,16 @@ def get_transaction_summary(
 
 @router.get("/features", response_model=FinancialFeaturesOut)
 def get_user_features(
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Retrieve 20+ engineered financial feature metrics for the current user."""
-    txns = db.query(Transaction).filter(Transaction.user_id == current_user.id).all()
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if document_ids is not None:
+        ids = [value.strip() for value in document_ids.split(",") if value.strip()]
+        query = query.filter(Transaction.document_id.in_(ids)) if ids else query.filter(False)
+    txns = query.all()
     txn_dicts = [
         {
             "transaction_date": t.transaction_date,

@@ -1,20 +1,26 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from app.models.financial import Transaction
 from app.models import Recommendation
 from app.services.feature_engineering_service import compute_20_financial_features
 
 
-def generate_smart_recommendations(db: Session, user_id: str) -> List[Recommendation]:
+def generate_smart_recommendations(db: Session, user_id: str, document_ids: Optional[List[str]] = None) -> List[Recommendation]:
     """Generate rule-based financial advice grounded in computed risk features."""
-    txns = db.query(Transaction).filter(Transaction.user_id == user_id).all()
+    query = db.query(Transaction).filter(Transaction.user_id == user_id)
+    if document_ids is not None:
+        query = query.filter(Transaction.document_id.in_(document_ids)) if document_ids else query.filter(False)
+    txns = query.all()
     txn_dicts = [
         {"transaction_date": t.transaction_date, "amount": float(t.amount), "transaction_type": t.transaction_type, "category": t.category, "description": t.description}
         for t in txns
     ]
     features = compute_20_financial_features(txn_dicts)
+    if not features:
+        raise HTTPException(status_code=400, detail="Upload a statement with parsed transactions before generating recommendations.")
 
     recs_to_add = []
 
@@ -23,7 +29,7 @@ def generate_smart_recommendations(db: Session, user_id: str) -> List[Recommenda
     if emergency_months < 3.0:
         recs_to_add.append({
             "title": "Build a 3-Month Emergency Cushion",
-            "description": f"Your current cash reserves cover ~{emergency_months:.1f} months of expenses. Allocate 10% of monthly salary toward high-liquidity emergency funds.",
+            "description": f"The surplus-based coverage estimate from your transaction history is about {emergency_months:.1f} months. Consider building a separate liquid reserve; the statement does not report your account balance.",
             "category": "Savings",
             "impact_level": "High"
         })
@@ -33,7 +39,7 @@ def generate_smart_recommendations(db: Session, user_id: str) -> List[Recommenda
     if disc_ratio > 0.35:
         recs_to_add.append({
             "title": "Curtail High Discretionary Outflow",
-            "description": f"Lifestyle purchases account for {disc_ratio*100:.1f}% of total debits. Trimming dining and online retail by 15% can unlock ₹12,000+ monthly savings.",
+            "description": f"Lifestyle purchases account for {disc_ratio*100:.1f}% of total debits in the uploaded data. Reducing this share could increase monthly surplus; exact savings depend on actual spending changes.",
             "category": "Debt",
             "impact_level": "Medium"
         })
@@ -46,15 +52,6 @@ def generate_smart_recommendations(db: Session, user_id: str) -> List[Recommenda
             "description": f"Excellent {savings_rate*100:.1f}% savings rate! Deploy surplus cash into diversified index funds rather than idle zero-interest current accounts.",
             "category": "Investment",
             "impact_level": "High"
-        })
-
-    # Fallback standard recommendation
-    if not recs_to_add:
-        recs_to_add.append({
-            "title": "Maintain Balanced Credit Card Utilization",
-            "description": "Keep monthly credit card balances below 30% of your sanction limit to sustain an optimal credit risk tier.",
-            "category": "Credit",
-            "impact_level": "Medium"
         })
 
     # Clear old and save fresh recommendations

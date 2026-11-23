@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from typing import Optional
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -13,11 +14,13 @@ router = APIRouter(prefix="/explainability", tags=["Explainable AI (XAI) & Simul
 @router.get("/{prediction_id}", response_model=ExplanationOut)
 def get_prediction_explanation(
     prediction_id: str,
+    document_ids: Optional[str] = Query(None, description="Comma-separated statement IDs to include"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Retrieve SHAP-style feature contributions for a specific prediction."""
-    return get_or_generate_explanation(db, prediction_id)
+    """Return user-scoped, rule-based feature contribution estimates for a prediction."""
+    ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
+    return get_or_generate_explanation(db, prediction_id, current_user.id, ids)
 
 
 @router.post("/what-if", response_model=WhatIfResponse)

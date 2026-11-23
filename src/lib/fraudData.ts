@@ -12,7 +12,7 @@ export interface FraudTransaction {
   region: "Mumbai Hub" | "Delhi NCR Hub" | "Bengaluru Hub" | "Hyderabad Hub" | "International Inbound" | "Other";
   whyFlagged: {
     factor: string;
-    weight: number;
+    weight: number | null;
   }[];
   behavioralComparison: {
     metric: string;

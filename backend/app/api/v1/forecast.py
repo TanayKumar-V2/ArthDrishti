@@ -18,7 +18,7 @@ def trigger_forecast_generation(
     current_user: User = Depends(get_current_user)
 ):
     """Trigger time-series cash flow forecasting job."""
-    return generate_cash_flow_forecast(db, current_user.id, payload.horizon)
+    return generate_cash_flow_forecast(db, current_user.id, payload.horizon, payload.document_ids)
 
 
 @router.get("", response_model=ForecastOut)
