@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 import { Check, ArrowRight, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { authApi } from "@/lib/api";
 
 export default function RegistrationPage() {
   const router = useRouter();
@@ -46,17 +47,38 @@ export default function RegistrationPage() {
     }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isStep2Valid) return;
 
     setLoading(true);
 
-    // Simulate database registration call
-    setTimeout(() => {
-      toast.success("Account successfully created! Verification OTP dispatched.");
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-    }, 1800);
+    try {
+      await authApi.register({
+        email,
+        password,
+        full_name: fullName,
+        role: accountType === "officer" ? "loan_officer" : "customer",
+      });
+      toast.success("Account successfully created! Directing to workspace...");
+      try {
+        await authApi.login({ email, password });
+        router.push(accountType === "officer" ? "/officer" : "/dashboard");
+      } catch {
+        router.push(`/login`);
+      }
+    } catch (err: any) {
+      if (process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === "true" && (err?.message?.includes("fetch") || err?.message?.includes("NetworkError"))) {
+        toast.info("Backend offline: creating local demo session...");
+        setTimeout(() => {
+          router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        }, 800);
+        return;
+      }
+      toast.error(err?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -103,7 +125,7 @@ export default function RegistrationPage() {
                 autoComplete="name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Rahul Chahar" 
+                placeholder="e.g. Priya Sharma" 
                 className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm font-sans transition-colors"
               />
             </div>

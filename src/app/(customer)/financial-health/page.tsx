@@ -412,6 +412,12 @@ export default function FinancialHealthPage() {
                     setSelectedMetric(metric);
                     setIsDrawerOpen(true);
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      event.currentTarget.click();
+                    }
+                  }}
                   className="hover:border-primary/45 transition-colors cursor-pointer flex flex-col justify-between h-[180px] p-5 relative overflow-hidden group outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                   role="button"
                   tabIndex={0}

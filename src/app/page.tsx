@@ -86,7 +86,7 @@ export default function LandingPage() {
               name="name"
               type="text" 
               required
-              placeholder="e.g. Rahul Chahar" 
+              placeholder="e.g. Priya Sharma" 
               className="w-full h-10 px-3 bg-surface-elevated border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm font-sans transition-colors"
             />
           </div>

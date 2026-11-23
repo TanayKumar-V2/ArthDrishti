@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { riskApi } from "@/lib/api";
 
 interface SelectedSourceMap {
   [key: string]: string;
@@ -427,10 +428,15 @@ export default function FileIngestionPage() {
     );
   };
 
-  const handleValidateAndAnalyze = () => {
+  const handleValidateAndAnalyze = async () => {
     setIsSubmitting(true);
+    try {
+      await riskApi.evaluateCreditRisk();
+    } catch {
+      // Fallback in demo/offline mode
+    }
     toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 2000)),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
       {
         loading: "Ingesting validated ledger tables to AI models...",
         success: () => {

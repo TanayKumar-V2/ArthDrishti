@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Menu, User, LogOut, Activity, Search, Shield } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/InputControls";
@@ -9,6 +9,7 @@ import { Dropdown } from "@/components/ui/Overlays";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppLogo } from "@/components/ui/AppLogo";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 interface TopbarProps {
   sidebarExpanded: boolean;
@@ -19,13 +20,27 @@ interface TopbarProps {
 export function AdminTopbar({ sidebarExpanded, setSidebarExpanded, onSearchClick }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) setCurrentUser(stored);
+
+    authApi.getCurrentUser()
+      .then((user) => setCurrentUser(user))
+      .catch(() => {});
+  }, []);
+
+  const userName = currentUser?.full_name || currentUser?.email?.split("@")[0] || "Administrator";
+  const userRole = currentUser?.role === "loan_officer" ? "Loan Officer" : "Administrator";
+  const userInitial = (userName.charAt(0) || "A").toUpperCase();
 
   const profileDropdownItems = [
     {
       id: "profile",
       label: "Admin Profile",
       icon: User,
-      onClick: () => toast.info("Admin profile settings requested")
+      onClick: () => router.push("/admin/settings")
     },
     {
       id: "customer-dashboard",
@@ -38,7 +53,13 @@ export function AdminTopbar({ sidebarExpanded, setSidebarExpanded, onSearchClick
       label: "Secure Logout",
       icon: LogOut,
       destructive: true,
-      onClick: () => toast.success("Successfully logged out (Mock)")
+      onClick: async () => {
+        try {
+          await authApi.logout();
+        } catch {}
+        toast.success("Successfully logged out");
+        router.push("/login");
+      }
     }
   ];
 
@@ -191,14 +212,14 @@ export function AdminTopbar({ sidebarExpanded, setSidebarExpanded, onSearchClick
               aria-label="Admin account controls"
             >
               <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm select-none group-hover:bg-primary/20 transition-colors">
-                AD
+                {userInitial}
               </div>
               <div className="hidden lg:flex flex-col text-sm leading-tight">
                 <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                  System Admin
+                  {userName}
                 </span>
                 <span className="text-[10px] text-foreground-secondary font-medium uppercase tracking-wider">
-                  Root Administrator
+                  {userRole}
                 </span>
               </div>
             </button>

@@ -37,6 +37,7 @@ import {
   ScatterPointData,
   SegmentProfile
 } from "@/lib/segments_data";
+import { authApi, getStoredUser } from "@/lib/api";
 
 // Custom type definitions for Tooltips
 interface CustomRadarTooltipProps {
@@ -59,7 +60,7 @@ const CustomRadarTooltip = ({ active, payload }: CustomRadarTooltipProps) => {
         </p>
         <div className="space-y-1 font-mono">
           <div className="flex justify-between items-center gap-4">
-            <span className="text-foreground-secondary font-sans">You (Rahul):</span>
+            <span className="text-foreground-secondary font-sans">You (Your Profile):</span>
             <span className="font-bold text-primary">{data.userValue}/100</span>
           </div>
           <div className="flex justify-between items-center gap-4">
@@ -117,12 +118,17 @@ export default function CustomerRiskSegmentsPage() {
     };
   }, []);
 
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
   const [selectedClusterId, setSelectedClusterId] = useState<string>("young_investor");
   const [isLoading, setIsLoading] = useState(true);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
 
-  // Initial loading pulse simulation
+  // Initial loading and user fetch
   useEffect(() => {
+    authApi.getCurrentUser().then((u) => {
+      if (u) setCurrentUser(u);
+    }).catch(() => {});
+
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 550);
@@ -144,7 +150,7 @@ export default function CustomerRiskSegmentsPage() {
     "Luxury Spenders": "luxury",
     "Budget Families": "family",
     "High-Risk Borrowers": "borrower",
-    "You (Rahul)": "young_investor"
+    "You (Your Profile)": "young_investor"
   }), []);
 
   const getClusterOpacity = useCallback((clusterId: string) => {
@@ -155,8 +161,8 @@ export default function CustomerRiskSegmentsPage() {
   const handleUserClick = useCallback(() => {
     setIsUserProfileOpen(true);
     handleClusterSelect("young_investor");
-    toast.success("Rahul Chahar's structural audit profile loaded.");
-  }, [handleClusterSelect]);
+    toast.success(`${currentUser?.full_name || "Your"} structural audit profile loaded.`);
+  }, [handleClusterSelect, currentUser]);
 
   // Scatter points are always fully visible for cluster explorer
   const filteredScatterPoints = mockScatterPoints;
@@ -291,7 +297,7 @@ export default function CustomerRiskSegmentsPage() {
           "Luxury Spenders",
           "Budget Families",
           "High-Risk Borrowers",
-          "You (Rahul)"
+          "You (Your Profile)"
         ]
       },
       tooltip: {
@@ -490,7 +496,7 @@ export default function CustomerRiskSegmentsPage() {
           }
         },
         {
-          name: "You (Rahul)",
+          name: "You (Your Profile)",
           type: "scatter",
           data: clusterSeries.user.map((p) => ({
             value: [p.x, p.y],
@@ -518,7 +524,7 @@ export default function CustomerRiskSegmentsPage() {
     // Setup interactive event listeners
     const handlePointClick = (params: unknown) => {
       const paramObj = params as { seriesName: string; data: { value: [number, number]; customData: ScatterPointData } };
-      if (paramObj.seriesName === "You (Rahul)" || (paramObj.data && paramObj.data.customData?.isCurrentUser)) {
+      if (paramObj.seriesName === "You (Your Profile)" || (paramObj.data && paramObj.data.customData?.isCurrentUser)) {
         handleUserClick();
       } else if (paramObj.data && paramObj.data.customData) {
         const pObj = paramObj.data.customData;
@@ -675,7 +681,7 @@ export default function CustomerRiskSegmentsPage() {
                   />
                   {/* User Radar (Solid Area, primary color) */}
                   <Radar
-                    name="You (Rahul)"
+                    name="You (Your Profile)"
                     dataKey="userValue"
                     stroke="var(--primary)"
                     fill="var(--primary)"
@@ -907,10 +913,10 @@ export default function CustomerRiskSegmentsPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 border-b border-border/60 pb-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                  RC
+                  {currentUser?.full_name ? currentUser.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "U"}
                 </div>
                 <div>
-                  <h3 className="font-heading font-semibold text-lg text-foreground">Rahul Chahar</h3>
+                  <h3 className="font-heading font-semibold text-lg text-foreground">{currentUser?.full_name || "Verified Account"}</h3>
                   <span className="text-[10px] uppercase font-mono font-bold text-foreground-muted">Account Ref: AC-8902-IN</span>
                 </div>
               </div>
@@ -947,7 +953,7 @@ export default function CustomerRiskSegmentsPage() {
                   <Brain className="h-4 w-4 text-ai animate-pulse" /> Persona Vector Analysis
                 </span>
                 <p className="text-[11.5px] text-foreground-secondary leading-relaxed font-sans">
-                  Rahul falls squarely within the Young Investor cluster centroid. High stability in monthly salary deposits coupled with automatic SIP investment sweeps outweighs small discretionary spikes. Repayments (DTI 24%) are fully hedged by liquid runway buffers.
+                  {currentUser?.full_name ? currentUser.full_name.split(" ")[0] : "Your profile"} falls squarely within the Young Investor cluster centroid. High stability in monthly salary deposits coupled with automatic SIP investment sweeps outweighs small discretionary spikes. Repayments (DTI 24%) are fully hedged by liquid runway buffers.
                 </p>
               </div>
 

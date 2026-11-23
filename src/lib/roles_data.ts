@@ -268,7 +268,7 @@ export const INITIAL_ROLES: SystemRole[] = [
 ];
 
 export const INITIAL_ROLE_USERS: RoleUser[] = [
-  { id: "u-1", name: "Rahul Chahar", email: "rahul.chahar@arthdrishti.in", avatar: "RC", department: "Platform Operations", organization: "ArthDrishti", status: "Active", assignedDate: "2026-03-12" },
+  { id: "u-1", name: "Rohan Mehta", email: "rohan.mehta@arthdrishti.in", avatar: "RM", department: "Platform Operations", organization: "ArthDrishti", status: "Active", assignedDate: "2026-03-12" },
   { id: "u-2", name: "Priya Sharma", email: "priya.sharma@hdfcbank.com", avatar: "PS", department: "Retail Lending Underwriting", organization: "HDFC Bank Ltd.", status: "Active", assignedDate: "2024-05-15" },
   { id: "u-3", name: "Anand Sinha", email: "anand.sinha@icicibank.com", avatar: "AS", department: "Risk Intelligence Unit", organization: "ICICI Bank Ltd.", status: "Active", assignedDate: "2025-08-20" },
   { id: "u-4", name: "Sarah Jenkins", email: "sarah.j@credco.org", avatar: "SJ", department: "Micro Lending Desk", organization: "CredCo Microfinance", status: "Active", assignedDate: "2024-08-15" },
@@ -285,8 +285,8 @@ export const INITIAL_ACCESS_POLICIES: AccessPolicy[] = [
 ];
 
 export const INITIAL_AUDIT_HISTORY: RoleAuditLog[] = [
-  { id: "lh-1", type: "Role Created", timestamp: "2026-07-13 10:20:11", operator: "Rahul Chahar", detail: "Custom role 'Sub-Underwriter' provisioned under Officer Operations category." },
-  { id: "lh-2", type: "Permissions Updated", timestamp: "2026-07-12 16:40:02", operator: "Rahul Chahar", detail: "Elevated 'Approve' permission on Applications for Loan Officer role." },
+  { id: "lh-1", type: "Role Created", timestamp: "2026-07-13 10:20:11", operator: "Platform Administrator", detail: "Custom role 'Sub-Underwriter' provisioned under Officer Operations category." },
+  { id: "lh-2", type: "Permissions Updated", timestamp: "2026-07-12 16:40:02", operator: "Platform Administrator", detail: "Elevated 'Approve' permission on Applications for Loan Officer role." },
   { id: "lh-3", type: "User Assigned", timestamp: "2026-07-10 11:30:15", operator: "System AD Sync", detail: "Assigned user 'Priya Sharma' to Loan Officer role." },
   { id: "lh-4", type: "User Removed", timestamp: "2026-07-08 09:15:00", operator: "Sarah Jenkins", detail: "Removed 'Ramesh Patel' from Branch Manager seat list." }
 ];

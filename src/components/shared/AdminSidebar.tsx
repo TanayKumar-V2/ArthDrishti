@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Tooltip } from "@/components/ui/Overlays";
 import { toast } from "sonner";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 interface SidebarProps {
   expanded: boolean;
@@ -43,6 +44,21 @@ interface SidebarGroup {
 
 export function AdminSidebar({ expanded, setExpanded }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) setCurrentUser(stored);
+
+    authApi.getCurrentUser()
+      .then((user) => setCurrentUser(user))
+      .catch(() => {});
+  }, []);
+
+  const userName = currentUser?.full_name || currentUser?.email?.split("@")[0] || "Administrator";
+  const userRole = currentUser?.role === "loan_officer" ? "Loan Officer" : "Administrator";
+  const userInitial = (userName.charAt(0) || "A").toUpperCase();
 
   const navigationGroups: SidebarGroup[] = [
     {
@@ -84,8 +100,12 @@ export function AdminSidebar({ expanded, setExpanded }: SidebarProps) {
     { name: "System Settings", href: "/admin/settings", icon: Settings }
   ];
 
-  const handleLogout = () => {
-    toast.success("Successfully logged out (Mock)");
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {}
+    toast.success("Successfully logged out");
+    router.push("/login");
   };
 
   const renderLink = (item: SidebarItem) => {
@@ -207,14 +227,14 @@ export function AdminSidebar({ expanded, setExpanded }: SidebarProps) {
             <div className="flex items-center justify-between p-1.5 rounded-sm bg-surface-elevated/50 border border-border/40">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm flex-shrink-0 select-none">
-                  AD
+                  {userInitial}
                 </div>
                 <div className="flex flex-col min-w-0 text-left">
                   <span className="text-xs font-semibold text-foreground truncate">
-                    Platform Admin
+                    {userName}
                   </span>
                   <span className="text-[10px] text-foreground-secondary font-medium uppercase tracking-wider">
-                    Administrator
+                    {userRole}
                   </span>
                 </div>
               </div>
@@ -228,13 +248,13 @@ export function AdminSidebar({ expanded, setExpanded }: SidebarProps) {
               </button>
             </div>
           ) : (
-            <Tooltip content="Platform Admin" className="z-40">
+            <Tooltip content={`${userName} (${userRole})`} className="z-40">
               <button
                 onClick={handleLogout}
                 className="w-10 h-10 mx-auto flex items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-primary font-heading font-bold text-sm cursor-pointer hover:bg-primary/20 transition-colors focus-visible:outline-2"
-                aria-label="Admin Profile"
+                aria-label={`Admin Profile ${userName}`}
               >
-                AD
+                {userInitial}
               </button>
             </Tooltip>
           )}

@@ -7,6 +7,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 import { Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { authApi } from "@/lib/api";
 
 export default function SecureGatewayLoginPage() {
   const router = useRouter();
@@ -25,24 +26,40 @@ export default function SecureGatewayLoginPage() {
   const isEmailValid = email.includes("@") && email.includes(".");
   const isFormValid = isEmailValid && password.length >= 6;
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isFormValid) return;
 
     setLoading(true);
     setErrorMsg(null);
 
-    // Simulate authentication pipeline
-    setTimeout(() => {
-      if (email === "error@arthdrishti.com") {
-        setErrorMsg("Authentication failed. Invalid corporate credentials or suspended account.");
-        toast.error("Sign-in failed. Please verify your credentials.");
-        setLoading(false);
+    try {
+      const response = await authApi.login({ email, password });
+      toast.success("Successfully authenticated. Directing to workspace...");
+      
+      const role = response.user?.role;
+      if (role === "admin") {
+        router.push("/admin");
+      } else if (role === "loan_officer") {
+        router.push("/officer");
       } else {
-        toast.success("Successfully authenticated. Directing to workspace...");
         router.push("/dashboard");
       }
-    }, 1800);
+    } catch (err: any) {
+      if (process.env.NEXT_PUBLIC_ENABLE_MOCK_DATA === "true" && (err?.message?.includes("fetch") || err?.message?.includes("NetworkError"))) {
+        toast.info("Demo mode: signing in with sample profile...");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 600);
+        return;
+      }
+      
+      const message = err?.message || "Authentication failed. Invalid corporate credentials or suspended account.";
+      setErrorMsg(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

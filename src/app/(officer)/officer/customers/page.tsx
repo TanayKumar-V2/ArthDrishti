@@ -27,7 +27,7 @@ interface CustomerRecord {
 }
 
 const INITIAL_CUSTOMERS: CustomerRecord[] = [
-  { id: "c1", name: "Rahul Chahar", avatar: "RC", email: "rahul.chahar@corporation.com", company: "ArthDrishti Labs", creditScore: 785, dti: 22, activeLimit: 1500000, outstandingBalance: 420000, status: "Active", lastAuditDate: "2026-06-15" },
+  { id: "c1", name: "Rohan Mehta", avatar: "RM", email: "rohan.mehta@corporation.com", company: "ArthDrishti Labs", creditScore: 785, dti: 22, activeLimit: 1500000, outstandingBalance: 420000, status: "Active", lastAuditDate: "2026-06-15" },
   { id: "c2", name: "Amit Sharma", avatar: "AS", email: "amit.sharma@gmail.com", company: "Sharma Logistics", creditScore: 589, dti: 57, activeLimit: 2500000, outstandingBalance: 1800000, status: "Delinquent", lastAuditDate: "2026-06-28" },
   { id: "c3", name: "Priyanka Roy", avatar: "PR", email: "priyanka.roy@outlook.com", company: "Roy Enterprises", creditScore: 812, dti: 12, activeLimit: 3000000, outstandingBalance: 120000, status: "Active", lastAuditDate: "2026-07-03" },
   { id: "c4", name: "Suresh Gupta", avatar: "SG", email: "suresh.gupta@guptas.in", company: "Gupta Traders", creditScore: 748, dti: 28, activeLimit: 1200000, outstandingBalance: 50000, status: "Active", lastAuditDate: "2026-07-09" }

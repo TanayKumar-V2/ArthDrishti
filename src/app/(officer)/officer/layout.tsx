@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -38,6 +39,14 @@ interface SidebarGroup {
 
 export default function OfficerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredUser());
+
+  useEffect(() => {
+    authApi.getCurrentUser().then((user) => {
+      if (user) setCurrentUser(user);
+    }).catch(() => {});
+  }, []);
 
   const [expanded, setExpanded] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -82,7 +91,9 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
   }, []);
 
   const handleLogout = () => {
+    authApi.logout();
     toast.success("Successfully logged out from officer portal.");
+    router.push("/login");
   };
 
   const navigationGroups: SidebarGroup[] = [
@@ -267,11 +278,15 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
               title="Officer Profile Settings"
             >
               <div className="h-8 w-8 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-extrabold text-xs">
-                RO
+                {currentUser?.full_name ? currentUser.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "LO"}
               </div>
               <div className="hidden md:block">
-                <span className="font-extrabold text-foreground block leading-tight">Officer Rahul</span>
-                <span className="text-[9px] text-foreground-muted block leading-none">Senior Underwriter</span>
+                <span className="font-extrabold text-foreground block leading-tight">
+                  {currentUser?.full_name ? `Officer ${currentUser.full_name}` : "Loan Officer"}
+                </span>
+                <span className="text-[9px] text-foreground-muted block leading-none">
+                  {currentUser?.role === "admin" ? "Platform Administrator" : "Senior Underwriter"}
+                </span>
               </div>
             </Link>
           </div>

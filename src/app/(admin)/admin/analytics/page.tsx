@@ -385,7 +385,7 @@ export default function ExecutiveAnalyticsDashboardPage() {
       {/* ERROR PANEL SCREEN */}
       {isError ? (
         <Card className="border border-critical bg-critical/5 select-none my-8 p-8 flex flex-col items-center justify-center text-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-critical/10 flex items-center justify-center text-critical animate-bounce">
+          <div className="h-12 w-12 rounded-full bg-critical/10 flex items-center justify-center text-critical">
             <ShieldAlert className="h-6 w-6" />
           </div>
           <div>

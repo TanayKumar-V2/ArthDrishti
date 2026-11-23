@@ -1,15 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Menu, User, LogOut, Activity, Search, Sparkles } from "lucide-react";
+import { Bell, Menu, User, LogOut, Search, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/InputControls";
 import { IconButton } from "@/components/ui/IconButton";
 import { Dropdown } from "@/components/ui/Overlays";
-import { mockCurrentUser } from "@/types/mockData";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppLogo } from "@/components/ui/AppLogo";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 interface TopbarProps {
   sidebarExpanded: boolean;
@@ -20,26 +20,51 @@ interface TopbarProps {
 export function Topbar({ sidebarExpanded, setSidebarExpanded, onSearchClick }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    const updateProfile = () => {
+      const stored = getStoredUser();
+      if (stored) setCurrentUser(stored);
+    };
+
+    updateProfile();
+
+    authApi.getCurrentUser()
+      .then((user) => setCurrentUser(user))
+      .catch(() => {});
+
+    window.addEventListener("storage", updateProfile);
+    window.addEventListener("user-updated", updateProfile);
+    return () => {
+      window.removeEventListener("storage", updateProfile);
+      window.removeEventListener("user-updated", updateProfile);
+    };
+  }, []);
+
+  const userName = currentUser?.full_name || currentUser?.email?.split("@")[0] || "Client";
+  const userRole = currentUser?.role === "loan_officer" ? "Loan Officer" : "Customer";
+  const userInitial = (userName.charAt(0) || "C").toUpperCase();
 
   const profileDropdownItems = [
     {
       id: "profile",
       label: "My Profile",
       icon: User,
-      onClick: () => toast.info("Profile settings requested")
-    },
-    {
-      id: "design-system",
-      label: "Design System",
-      icon: Activity,
-      onClick: () => router.push("/design-system")
+      onClick: () => router.push("/settings")
     },
     {
       id: "logout",
       label: "Secure Logout",
       icon: LogOut,
       destructive: true,
-      onClick: () => toast.success("Successfully logged out (Mock)")
+      onClick: async () => {
+        try {
+          await authApi.logout();
+        } catch {}
+        toast.success("Successfully logged out");
+        router.push("/login");
+      }
     }
   ];
 
@@ -197,14 +222,14 @@ export function Topbar({ sidebarExpanded, setSidebarExpanded, onSearchClick }: T
               aria-label="User account controls"
             >
               <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm select-none group-hover:bg-primary/20 transition-colors">
-                R
+                {userInitial}
               </div>
               <div className="hidden lg:flex flex-col text-sm leading-tight">
                 <span className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {mockCurrentUser.name}
+                  {userName}
                 </span>
                 <span className="text-[10px] text-foreground-secondary font-medium uppercase tracking-wider">
-                  {mockCurrentUser.role}
+                  {userRole}
                 </span>
               </div>
             </button>

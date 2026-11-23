@@ -95,7 +95,7 @@ export default function OfficerApplicationsPage() {
     type: "assign" | "approve" | "reject" | "manual" | "archive";
     isOpen: boolean;
   } | null>(null);
-  const [bulkAssignOfficer, setBulkAssignOfficer] = useState<string>("Officer Rahul");
+  const [bulkAssignOfficer, setBulkAssignOfficer] = useState<string>("Officer Rohan");
 
   // Advanced Filters State
   const [filters, setFilters] = useState({
@@ -313,10 +313,10 @@ export default function OfficerApplicationsPage() {
         { name: "Identity Proof (Ingested)", status: "Verified", type: "PDF" }
       ],
       auditHistory: [
-        { date: new Date().toLocaleString(), action: "Application Created", user: "Officer Rahul", notes: "Manually registered in CRM workspace." }
+        { date: new Date().toLocaleString(), action: "Application Created", user: "Officer Rohan", notes: "Manually registered in CRM workspace." }
       ],
       employmentType: newAppForm.employmentType,
-      officer: "Officer Rahul",
+      officer: "Officer Rohan",
       priority: "Medium"
     };
 
@@ -772,7 +772,7 @@ export default function OfficerApplicationsPage() {
       {/* 1. PROFESSIONAL ERROR SCREEN */}
       {isError ? (
         <div className="flex flex-col items-center justify-center min-h-[500px] border border-border border-dashed p-8 rounded-md bg-surface mt-6 text-center max-w-xl mx-auto">
-          <AlertOctagon className="h-12 w-12 text-critical mb-4 animate-bounce" />
+          <AlertOctagon className="h-12 w-12 text-critical mb-4" />
           <h2 className="text-lg font-bold text-foreground">Workspace Synchronizer Failure</h2>
           <p className="text-xs text-foreground-secondary mt-2 mb-6 max-w-sm leading-relaxed">
             The database connection failed while attempting to query application tables. A firewall or session timeout may have interrupted active connections.
@@ -1170,7 +1170,7 @@ export default function OfficerApplicationsPage() {
                   className="w-full bg-surface border border-border rounded-sm py-1.5 pl-2.5 pr-8 text-[10.5px] font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer appearance-none"
                 >
                   <option value="All">All Officers</option>
-                  <option value="Officer Rahul">Officer Rahul</option>
+                  <option value="Officer Rohan">Officer Rohan</option>
                   <option value="Officer Priya">Officer Priya</option>
                   <option value="Unassigned">Unassigned</option>
                 </select>
@@ -2090,7 +2090,7 @@ export default function OfficerApplicationsPage() {
                         onChange={(e) => setBulkAssignOfficer(e.target.value)}
                         className="w-full bg-surface border border-border rounded-sm py-1.5 pl-2.5 pr-8 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer appearance-none"
                       >
-                        <option value="Officer Rahul">Officer Rahul (Senior Underwriter)</option>
+                        <option value="Officer Rohan">Officer Rohan (Senior Underwriter)</option>
                         <option value="Officer Priya">Officer Priya (Risk Auditor)</option>
                         <option value="Unassigned">Unassigned (Queue Pool)</option>
                       </select>

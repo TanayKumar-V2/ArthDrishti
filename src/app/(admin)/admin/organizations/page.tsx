@@ -2673,7 +2673,7 @@ export default function EnterpriseOrganizationsPage() {
                 required
                 value={newMemberData.name}
                 onChange={(e) => setNewMemberData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g. Ramesh Chahar"
+                placeholder="e.g. Rajesh Sharma"
                 className="w-full h-9 px-3 bg-surface border border-border text-xs rounded-xs outline-none focus:border-primary text-foreground"
               />
             </div>

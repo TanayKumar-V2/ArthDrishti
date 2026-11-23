@@ -131,7 +131,7 @@ export default function AIUnderwritingWorkspacePage() {
 
       // Timeline audit trail
       timelineEvents: [
-        { date: "2026-07-03 04:30 PM", action: "Decision Draft Saved", user: "Officer Rahul", notes: "Decision draft pending document e-sign validation." },
+        { date: "2026-07-03 04:30 PM", action: "Decision Draft Saved", user: "Officer Rohan", notes: "Decision draft pending document e-sign validation." },
         { date: "2026-07-02 03:00 PM", action: "AI Insights Generated", user: "Ensemble Models", notes: "Identified high payroll consistency and DTI margins." },
         { date: "2026-07-02 10:15 AM", action: "Credit Risk Profile Analysis", user: "Bureau System", notes: "Experian Credit Score parsed: 712. Active DTI: 42%." },
         { date: "2026-07-01 11:00 AM", action: "Fraud Analysis Verification", user: "AI Engine", notes: "Fraud score evaluated at Low. Device fingerprint matched." },
@@ -1390,7 +1390,7 @@ export default function AIUnderwritingWorkspacePage() {
       >
         <div className="space-y-4 font-sans text-xs text-center select-none">
           <div className="w-full h-44 border border-border border-dashed rounded bg-surface-elevated/45 flex flex-col items-center justify-center text-foreground-secondary">
-            <FileText className="h-10 w-10 text-foreground-muted mb-2 animate-bounce" />
+            <FileText className="h-10 w-10 text-foreground-muted mb-2" />
             <span className="text-xs font-bold text-foreground">{selectedDocName}</span>
             <span className="text-[9px] text-foreground-muted mt-1 font-mono">Format: PDF • Verification: Verified</span>
           </div>

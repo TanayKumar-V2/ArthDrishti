@@ -63,6 +63,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Sheet, Modal, Tooltip } from "@/components/ui/Overlays";
 import { cn } from "@/lib/utils";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 // HSL Color Maps from globals.css
 const COLORS = {
@@ -135,6 +136,13 @@ interface SystemReport {
 
 export default function EnterpriseAdminDashboardPage() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredUser());
+
+  useEffect(() => {
+    authApi.getCurrentUser().then((u) => {
+      if (u) setCurrentUser(u);
+    }).catch(() => {});
+  }, []);
 
   // Page States
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -255,10 +263,10 @@ export default function EnterpriseAdminDashboardPage() {
   // Real-time activity timeline logs
   const activities: ActivityItem[] = [
     { id: "act-1", type: "Orgs", icon: Building2, description: "New Organization onboarded: Finserv Global Corp. (Enterprise License)", timestamp: "2 mins ago", priority: "Medium", relatedEntity: "Organizations" },
-    { id: "act-2", type: "Loans", icon: ClipboardList, description: "Loan Auto-Approved: Rahul Sen (app1) cleared threshold bounds.", timestamp: "10 mins ago", priority: "Low", relatedEntity: "Underwriting" },
+    { id: "act-2", type: "Loans", icon: ClipboardList, description: "Loan Auto-Approved: Aarav Sen (app1) cleared threshold bounds.", timestamp: "10 mins ago", priority: "Low", relatedEntity: "Underwriting" },
     { id: "act-3", type: "Security", icon: ShieldAlert, description: "Critical Fraud Anomaly Alert generated on Vikram Malhotra.", timestamp: "15 mins ago", priority: "Critical", relatedEntity: "Security Console" },
     { id: "act-4", type: "Models", icon: Cpu, description: "AI Model Retrained: Credit Risk Model updated to v3.1.2 weights.", timestamp: "1 hour ago", priority: "High", relatedEntity: "Model Registry" },
-    { id: "act-5", type: "Users", icon: Users, description: "User session authenticated: Officer Rahul (Senior Underwriter) logged in.", timestamp: "2 hours ago", priority: "Low", relatedEntity: "Access Logs" },
+    { id: "act-5", type: "Users", icon: Users, description: "User session authenticated: Credit Underwriter logged in.", timestamp: "2 hours ago", priority: "Low", relatedEntity: "Access Logs" },
     { id: "act-6", type: "Gateway", icon: Network, description: "Gateway Rate Limiter active: RPM burst from third-party gateway API.", timestamp: "4 hours ago", priority: "High", relatedEntity: "API Monitoring" },
     { id: "act-7", type: "Predictions", icon: Activity, description: "Model inference calculation batch complete for Q2 portfolio drift.", timestamp: "6 hours ago", priority: "Low", relatedEntity: "Batch Runner" },
     { id: "act-8", type: "Reports", icon: FileText, description: "Weekly Audit Executive PDF generated successfully by System Scheduler.", timestamp: "Yesterday", priority: "Medium", relatedEntity: "Report Vault" },
@@ -444,7 +452,7 @@ export default function EnterpriseAdminDashboardPage() {
         <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-border/80 pt-2 sm:pt-0 sm:pl-5">
           <span className="text-foreground-secondary font-medium">Active Admin:</span>
           <span className="font-semibold text-foreground bg-primary/10 text-primary border border-primary/20 rounded-xs px-2 py-0.5 text-[10px]">
-            Super Admin (Rahul Chahar)
+            Super Admin ({currentUser?.full_name || "Platform Admin"})
           </span>
         </div>
       </div>

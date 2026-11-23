@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 // ============================================================================
 // APPLICANTS TYPE DEFINITIONS
@@ -48,8 +49,8 @@ interface DecisionHistory {
 const MOCK_APPLICANTS: ApplicantReview[] = [
   {
     id: "app1",
-    name: "Rahul Sen",
-    avatar: "RS",
+    name: "Aarav Sen",
+    avatar: "AS",
     age: 34,
     amount: 650000,
     defaultProb: 42,
@@ -101,13 +102,20 @@ const MOCK_APPLICANTS: ApplicantReview[] = [
 ];
 
 const INITIAL_DECISIONS: DecisionHistory[] = [
-  { id: "d1", name: "Suresh Gupta", decision: "Approved", officer: "Rahul Chahar", aiRec: "Approve", confidence: 95.8, timestamp: "10 mins ago" },
-  { id: "d2", name: "Ananya Misra", decision: "Denied", officer: "Rahul Chahar", aiRec: "Deny", confidence: 93.4, timestamp: "1 hour ago" },
-  { id: "d3", name: "Karan Johar", decision: "Approved", officer: "Rahul Chahar", aiRec: "Approve", confidence: 91.2, timestamp: "Yesterday" }
+  { id: "d1", name: "Suresh Gupta", decision: "Approved", officer: "Senior Underwriter", aiRec: "Approve", confidence: 95.8, timestamp: "10 mins ago" },
+  { id: "d2", name: "Ananya Misra", decision: "Denied", officer: "Senior Underwriter", aiRec: "Deny", confidence: 93.4, timestamp: "1 hour ago" },
+  { id: "d3", name: "Karan Johar", decision: "Approved", officer: "Senior Underwriter", aiRec: "Approve", confidence: 91.2, timestamp: "Yesterday" }
 ];
 
 export default function LoanOfficerCommandCenterPage() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getStoredUser());
+
+  useEffect(() => {
+    authApi.getCurrentUser().then((u) => {
+      if (u) setCurrentUser(u);
+    }).catch(() => {});
+  }, []);
 
   // Applicants & decisions state logs
   const [applicants, setApplicants] = useState<ApplicantReview[]>(MOCK_APPLICANTS);
@@ -151,7 +159,7 @@ export default function LoanOfficerCommandCenterPage() {
         id: `d_${Date.now()}`,
         name: target.name,
         decision: "Approved",
-        officer: "Rahul Chahar",
+        officer: currentUser?.full_name ? `Officer ${currentUser.full_name}` : "Loan Officer",
         aiRec: target.aiRec,
         confidence: target.confidence,
         timestamp: "Just Now"
@@ -159,7 +167,7 @@ export default function LoanOfficerCommandCenterPage() {
       ...prev
     ]);
     toast.success(`Application for "${target.name}" approved.`);
-  }, [applicants]);
+  }, [applicants, currentUser]);
 
   const handleDeny = useCallback((id: string) => {
     const target = applicants.find((a) => a.id === id);
@@ -171,7 +179,7 @@ export default function LoanOfficerCommandCenterPage() {
         id: `d_${Date.now()}`,
         name: target.name,
         decision: "Denied",
-        officer: "Rahul Chahar",
+        officer: currentUser?.full_name ? `Officer ${currentUser.full_name}` : "Loan Officer",
         aiRec: target.aiRec,
         confidence: target.confidence,
         timestamp: "Just Now"
@@ -179,7 +187,7 @@ export default function LoanOfficerCommandCenterPage() {
       ...prev
     ]);
     toast.success(`Application for "${target.name}" denied.`);
-  }, [applicants]);
+  }, [applicants, currentUser]);
 
   const handleUnderwrite = useCallback((id: string) => {
     toast.info("Entering dedicated AI Underwriting console...");
@@ -661,7 +669,7 @@ export default function LoanOfficerCommandCenterPage() {
             <div className="space-y-3 text-xs">
               {[
                 { title: "Location mismatch anomaly", text: "Applicant Vikram Malhotra: Swipes velocity location IP does not match cell coordinates.", priority: "High" },
-                { title: "Ensemble model discrepancy", text: "Applicant Rahul Sen: LightGBM reports Low risk (18%), but isolation forest signals High fraud risk (78%).", priority: "High" },
+                { title: "Ensemble model discrepancy", text: "Applicant Aarav Sen: LightGBM reports Low risk (18%), but isolation forest signals High fraud risk (78%).", priority: "High" },
                 { title: "Asset records check error", text: "Applicant Amit Sharma: Active checking logs display negative balance duration vectors.", priority: "Medium" }
               ].map((al, idx) => (
                 <div

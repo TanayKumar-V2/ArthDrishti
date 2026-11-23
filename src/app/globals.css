@@ -20,9 +20,9 @@
   --color-foreground-secondary: var(--foreground-secondary);
   --color-foreground-muted: var(--foreground-muted);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-heading: var(--font-manrope), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --radius-sm: 12px;
   --radius-md: 16px;
@@ -38,15 +38,21 @@
   --surface-hover: #F1F5F9;
   --border: #E2E8F0;
   --border-strong: #CBD5E1;
-  --primary: #4F7CFF;
-  --ai: #8B5CF6;
-  --forecast: #06B6D4;
-  --positive: #10B981;
-  --warning: #F59E0B;
-  --critical: #EF4444;
+  --primary: #2856D8;
+  --primary-foreground: #FFFFFF;
+  --ai: #6D28D9;
+  --ai-foreground: #FFFFFF;
+  --forecast: #0E7490;
+  --forecast-foreground: #FFFFFF;
+  --positive: #047857;
+  --positive-foreground: #FFFFFF;
+  --warning: #A16207;
+  --warning-foreground: #FFFFFF;
+  --critical: #B91C1C;
+  --critical-foreground: #FFFFFF;
   --foreground: #0F172A;
   --foreground-secondary: #64748B;
-  --foreground-muted: #94A3B8;
+  --foreground-muted: #667085;
 }
 
 .dark {
@@ -59,15 +65,29 @@
   --border: #1E293B;
   --border-strong: #334155;
   --primary: #4F7CFF;
+  --primary-foreground: #050814;
   --ai: #8B5CF6;
+  --ai-foreground: #050814;
   --forecast: #06B6D4;
+  --forecast-foreground: #050814;
   --positive: #10B981;
+  --positive-foreground: #050814;
   --warning: #F59E0B;
+  --warning-foreground: #050814;
   --critical: #EF4444;
+  --critical-foreground: #050814;
   --foreground: #F8FAFC;
   --foreground-secondary: #94A3B8;
-  --foreground-muted: #64748B;
+  --foreground-muted: #A5B4C8;
 }
+
+/* Solid semantic fills use theme-aware foreground colors. */
+.bg-primary { color: var(--primary-foreground); }
+.bg-ai { color: var(--ai-foreground); }
+.bg-forecast { color: var(--forecast-foreground); }
+.bg-positive { color: var(--positive-foreground); }
+.bg-warning { color: var(--warning-foreground); }
+.bg-critical { color: var(--critical-foreground); }
 
 /* Base Body Styles */
 body {
@@ -112,4 +132,15 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-ping {
+    animation: none;
+  }
+
+  .animate-spin {
+    animation-duration: 1.5s;
+  }
 }

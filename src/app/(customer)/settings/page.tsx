@@ -1,16 +1,18 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   User,
   Shield,
   Database,
   Bell,
   Monitor,
-  Key,
   CheckCircle2,
   AlertTriangle,
-  Laptop
+  Laptop,
+  UploadCloud,
+  ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,10 +20,8 @@ import PageContainer from "@/components/ui/PageContainer";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { authApi, getStoredUser } from "@/lib/api";
 
-// ============================================================================
-// DATA SOURCES INTERFACE
-// ============================================================================
 interface DataSource {
   id: string;
   name: string;
@@ -30,26 +30,57 @@ interface DataSource {
   lastSync: string;
 }
 
-const INITIAL_SOURCES: DataSource[] = [
-  { id: "ds1", name: "ICICI Business checking account", type: "Bank Ledger", status: "Synced", lastSync: "10 mins ago" },
-  { id: "ds2", name: "HDFC Platinum credit card", type: "Credit Statement", status: "Delayed", lastSync: "Yesterday" },
-  { id: "ds3", name: "Razorpay Merchant gateway", type: "API Feed", status: "Synced", lastSync: "1 hour ago" }
-];
-
 export default function CustomerSettingsPage() {
+  const router = useRouter();
+
   // Navigation tabs state
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "data" | "notifications" | "appearance" | "api">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "data" | "notifications" | "appearance">("profile");
 
-  // Profile forms baseline
-  const BASELINE_PROFILE = useMemo(() => ({
-    name: "Rahul Chahar",
-    email: "rahul.chahar@corporation.com",
-    organization: "ArthDrishti Labs",
-    avatar: "RC"
-  }), []);
+  // Profile state initialized cleanly from stored session
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    organization: string;
+    avatar: string;
+  }>(() => {
+    const stored = getStoredUser();
+    const name = stored?.full_name || stored?.email?.split("@")[0] || "";
+    const avatar = (name.split(" ").map((n) => n[0]).join("") || "U").slice(0, 2).toUpperCase();
+    return {
+      name,
+      email: stored?.email || "",
+      organization: "Personal Account",
+      avatar
+    };
+  });
 
-  // Profile form local state
-  const [profile, setProfile] = useState(BASELINE_PROFILE);
+  const [baselineProfile, setBaselineProfile] = useState(profile);
+
+  // Hydrate with latest live user profile from client storage & server
+  useEffect(() => {
+    const syncUser = (user: { full_name?: string | null; email?: string } | null) => {
+      if (!user) return;
+      const name = user.full_name || user.email?.split("@")[0] || "User";
+      const initials = (name.split(" ").map((n) => n[0]).join("") || "U").slice(0, 2).toUpperCase();
+      const loaded = {
+        name,
+        email: user.email || "",
+        organization: "Personal Account",
+        avatar: initials
+      };
+      setProfile(loaded);
+      setBaselineProfile(loaded);
+    };
+
+    const stored = getStoredUser();
+    if (stored) syncUser(stored);
+
+    authApi.getCurrentUser()
+      .then((user) => {
+        if (user) syncUser(user);
+      })
+      .catch(() => {});
+  }, []);
 
   // Security Password local state
   const [password, setPassword] = useState({
@@ -58,14 +89,13 @@ export default function CustomerSettingsPage() {
     confirm: ""
   });
 
-  // Active sessions mock list
-  const [sessions, setSessions] = useState([
-    { id: "s1", device: "Chrome 126 (Windows 11)", location: "Mumbai, MH", ip: "192.168.1.45", current: true },
-    { id: "s2", device: "Firefox Mobile (Android 14)", location: "New Delhi, DL", ip: "103.45.12.89", current: false }
+  // Active sessions (Current browser session)
+  const [sessions] = useState([
+    { id: "s1", device: "Current Web Browser Session", location: "Active Device", ip: "127.0.0.1", current: true }
   ]);
 
   // Connected data sources state
-  const [sources, setSources] = useState<DataSource[]>(INITIAL_SOURCES);
+  const [sources, setSources] = useState<DataSource[]>([]);
 
   // Notifications toggles state
   const [notifConfig, setNotifConfig] = useState({
@@ -84,13 +114,14 @@ export default function CustomerSettingsPage() {
     compactDensity: false
   });
 
-  // API access tokens mock list
-  const [apiTokens, setApiTokens] = useState<string[]>([]);
-
   // Check if profile form is changed from baseline
   const isProfileChanged = useMemo(() => {
-    return JSON.stringify(profile) !== JSON.stringify(BASELINE_PROFILE);
-  }, [profile, BASELINE_PROFILE]);
+    return (
+      profile.name !== baselineProfile.name ||
+      profile.email !== baselineProfile.email ||
+      profile.organization !== baselineProfile.organization
+    );
+  }, [profile, baselineProfile]);
 
   // Check if password form is changed from empty baseline
   const isPasswordChanged = useMemo(() => {
@@ -116,52 +147,39 @@ export default function CustomerSettingsPage() {
 
   // Save actions
   const handleSaveChanges = useCallback(() => {
-    toast.success("Settings parameters updated successfully!");
-    // Set baseline checks to current state by resetting the diff indicators
+    const stored = getStoredUser();
+    const updated = {
+      ...(stored || { id: "user-current", role: "customer" }),
+      full_name: profile.name,
+      email: profile.email
+    };
+    if (typeof window !== "undefined") {
+      localStorage.setItem("arthdrishti_user", JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("user-updated"));
+    }
+    setBaselineProfile({ ...profile });
+    toast.success("Profile parameters updated successfully!");
     setPassword({ current: "", new: "", confirm: "" });
-  }, []);
+  }, [profile]);
 
   // Discard changes
   const handleDiscardChanges = useCallback(() => {
-    setProfile(BASELINE_PROFILE);
+    setProfile({ ...baselineProfile });
     setPassword({ current: "", new: "", confirm: "" });
     setNotifConfig(baselineNotifConfig);
     setAppearance(baselineAppearance);
     toast.info("Unsaved modifications discarded.");
-  }, [BASELINE_PROFILE, baselineNotifConfig, baselineAppearance]);
-
-  // Security actions
-  const handleSignOutOthers = useCallback(() => {
-    setSessions((prev) => prev.filter((s) => s.current));
-    toast.success("Successfully logged out from all other active device sessions.");
-  }, []);
+  }, [baselineProfile, baselineNotifConfig, baselineAppearance]);
 
   // Data source actions
-  const handleReconnectSource = useCallback((id: string, name: string) => {
-    toast.info(`Attempting sync handshake with "${name}"...`);
-    setTimeout(() => {
-      setSources((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, status: "Synced", lastSync: "Just Now" } : s))
-      );
-      toast.success(`Successfully connected: "${name}"`);
-    }, 600);
-  }, []);
-
   const handleRemoveSource = useCallback((id: string) => {
     setSources((prev) => prev.filter((s) => s.id !== id));
-    toast.success("Disconnected data ledger source.");
-  }, []);
-
-  // API Token generators
-  const handleGenerateToken = useCallback(() => {
-    const token = `arth_live_${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`;
-    setApiTokens((prev) => [...prev, token]);
-    toast.success("API Integration token generated.");
+    toast.success("Disconnected data source.");
   }, []);
 
   return (
     <PageContainer className="pb-28">
-      
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-3 border-b border-border/60 select-none">
         <div className="space-y-1">
@@ -169,23 +187,21 @@ export default function CustomerSettingsPage() {
             <User className="h-6.5 w-6.5 text-primary" /> ACCOUNT SETTINGS
           </h1>
           <p className="text-xs text-foreground-secondary font-sans">
-            Manage your personal credentials, active telemetry directories, notifications targets, and layout variables.
+            Manage your personal profile, authentication, notifications, and dashboard display preferences.
           </p>
         </div>
       </div>
 
       {/* CORE WORKSPACE SETTINGS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6">
-        
-        {/* LEFT COLUMN: TABS NAVIGATION (DESKTOP - 3 COLS) */}
+        {/* LEFT COLUMN: TABS NAVIGATION */}
         <div className="lg:col-span-3 space-y-1.5 select-none bg-surface border border-border/80 rounded-sm p-4 h-fit">
           {[
             { id: "profile" as const, label: "User Profile", icon: User },
             { id: "security" as const, label: "Security & Access", icon: Shield },
             { id: "data" as const, label: "Connected Data", icon: Database },
             { id: "notifications" as const, label: "Notification Alert Rules", icon: Bell },
-            { id: "appearance" as const, label: "Dashboard Appearance", icon: Monitor },
-            { id: "api" as const, label: "API Integrations", icon: Key }
+            { id: "appearance" as const, label: "Dashboard Appearance", icon: Monitor }
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -207,10 +223,9 @@ export default function CustomerSettingsPage() {
           })}
         </div>
 
-        {/* RIGHT COLUMN: ACTIVE TAB WORKSPACE (9 COLS) */}
+        {/* RIGHT COLUMN: ACTIVE TAB WORKSPACE */}
         <div className="lg:col-span-9">
           <Card className="border border-border/80 bg-surface p-6 md:p-8 select-none min-h-[420px]">
-            
             {/* 1. PROFILE SECTION PANEL */}
             {activeTab === "profile" && (
               <div className="space-y-6">
@@ -226,7 +241,12 @@ export default function CustomerSettingsPage() {
                     <input
                       type="text"
                       value={profile.name}
-                      onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        const newAvatar = (newName.split(" ").map((n) => n[0]).join("") || "U").slice(0, 2).toUpperCase();
+                        setProfile((p) => ({ ...p, name: newName, avatar: newAvatar }));
+                      }}
+                      placeholder="Your Full Name"
                       className="w-full bg-surface border border-border rounded-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-bold"
                     />
                   </div>
@@ -238,6 +258,7 @@ export default function CustomerSettingsPage() {
                       type="email"
                       value={profile.email}
                       onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
+                      placeholder="name@company.com"
                       className="w-full bg-surface border border-border rounded-sm py-2 px-3 focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-bold"
                     />
                   </div>
@@ -253,16 +274,29 @@ export default function CustomerSettingsPage() {
                     />
                   </div>
 
-                  {/* Organization field readonly */}
+                  {/* Profile avatar indicator */}
                   <div className="space-y-1.5">
                     <label className="text-[9.5px] font-bold text-foreground-muted uppercase tracking-wider block">Profile Avatar</label>
                     <div className="flex items-center gap-3 pt-1">
                       <div className="h-10 w-10 bg-primary/10 text-primary border border-primary/25 rounded-full flex items-center justify-center font-extrabold text-sm">
-                        {profile.avatar}
+                        {profile.avatar || "U"}
                       </div>
-                      <span className="text-[10.5px] text-foreground-secondary">RC Client Key Verified</span>
+                      <span className="text-[10.5px] text-positive font-mono font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Verified Account
+                      </span>
                     </div>
                   </div>
+                </div>
+
+                <div className="pt-4 border-t border-border/40 flex justify-end">
+                  <Button
+                    onClick={handleSaveChanges}
+                    size="sm"
+                    className="text-xs uppercase font-sans font-bold py-2 px-4 cursor-pointer"
+                  >
+                    Save Profile Changes
+                  </Button>
                 </div>
               </div>
             )}
@@ -272,7 +306,7 @@ export default function CustomerSettingsPage() {
               <div className="space-y-6">
                 <div className="border-b border-border/40 pb-3">
                   <h3 className="text-sm font-extrabold text-foreground uppercase tracking-wider">Security & Access Controls</h3>
-                  <p className="text-[10.5px] text-foreground-secondary mt-0.5">Manage authentication passwords, device sessions, and protection layers.</p>
+                  <p className="text-[10.5px] text-foreground-secondary mt-0.5">Manage authentication passwords, active sessions, and credential security.</p>
                 </div>
 
                 {/* Password form */}
@@ -318,14 +352,6 @@ export default function CustomerSettingsPage() {
                     <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest block">
                       Active device sessions
                     </span>
-                    {sessions.length > 1 && (
-                      <button
-                        onClick={handleSignOutOthers}
-                        className="text-[9.5px] font-sans font-bold hover:underline uppercase text-critical cursor-pointer"
-                      >
-                        Sign Out Other Sessions
-                      </button>
-                    )}
                   </div>
 
                   <div className="space-y-2.5">
@@ -341,11 +367,11 @@ export default function CustomerSettingsPage() {
                               {sess.device}
                               {sess.current && (
                                 <span className="text-[8px] bg-positive/10 text-positive px-1.5 py-0.25 rounded-xs border border-positive/15 font-sans font-bold uppercase">
-                                  Current
+                                  Current Session
                                 </span>
                               )}
                             </span>
-                            <span className="text-[9px] text-foreground-muted block">{sess.location} • IP: {sess.ip}</span>
+                            <span className="text-[9px] text-foreground-muted block">{sess.location} • Status: Active</span>
                           </div>
                         </div>
                       </div>
@@ -359,15 +385,29 @@ export default function CustomerSettingsPage() {
             {activeTab === "data" && (
               <div className="space-y-6">
                 <div className="border-b border-border/40 pb-3">
-                  <h3 className="text-sm font-extrabold text-foreground uppercase tracking-wider">Connected Data Ledger Feeds</h3>
-                  <p className="text-[10.5px] text-foreground-secondary mt-0.5">Synchronize and disconnect active bank APIs and merchant gateway feeds.</p>
+                  <h3 className="text-sm font-extrabold text-foreground uppercase tracking-wider">Connected Data & Statements</h3>
+                  <p className="text-[10.5px] text-foreground-secondary mt-0.5">Manage your financial statements, bank records, and analytics ledgers.</p>
                 </div>
 
                 {sources.length === 0 ? (
-                  <div className="text-center border border-border border-dashed p-8 rounded-sm bg-surface">
-                    <Database className="h-10 w-10 text-foreground-muted mx-auto mb-2" />
-                    <h3 className="text-xs font-bold text-foreground">No active data feeds</h3>
-                    <p className="text-[10px] text-foreground-secondary mt-1">Upload a statements ledger or hook banking APIs to feed metrics.</p>
+                  <div className="text-center border border-border border-dashed p-8 rounded-sm bg-surface flex flex-col items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      <UploadCloud className="h-6 w-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-foreground">Import Financial Statements</h3>
+                      <p className="text-xs text-foreground-secondary max-w-sm">
+                        Upload your bank statements (CSV/PDF) to populate cash flow forecasts, transactions, and risk scores.
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => router.push("/onboarding/upload")}
+                      className="text-xs uppercase font-sans font-bold gap-2 mt-2 cursor-pointer"
+                    >
+                      Upload Statement <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3.5 text-xs">
@@ -398,14 +438,6 @@ export default function CustomerSettingsPage() {
                             {src.status}
                           </span>
 
-                          <Button
-                            variant="outline"
-                            onClick={() => handleReconnectSource(src.id, src.name)}
-                            size="sm"
-                            className="text-[9.5px] uppercase font-sans font-bold py-1.5 px-3 border-border/80 cursor-pointer"
-                          >
-                            Sync Handshake
-                          </Button>
                           <Button
                             variant="outline"
                             onClick={() => handleRemoveSource(src.id)}
@@ -480,7 +512,6 @@ export default function CustomerSettingsPage() {
                 </div>
 
                 <div className="space-y-5 text-xs font-sans">
-                  
                   {/* Theme toggles */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-foreground-muted uppercase tracking-wider block">Theme Mode</label>
@@ -551,67 +582,11 @@ export default function CustomerSettingsPage() {
                       </p>
                     </div>
                   </div>
-
                 </div>
               </div>
             )}
-
-            {/* 6. API ACCESS TOKENS PANEL */}
-            {activeTab === "api" && (
-              <div className="space-y-6">
-                <div className="border-b border-border/40 pb-3">
-                  <h3 className="text-sm font-extrabold text-foreground uppercase tracking-wider">Developer API Access</h3>
-                  <p className="text-[10.5px] text-foreground-secondary mt-0.5">Generate access keys to feed diagnostic metrics models directly into your custom pipelines.</p>
-                </div>
-
-                <div className="space-y-5 text-xs font-sans">
-                  
-                  <div className="bg-primary/5 border border-primary/20 p-4.5 rounded-sm space-y-2 max-w-xl">
-                    <span className="text-[10px] font-bold text-foreground block uppercase tracking-wide">Developer Sandbox Credentials</span>
-                    <p className="text-xs text-foreground-secondary leading-relaxed">
-                      API access tokens are held in mock development states. Live connections require enterprise registration clearance.
-                    </p>
-                  </div>
-
-                  <Button
-                    onClick={handleGenerateToken}
-                    size="sm"
-                    className="text-[10px] uppercase font-sans font-bold gap-1.5 cursor-pointer"
-                  >
-                    <Key className="h-4 w-4" /> Generate New API Token
-                  </Button>
-
-                  {apiTokens.length > 0 && (
-                    <div className="space-y-2.5 max-w-xl">
-                      <span className="text-[10px] font-bold text-foreground-muted uppercase tracking-widest block">Active Sandbox Keys</span>
-                      {apiTokens.map((tok, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-surface-elevated/45 border border-border p-3.5 rounded-xs flex justify-between items-center text-xs font-mono select-all"
-                        >
-                          <span className="text-foreground font-bold truncate max-w-[320px]">{tok}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(tok);
-                              toast.success("Copied API token key to clipboard.");
-                            }}
-                            className="text-[9.5px] font-sans font-bold hover:underline uppercase text-primary cursor-pointer select-none"
-                          >
-                            Copy key
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            )}
-
           </Card>
         </div>
-
       </div>
 
       {/* STICKY UNSAVED CHANGES WARNING BAR */}
@@ -643,7 +618,6 @@ export default function CustomerSettingsPage() {
           </div>
         </div>
       )}
-
     </PageContainer>
   );
 }

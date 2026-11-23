@@ -82,7 +82,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif-1",
     title: "High Risk Fraud Alert",
-    description: "Applicant Rahul Chahar has been flagged with an anomalous debt-to-income ratio and suspicious credit bureau log changes.",
+    description: "Applicant has been flagged with an anomalous debt-to-income ratio and suspicious credit bureau log changes.",
     type: "fraud",
     priority: "Critical",
     readStatus: false,
@@ -91,7 +91,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     relativeTime: "10m ago",
     aiSummary: "The applicant exhibits extreme debt leverage ratios and recent defaults history. Immediate underwriting check is highly recommended.",
     relatedApplicantId: "APPL-101",
-    assignedOfficer: "Rahul Chahar",
+    assignedOfficer: "Assigned Risk Officer",
     timeline: [
       { status: "Fraud Flagged", time: "20:10", note: "Risk engine detected credit score variance threshold anomaly." }
     ]

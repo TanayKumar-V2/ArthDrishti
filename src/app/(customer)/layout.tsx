@@ -30,14 +30,29 @@ import { Topbar } from "@/components/shared/Topbar";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 import { Sheet } from "@/components/ui/Overlays";
 import { toast } from "sonner";
+import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) setCurrentUser(stored);
+
+    authApi.getCurrentUser()
+      .then((user) => setCurrentUser(user))
+      .catch(() => {});
+  }, []);
+
+  const userName = currentUser?.full_name || currentUser?.email?.split("@")[0] || "Client";
+  const userRole = currentUser?.role === "loan_officer" ? "Loan Officer" : "Customer";
+  const userInitial = (userName.charAt(0) || "C").toUpperCase();
 
   // Sync sidebar expanded state from localStorage safely on mount
   useEffect(() => {
@@ -66,9 +81,13 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, []);
 
-  const handleLogout = () => {
-    toast.success("Successfully logged out (Mock)");
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {}
+    toast.success("Successfully logged out");
     setIsMoreMenuOpen(false);
+    router.push("/login");
   };
 
   // Mobile Bottom Navigation definition
@@ -202,14 +221,14 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
             {/* User profile header card */}
             <div className="flex items-center gap-3.5 p-3.5 rounded-sm bg-surface-elevated border border-border/80">
               <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm select-none">
-                R
+                {userInitial}
               </div>
               <div className="flex flex-col text-left">
                 <span className="text-sm font-semibold text-foreground">
-                  Rahul
+                  {userName}
                 </span>
                 <span className="text-[11px] text-foreground-secondary font-medium uppercase tracking-wider">
-                  Customer Profile
+                  {userRole} Profile
                 </span>
               </div>
             </div>

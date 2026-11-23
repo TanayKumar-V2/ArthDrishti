@@ -526,7 +526,7 @@ export default function ApplicantIntelligenceProfilePage() {
     const newEvent = {
       date: formattedDate,
       action: "Officer Notes Updated",
-      user: "Officer Rahul",
+      user: "Officer Rohan",
       notes: commentText.trim()
     };
 
@@ -1289,8 +1289,8 @@ export default function ApplicantIntelligenceProfilePage() {
                         {detailedApplicant.aiInsightsList.map((ins, idx) => (
                           <div
                             key={idx}
-                            className={cn("border-l-4 p-5 rounded-r bg-surface-elevated/20 border-y border-r border-border/60 flex flex-col sm:flex-row sm:items-start justify-between gap-4 transition-all hover:bg-surface-elevated/35",
-                              ins.priority === "High" ? "border-l-critical" : ins.priority === "Medium" ? "border-l-warning" : "border-l-positive"
+                            className={cn("border p-5 rounded-sm bg-surface-elevated/20 border-border/60 flex flex-col sm:flex-row sm:items-start justify-between gap-4 transition-colors hover:bg-surface-elevated/35",
+                              ins.priority === "High" ? "bg-critical/[0.035]" : ins.priority === "Medium" ? "bg-warning/[0.04]" : "bg-positive/[0.035]"
                             )}
                           >
                             <div className="space-y-2">

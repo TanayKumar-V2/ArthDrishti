@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Overlays";
 import { cn } from "@/lib/utils";
 import { INITIAL_RECOMMENDATIONS, RecommendationCard } from "@/lib/recommendations_data";
+import { recommendationsApi } from "@/lib/api";
 
 export default function RecommendationsCenterPage() {
   const router = useRouter();
@@ -44,6 +45,48 @@ export default function RecommendationsCenterPage() {
   const [selectedRec, setSelectedRec] = useState<RecommendationCard | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [remindersEnabled, setRemindersEnabled] = useState<Record<string, boolean>>({});
+
+  // Hydrate live recommendations from backend
+  useEffect(() => {
+    let isMounted = true;
+    recommendationsApi
+      .list()
+      .then((data: any) => {
+        if (!isMounted || !Array.isArray(data) || data.length === 0) return;
+        const mapped: RecommendationCard[] = data.map((r: any, idx: number) => ({
+          id: String(r.id || `rec-${idx}`),
+          title: r.title || r.action || "Improve Credit Health",
+          category: (r.category === "savings" ? "Savings" :
+                     r.category === "spending" ? "Spending" :
+                     r.category === "debt" ? "Debt" :
+                     r.category === "cash_flow" ? "Cash Flow" : "Credit Risk") as RecommendationCard["category"],
+          priority: (r.impact_level === "high" ? "Urgent" : r.impact_level === "medium" ? "High-Impact" : "Active") as RecommendationCard["priority"],
+          currentValue: "Active Ratio",
+          targetValue: "Optimal Range",
+          whyText: r.description || "System recommendation based on real-time transaction and credit telemetry.",
+          impactDefaultRisk: "-8%",
+          impactFinancialHealth: "+5 Points",
+          timeframe: "30 Days",
+          difficulty: "Easy" as const,
+          steps: [
+            { text: r.description || "Review balance and schedule automated payments", completed: false },
+            { text: "Monitor impact on next statement cycle", completed: false }
+          ],
+          relatedMetrics: "Credit Risk Index, DTI Ratio",
+          dueDate: "End of Month",
+          progressPercent: 0
+        }));
+        setRecommendations((prev) => {
+          const ids = new Set(prev.map((item) => item.id));
+          const unique = mapped.filter((item) => !ids.has(item.id));
+          return [...unique, ...prev];
+        });
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Simulate data fetch skeleton on filter changes
   const handleFilterChange = useCallback((filter: string) => {

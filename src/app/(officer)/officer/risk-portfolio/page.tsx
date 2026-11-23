@@ -105,7 +105,7 @@ export default function OfficerRiskPortfolioPage() {
   // Case Assignment Modal States
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedAssignApps, setSelectedAssignApps] = useState<Record<string, boolean>>({});
-  const [assignTargetOfficer, setAssignTargetOfficer] = useState("Officer Rahul");
+  const [assignTargetOfficer, setAssignTargetOfficer] = useState("Officer Rohan");
 
   // Large Overview Chart configuration tab and time filters
   const [activeOverviewTab, setActiveOverviewTab] = useState<
@@ -921,7 +921,7 @@ export default function OfficerRiskPortfolioPage() {
                   <div className="space-y-0.5">
                     <span className="font-extrabold text-foreground block">Revolving Credit Exposure Expansion</span>
                     <p className="text-[10.5px] text-foreground-secondary leading-relaxed">
-                      Rahul Sen credit card utilization crossed 64% threshold. Active EMI burden expanded by 12%.
+                      Aarav Sen credit card utilization crossed 64% threshold. Active EMI burden expanded by 12%.
                     </p>
                     <button
                       onClick={() => {
@@ -1559,7 +1559,7 @@ export default function OfficerRiskPortfolioPage() {
               onChange={(e) => setAssignTargetOfficer(e.target.value)}
               className="w-full border border-border bg-surface rounded p-2 text-xs focus:outline-none"
             >
-              <option value="Officer Rahul">Officer Rahul</option>
+              <option value="Officer Rohan">Officer Rohan</option>
               <option value="Officer Priya">Officer Priya</option>
               <option value="Officer Sinha">Officer Sinha</option>
               <option value="Senior Manager Priya">Senior Manager Priya</option>

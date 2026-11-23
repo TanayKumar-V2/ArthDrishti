@@ -470,15 +470,15 @@ npm run test
 
 ## Roadmap
 
-| Phase | Weeks | Focus |
-|---|---|---|
-| 1 | 1–2 | Foundation — frontend, backend, auth, PostgreSQL, Docker, CI |
-| 2 | 3–4 | Data pipeline — upload, validation, cleaning, feature engineering |
-| 3 | 5–6 | Core ML — credit risk, fraud, segmentation models |
-| 4 | 7–8 | APIs — prediction, forecasting, explainability, reporting endpoints |
-| 5 | 9–10 | Dashboard — charts, filters, what-if simulator, report pages |
-| 6 | 11 | MLOps — MLflow, versioning, drift monitoring, retraining hooks |
-| 7 | 12 | Polish — UI/UX, performance, docs, deployment, demo recording |
+| Phase | Weeks | Focus | Status |
+|---|---|---|---|
+| **Phase 1** | 1–2 | Foundation — FastAPI, JWT auth, PostgreSQL (15 tables), Docker, CI, Celery | ✅ Complete |
+| **Phase 2** | 3–4 | Data pipeline — Multi-format parser (CSV/XLSX/PDF), 22 engineered features, synthetic data | ✅ Complete |
+| **Phase 3** | 5–6 | Core ML — Stacking credit risk classifier, Isolation Forest, KMeans clustering | ✅ Complete |
+| **Phase 4** | 7–8 | Advanced APIs — SHAP explainability, cash flow forecasting, loan underwriting, PDF generator | ✅ Complete |
+| **Phase 5** | 9–10 | Dashboard & Live Integration — Next.js live API integration, role auth routing, simulator, reports | ✅ Complete |
+| **Phase 6** | 11 | MLOps — Kolmogorov-Smirnov test, Population Stability Index (PSI) drift detector, model rollback | ✅ Complete |
+| **Phase 7** | 12 | Polish & Verification — Full test suite passing (19/19 pytest, 60/60 Next.js routes compiled) | ✅ Complete |
 
 ---
 

@@ -291,7 +291,7 @@ export function BentoGrid() {
             <CardContent className="p-6 sm:p-8 flex flex-col md:flex-row gap-6 items-center justify-between">
               <div className="space-y-3 max-w-2xl text-center md:text-left">
                 <div className="inline-flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-full bg-ai/10 border border-ai/20 flex items-center justify-center text-ai animate-bounce">
+                  <div className="h-6 w-6 rounded-full bg-ai/10 border border-ai/20 flex items-center justify-center text-ai">
                     <Sparkles className="h-3.5 w-3.5" />
                   </div>
                   <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-ai">
@@ -302,7 +302,7 @@ export function BentoGrid() {
                   AI Financial Advisor Insight
                 </h3>
                 {/* Chat Bubble Layout */}
-                <div className="relative p-4 bg-surface-elevated border border-border/80 rounded-sm text-sm font-sans text-foreground-secondary leading-relaxed italic border-l-2 border-l-ai">
+                <div className="relative p-4 bg-surface-elevated border border-ai/20 rounded-sm text-sm font-sans text-foreground-secondary leading-relaxed italic">
                   “Your credit limit utilization decreased by 8% over the past 30 days. This stabilizes your liquidity runway, decreasing your default risk profile to Low Risk and improving model credit diagnostics by +2.4%.”
                 </div>
               </div>

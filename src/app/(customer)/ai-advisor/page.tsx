@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Overlays";
 import { cn } from "@/lib/utils";
 import { MOCK_RESPONSES, RichResponse } from "@/lib/advisor_data";
+import { advisorApi, getStoredUser, authApi } from "@/lib/api";
 
 // ============================================================================
 // CHAT MESSAGE TYPE
@@ -172,21 +173,29 @@ export default function AiAdvisorPage() {
     { id: "h4", title: "Cash Flow 6M Prediction", timestamp: "July 2, 2026", active: false }
   ]);
 
+  // User profile
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
+
   // Message stream
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "m_welcome",
-      sender: "assistant",
-      timestamp: "10:14 AM",
-      text: "GOOD MORNING, RAHUL.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?"
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const stored = getStoredUser();
+    const name = stored?.full_name ? stored.full_name.split(" ")[0].toUpperCase() : "THERE";
+    return [
+      {
+        id: "m_welcome",
+        sender: "assistant",
+        timestamp: "10:14 AM",
+        text: `GOOD MORNING, ${name}.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?`
+      }
+    ];
+  });
 
   // Form input composer values
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [attachContext, setAttachContext] = useState(true);
+  const [profileMetrics, setProfileMetrics] = useState<Record<string, unknown> | null>(null);
 
   // Mobile drawer sheets toggles
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -200,64 +209,104 @@ export default function AiAdvisorPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Handle preset prompt click
-  const handlePromptSelect = useCallback((promptText: string, mockKey: string) => {
-    // 1. Append user message
-    const userMsgId = `user_${Date.now()}`;
-    const userMsg: Message = {
-      id: userMsgId,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: promptText
+  // Hydrate user financial metrics from backend
+  useEffect(() => {
+    let isMounted = true;
+    authApi
+      .getCurrentUser()
+      .then((user) => {
+        if (isMounted && user) {
+          setCurrentUser(user);
+        }
+      })
+      .catch(() => {});
+
+    advisorApi
+      .getContext()
+      .then((data) => {
+        if (isMounted && data) {
+          setProfileMetrics(data);
+        }
+      })
+      .catch(() => {
+        // Offline / fallback mode
+      });
+    return () => {
+      isMounted = false;
     };
+  }, []);
 
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-    setIsError(false);
+  // Handle preset prompt click
+  const handlePromptSelect = useCallback(
+    async (promptText: string, mockKey: string) => {
+      const userMsgId = `user_${Date.now()}`;
+      const userMsg: Message = {
+        id: userMsgId,
+        sender: "user",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        text: promptText,
+      };
 
-    // 2. Simulate AI thinking delay
-    setTimeout(() => {
+      setMessages((prev) => [...prev, userMsg]);
+      setIsLoading(true);
+      setIsError(false);
+
       const richReply = MOCK_RESPONSES[mockKey];
-      if (richReply) {
+      try {
+        const historyPayload = messages.slice(-4).map((m) => ({ sender: m.sender, text: m.text }));
+        const res = await advisorApi.chat(promptText, historyPayload);
         const aiMsg: Message = {
           id: `ai_${Date.now()}`,
           sender: "assistant",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          text: richReply.text,
-          richData: richReply
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: res.response || richReply?.text || "Analysis complete.",
+          richData: richReply,
         };
         setMessages((prev) => [...prev, aiMsg]);
-        setIsLoading(false);
-      } else {
-        setIsError(true);
+      } catch {
+        // Fallback to rich mock responses if offline
+        if (richReply) {
+          const aiMsg: Message = {
+            id: `ai_${Date.now()}`,
+            sender: "assistant",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            text: richReply.text,
+            richData: richReply,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        } else {
+          setIsError(true);
+        }
+      } finally {
         setIsLoading(false);
       }
-    }, 1100);
-  }, []);
+    },
+    [messages]
+  );
 
   // Handle composer submission
-  const handleSendMessage = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
+  const handleSendMessage = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!inputValue.trim()) return;
 
-    const query = inputValue.trim();
-    setInputValue("");
+      const query = inputValue.trim();
+      setInputValue("");
 
-    const userMsg: Message = {
-      id: `user_${Date.now()}`,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      text: query
-    };
+      const userMsg: Message = {
+        id: `user_${Date.now()}`,
+        sender: "user",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        text: query,
+      };
 
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-    setIsError(false);
+      setMessages((prev) => [...prev, userMsg]);
+      setIsLoading(true);
+      setIsError(false);
 
-    // Dynamic mock response parsing based on keywords
-    setTimeout(() => {
+      // Determine visualization theme by keyword
       const normalizedQuery = query.toLowerCase();
-      let key = "risk"; // fallback
+      let key = "risk";
       if (normalizedQuery.includes("spend") || normalizedQuery.includes("buy") || normalizedQuery.includes("expense")) {
         key = "spending";
       } else if (normalizedQuery.includes("loan") || normalizedQuery.includes("afford") || normalizedQuery.includes("emi")) {
@@ -271,17 +320,32 @@ export default function AiAdvisorPage() {
       }
 
       const richReply = MOCK_RESPONSES[key];
-      const aiMsg: Message = {
-        id: `ai_${Date.now()}`,
-        sender: "assistant",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: richReply.text,
-        richData: richReply
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsLoading(false);
-    }, 1200);
-  }, [inputValue]);
+      try {
+        const historyPayload = messages.slice(-4).map((m) => ({ sender: m.sender, text: m.text }));
+        const res = await advisorApi.chat(query, historyPayload);
+        const aiMsg: Message = {
+          id: `ai_${Date.now()}`,
+          sender: "assistant",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: res.response || richReply?.text || "Analysis complete.",
+          richData: richReply,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } catch {
+        const aiMsg: Message = {
+          id: `ai_${Date.now()}`,
+          sender: "assistant",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: richReply.text,
+          richData: richReply,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [inputValue, messages]
+  );
 
   // Load selected historical chat topic
   const handleSelectHistory = useCallback((id: string) => {
@@ -289,7 +353,8 @@ export default function AiAdvisorPage() {
     setIsHistoryOpen(false);
     
     // Clear and load mock message history based on topic
-    let defaultMsg = "GOOD MORNING, RAHUL.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?";
+    const userGreetingName = (currentUser?.full_name?.split(" ")[0] || "THERE").toUpperCase();
+    let defaultMsg = `GOOD MORNING, ${userGreetingName}.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?`;
     let datasetKey = "";
 
     if (id === "h1") {
@@ -418,6 +483,19 @@ export default function AiAdvisorPage() {
         {/* COLUMN 2: AI CONVERSATION WORKSPACE (50% / 6 COLS) */}
         <div className="col-span-12 lg:col-span-6 bg-surface border border-border/80 rounded-sm flex flex-col overflow-hidden relative">
           
+          {/* Engine & Status Banner */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface-elevated/40 text-[10px]">
+            <div className="flex items-center gap-1.5 font-sans font-semibold text-foreground-secondary">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <span>Financial Risk Intelligence</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[9px] px-2 py-0.5 rounded-xs bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 font-semibold">
+                ⚡ Groq • openai/gpt-oss-20b
+              </span>
+            </div>
+          </div>
+
           {/* Scrollable Message stream area */}
           <div className="flex-1 p-4 md:p-5 overflow-y-auto space-y-5 scrollbar-none min-h-0">
             {messages.map((msg) => {
@@ -432,7 +510,7 @@ export default function AiAdvisorPage() {
                 >
                   {/* Sender title label */}
                   <span className="text-[9px] font-sans font-extrabold uppercase tracking-wider text-foreground-muted mb-1 px-1">
-                    {isAssistant ? "ArthDrishti AI Advisor" : "Rahul Chahar (You)"}
+                    {isAssistant ? "ArthDrishti AI Advisor" : `${currentUser?.full_name || "You"} (You)`}
                   </span>
 
                   {/* Bubble wrapper */}
@@ -555,9 +633,9 @@ export default function AiAdvisorPage() {
                   Advisor is analyzing...
                 </span>
                 <div className="p-4 rounded-sm border border-border/80 bg-surface-elevated/35 text-xs text-foreground flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                  <div className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                  <div className="h-2 w-2 rounded-full bg-primary animate-bounce" />
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:-0.3s]" />
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:-0.15s]" />
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 </div>
               </div>
             )}
@@ -565,7 +643,7 @@ export default function AiAdvisorPage() {
             {/* Error banner state */}
             {isError && (
               <div className="flex flex-col max-w-full self-center select-none text-center py-2 bg-critical/10 border border-critical/20 p-4 rounded-sm">
-                <AlertTriangle className="h-6 w-6 text-critical mx-auto mb-2 animate-bounce" />
+                <AlertTriangle className="h-6 w-6 text-critical mx-auto mb-2" />
                 <span className="text-xs font-bold text-critical font-sans">Attribution request failed</span>
                 <p className="text-[10px] text-foreground-secondary mt-1 font-sans">
                   The network experienced timeout parameters. Please try again.
@@ -649,11 +727,41 @@ export default function AiAdvisorPage() {
             {/* Stats list linking to pages */}
             <div className="space-y-3.5 font-sans">
               {[
-                { label: "Financial Health", value: "82/100", href: "/financial-health", status: "positive" },
-                { label: "Default Risk Rating", value: "18% (Low)", href: "/credit-risk", status: "positive" },
-                { label: "Pending Fraud Alerts", value: "2 Alerts", href: "/credit-risk", status: "critical" },
-                { label: "Monthly Savings Rate", value: "24.8%", href: "/explainable-ai", status: "positive" },
-                { label: "30-Day Liquidity Forecast", value: "Positive", href: "/cash-flow", status: "positive" }
+                {
+                  label: "Financial Health",
+                  value: profileMetrics ? `${profileMetrics.financial_health_score}/100` : "82/100",
+                  href: "/financial-health",
+                  status: Number(profileMetrics?.financial_health_score ?? 82) >= 70 ? "positive" : "critical",
+                },
+                {
+                  label: "Default Risk Rating",
+                  value: profileMetrics
+                    ? `${profileMetrics.default_probability_pct}% (${profileMetrics.credit_risk_band})`
+                    : "18% (Low)",
+                  href: "/credit-risk",
+                  status:
+                    profileMetrics?.credit_risk_band === "HIGH" || profileMetrics?.credit_risk_band === "SEVERE"
+                      ? "critical"
+                      : "positive",
+                },
+                {
+                  label: "Pending Fraud Alerts",
+                  value: profileMetrics ? `${profileMetrics.pending_fraud_alerts} Alerts` : "2 Alerts",
+                  href: "/credit-risk",
+                  status: Number(profileMetrics?.pending_fraud_alerts ?? 0) > 0 ? "critical" : "positive",
+                },
+                {
+                  label: "Monthly Savings Rate",
+                  value: profileMetrics ? `${profileMetrics.savings_rate_pct}%` : "24.8%",
+                  href: "/explainable-ai",
+                  status: Number(profileMetrics?.savings_rate_pct ?? 24.8) >= 20 ? "positive" : "critical",
+                },
+                {
+                  label: "Emergency Cushion",
+                  value: profileMetrics ? `${profileMetrics.emergency_fund_months} Mo` : "3.2 Mo",
+                  href: "/cash-flow",
+                  status: "positive",
+                },
               ].map((stat, idx) => (
                 <div
                   key={idx}

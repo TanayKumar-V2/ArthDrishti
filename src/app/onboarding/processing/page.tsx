@@ -271,7 +271,7 @@ export default function AIProcessingPage() {
         line: "bg-positive" // Connected line stays positive as the flow is complete
       },
       failed: {
-        bubble: "bg-critical text-white border-critical shadow-md shadow-critical/25 scale-105 animate-bounce",
+        bubble: "bg-critical text-white border-critical shadow-md shadow-critical/25 scale-105",
         icon: X,
         line: "bg-gradient-to-b from-critical to-border"
       },

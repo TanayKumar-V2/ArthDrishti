@@ -218,7 +218,7 @@ export default function RolePermissionManagementPage() {
       id: `audit-${Date.now()}`,
       type,
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
-      operator: "Rahul Chahar (Platform Admin)",
+      operator: "Platform Administrator",
       detail
     };
     setAuditLogs(prev => [newLog, ...prev]);
@@ -288,7 +288,7 @@ export default function RolePermissionManagementPage() {
       permissionsCount,
       status: "Active",
       iconName: newRoleData.iconName,
-      createdBy: "Rahul Chahar",
+      createdBy: "Platform Administrator",
       createdDate: new Date().toISOString().split("T")[0],
       lastModified: new Date().toISOString().split("T")[0],
       matrix: newRoleData.matrix
@@ -396,7 +396,7 @@ export default function RolePermissionManagementPage() {
       permissionsCount: roleToClone.permissionsCount,
       status: "Active",
       iconName: newRoleData.iconName,
-      createdBy: "Rahul Chahar",
+      createdBy: "Platform Administrator",
       createdDate: new Date().toISOString().split("T")[0],
       lastModified: new Date().toISOString().split("T")[0],
       matrix: [...roleToClone.matrix]

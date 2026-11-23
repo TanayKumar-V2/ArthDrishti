@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { MOCK_SESSIONS, DEFAULT_PREFERENCES, ActiveSession } from "@/lib/notifications_data";
+import { authApi, getStoredUser } from "@/lib/api";
 
 // Profile data structure
 interface OfficerProfile {
@@ -71,21 +72,52 @@ export default function OfficerSettingsPage() {
       if (saved) return JSON.parse(saved);
     }
     return {
-      fullName: "Officer Rahul",
+      fullName: "Loan Officer",
       employeeId: "EMP-2026-9812",
       department: "Risk Management & Underwriting",
       branch: "Corporate Head Office, Delhi",
       designation: "Senior Credit Underwriter",
-      email: "rahul.chahar@arthdrishti.in",
+      email: "officer@arthdrishti.in",
       phone: "+91 98765 43210",
       officeAddress: "7th Floor, Block C, Financial District, Delhi, 110001",
       joiningDate: "12th March 2023",
       manager: "Siddharth Mehta (VP Risk Operations)",
-      photoUrl: "" // Empty represents the initial default avatar "RO"
+      photoUrl: "" // Empty represents the initial default avatar
     };
   });
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editForm, setEditForm] = useState<OfficerProfile>({ ...profile });
+
+  // Sync with live authenticated officer profile
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) {
+      setProfile((prev) => ({
+        ...prev,
+        fullName: stored.full_name || prev.fullName,
+        email: stored.email || prev.email
+      }));
+      setEditForm((prev) => ({
+        ...prev,
+        fullName: stored.full_name || prev.fullName,
+        email: stored.email || prev.email
+      }));
+    }
+    authApi.getCurrentUser().then((user) => {
+      if (user) {
+        setProfile((prev) => ({
+          ...prev,
+          fullName: user.full_name || prev.fullName,
+          email: user.email || prev.email
+        }));
+        setEditForm((prev) => ({
+          ...prev,
+          fullName: user.full_name || prev.fullName,
+          email: user.email || prev.email
+        }));
+      }
+    }).catch(() => {});
+  }, []);
 
   // Security States
   const [currentPassword, setCurrentPassword] = useState("");
@@ -405,8 +437,9 @@ export default function OfficerSettingsPage() {
                   <form onSubmit={handleProfileSave} className="space-y-4 font-sans text-xs">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-foreground-secondary font-semibold">Full Name</label>
+                        <label htmlFor="officer-profile-name" className="text-foreground-secondary font-semibold">Full Name</label>
                         <input
+                          id="officer-profile-name"
                           type="text"
                           required
                           value={editForm.fullName}
@@ -415,8 +448,9 @@ export default function OfficerSettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-foreground-secondary font-semibold">Email Address</label>
+                        <label htmlFor="officer-profile-email" className="text-foreground-secondary font-semibold">Email Address</label>
                         <input
+                          id="officer-profile-email"
                           type="email"
                           required
                           value={editForm.email}
@@ -425,8 +459,9 @@ export default function OfficerSettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-foreground-secondary font-semibold">Phone Number</label>
+                        <label htmlFor="officer-profile-phone" className="text-foreground-secondary font-semibold">Phone Number</label>
                         <input
+                          id="officer-profile-phone"
                           type="text"
                           required
                           value={editForm.phone}
@@ -435,8 +470,9 @@ export default function OfficerSettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-foreground-secondary font-semibold">Office Address</label>
+                        <label htmlFor="officer-profile-address" className="text-foreground-secondary font-semibold">Office Address</label>
                         <input
+                          id="officer-profile-address"
                           type="text"
                           required
                           value={editForm.officeAddress}
@@ -519,9 +555,10 @@ export default function OfficerSettingsPage() {
                   <form onSubmit={handlePasswordChange} className="space-y-4 font-sans text-xs max-w-lg">
                     {/* Current Pass */}
                     <div className="space-y-1.5 relative">
-                      <label className="text-foreground-secondary font-semibold">Current Password</label>
+                      <label htmlFor="officer-current-password" className="text-foreground-secondary font-semibold">Current Password</label>
                       <div className="relative">
                         <input
+                          id="officer-current-password"
                           type={showCurrentPass ? "text" : "password"}
                           required
                           value={currentPassword}
@@ -533,6 +570,7 @@ export default function OfficerSettingsPage() {
                           type="button"
                           onClick={() => setShowCurrentPass(!showCurrentPass)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground cursor-pointer"
+                          aria-label={showCurrentPass ? "Hide current password" : "Show current password"}
                         >
                           {showCurrentPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -541,9 +579,10 @@ export default function OfficerSettingsPage() {
 
                     {/* New Pass */}
                     <div className="space-y-1.5 relative">
-                      <label className="text-foreground-secondary font-semibold">New Password</label>
+                      <label htmlFor="officer-new-password" className="text-foreground-secondary font-semibold">New Password</label>
                       <div className="relative">
                         <input
+                          id="officer-new-password"
                           type={showNewPass ? "text" : "password"}
                           required
                           value={newPassword}
@@ -555,6 +594,7 @@ export default function OfficerSettingsPage() {
                           type="button"
                           onClick={() => setShowNewPass(!showNewPass)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground cursor-pointer"
+                          aria-label={showNewPass ? "Hide new password" : "Show new password"}
                         >
                           {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -581,9 +621,10 @@ export default function OfficerSettingsPage() {
 
                     {/* Confirm Pass */}
                     <div className="space-y-1.5 relative">
-                      <label className="text-foreground-secondary font-semibold">Confirm New Password</label>
+                      <label htmlFor="officer-confirm-password" className="text-foreground-secondary font-semibold">Confirm New Password</label>
                       <div className="relative">
                         <input
+                          id="officer-confirm-password"
                           type={showConfirmPass ? "text" : "password"}
                           required
                           value={confirmPassword}
@@ -595,6 +636,7 @@ export default function OfficerSettingsPage() {
                           type="button"
                           onClick={() => setShowConfirmPass(!showConfirmPass)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground cursor-pointer"
+                          aria-label={showConfirmPass ? "Hide confirmation password" : "Show confirmation password"}
                         >
                           {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -722,8 +764,9 @@ export default function OfficerSettingsPage() {
                   <CardContent className="font-sans text-xs space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <span className="text-foreground-secondary font-semibold">Question</span>
+                        <label htmlFor="security-question" className="text-foreground-secondary font-semibold">Question</label>
                         <select
+                          id="security-question"
                           value={securityQuestion}
                           onChange={(e) => setSecurityQuestion(e.target.value)}
                           className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm transition-colors cursor-pointer"
@@ -735,8 +778,9 @@ export default function OfficerSettingsPage() {
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <span className="text-foreground-secondary font-semibold">Answer (Protected)</span>
+                        <label htmlFor="security-answer" className="text-foreground-secondary font-semibold">Answer (Protected)</label>
                         <input
+                          id="security-answer"
                           type="password"
                           value={securityAnswer}
                           onChange={(e) => setSecurityAnswer(e.target.value)}
@@ -805,6 +849,7 @@ export default function OfficerSettingsPage() {
                             <td className="py-3.5 px-3 text-center">
                               <input
                                 type="checkbox"
+                                aria-label={`${titleMap[key] || key} email notifications`}
                                 checked={row.email}
                                 onChange={() => handleTogglePreference(key, "email")}
                                 className="h-4 w-4 rounded-xs border-border bg-surface text-primary focus:ring-primary h-3.5 w-3.5"
@@ -815,6 +860,7 @@ export default function OfficerSettingsPage() {
                             <td className="py-3.5 px-3 text-center">
                               <input
                                 type="checkbox"
+                                aria-label={`${titleMap[key] || key} SMS notifications`}
                                 checked={row.sms}
                                 onChange={() => handleTogglePreference(key, "sms")}
                                 className="h-4 w-4 rounded-xs border-border bg-surface text-primary focus:ring-primary h-3.5 w-3.5"
@@ -825,6 +871,7 @@ export default function OfficerSettingsPage() {
                             <td className="py-3.5 px-3 text-center">
                               <input
                                 type="checkbox"
+                                aria-label={`${titleMap[key] || key} push notifications`}
                                 checked={row.push}
                                 onChange={() => handleTogglePreference(key, "push")}
                                 className="h-4 w-4 rounded-xs border-border bg-surface text-primary focus:ring-primary h-3.5 w-3.5"
@@ -835,6 +882,7 @@ export default function OfficerSettingsPage() {
                             <td className="py-3.5 px-3 text-center">
                               <input
                                 type="checkbox"
+                                aria-label={`${titleMap[key] || key} desktop notifications`}
                                 checked={row.desktop}
                                 onChange={() => handleTogglePreference(key, "desktop")}
                                 className="h-4 w-4 rounded-xs border-border bg-surface text-primary focus:ring-primary h-3.5 w-3.5"
@@ -844,6 +892,7 @@ export default function OfficerSettingsPage() {
                             {/* Frequency */}
                             <td className="py-3.5 pl-4">
                               <select
+                                aria-label={`${titleMap[key] || key} notification frequency`}
                                 value={row.frequency}
                                 onChange={(e) => handleFrequencyChange(key, e.target.value as any)}
                                 className="bg-surface border border-border text-[11px] rounded-xs px-2 py-1 outline-none focus:border-primary font-medium cursor-pointer"
@@ -899,8 +948,9 @@ export default function OfficerSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Language */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Primary Language</label>
+                    <label htmlFor="appearance-language" className="text-foreground-secondary font-semibold block">Primary Language</label>
                     <select
+                      id="appearance-language"
                       value={appearance.language}
                       onChange={(e) => handleAppearanceChange("language", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -915,8 +965,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Date Format */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Preferred Date Format</label>
+                    <label htmlFor="appearance-date-format" className="text-foreground-secondary font-semibold block">Preferred Date Format</label>
                     <select
+                      id="appearance-date-format"
                       value={appearance.dateFormat}
                       onChange={(e) => handleAppearanceChange("dateFormat", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -929,8 +980,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Time Format */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Preferred Time Format</label>
+                    <label htmlFor="appearance-time-format" className="text-foreground-secondary font-semibold block">Preferred Time Format</label>
                     <select
+                      id="appearance-time-format"
                       value={appearance.timeFormat}
                       onChange={(e) => handleAppearanceChange("timeFormat", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -942,8 +994,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Timezone */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Preferred Timezone</label>
+                    <label htmlFor="appearance-timezone" className="text-foreground-secondary font-semibold block">Preferred Timezone</label>
                     <select
+                      id="appearance-timezone"
                       value={appearance.timezone}
                       onChange={(e) => handleAppearanceChange("timezone", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -957,8 +1010,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Density */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Layout Padding Density</label>
+                    <label htmlFor="appearance-density" className="text-foreground-secondary font-semibold block">Layout Padding Density</label>
                     <select
+                      id="appearance-density"
                       value={appearance.density}
                       onChange={(e) => handleAppearanceChange("density", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -971,8 +1025,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Sidebar style */}
                   <div className="space-y-1.5">
-                    <label className="text-foreground-secondary font-semibold block">Sidebar Layout Mode</label>
+                    <label htmlFor="appearance-sidebar" className="text-foreground-secondary font-semibold block">Sidebar Layout Mode</label>
                     <select
+                      id="appearance-sidebar"
                       value={appearance.sidebarStyle}
                       onChange={(e) => handleAppearanceChange("sidebarStyle", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"
@@ -984,8 +1039,9 @@ export default function OfficerSettingsPage() {
 
                   {/* Reduced Motion Toggle */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-foreground-secondary font-semibold block">Page Transition Effects</label>
+                    <label htmlFor="appearance-motion" className="text-foreground-secondary font-semibold block">Page Transition Effects</label>
                     <select
+                      id="appearance-motion"
                       value={appearance.animation}
                       onChange={(e) => handleAppearanceChange("animation", e.target.value)}
                       className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm cursor-pointer"

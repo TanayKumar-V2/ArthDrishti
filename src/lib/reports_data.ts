@@ -45,7 +45,7 @@ export const MOCK_REPORTS: ReportItem[] = [
       confidence: "94.2% overall tree-ensemble confidence index"
     },
     content: {
-      executiveSummary: "This Complete Financial Intelligence Report summarizes the Q2 2026 risk profiles of Rahul Chahar. Integrating credit records, transaction logs, anomaly vectors, and time-series projections, our systems evaluated your financial health index at 82/100, default probability at 18%, and cash flow risk as moderate. Immediate debt clearing actions are advised to secure primary grades.",
+      executiveSummary: "This Complete Financial Intelligence Report summarizes your comprehensive account risk profiles. Integrating credit records, transaction logs, anomaly vectors, and time-series projections, our systems evaluated your financial health index at 82/100, default probability at 18%, and cash flow risk as moderate. Immediate debt clearing actions are advised to secure primary grades.",
       keyRisks: "The primary risk vectors reside in credit card utilization rates (active at 68%) and Debt-to-Income (DTI) metrics which have risen to 42%. These factors are responsible for 78% of the risk attribution indicators in classification models.",
       financialHealth: "Your overall financial health rating is 82 (Strong). Liquid reserve buffer ratio is estimated at 2.1 months of overhead expense coverage. Automating savings sweep channels can raise this score to 90+.",
       creditAnalysis: "Credit score is healthy, backed by a 100% billing history. However, active debt ratios limit credit capability indices. The simulated model predicts a 14% drop in default risk if card balances are reduced below ₹60,000.",
@@ -99,7 +99,7 @@ export const MOCK_REPORTS: ReportItem[] = [
       confidence: "91.8% diagnostic stability"
     },
     content: {
-      executiveSummary: "The Q2 2026 Financial Health Report audits the balance sheet strength, savings rate, and reserve buffers of Rahul Chahar. Your score is 82/100, indicating healthy status but with improvement margins in emergency reserve accounts.",
+      executiveSummary: "The Q2 2026 Financial Health Report audits your balance sheet strength, savings rate, and reserve buffers. Your score is 82/100, indicating healthy status but with improvement margins in emergency reserve accounts.",
       keyRisks: "Liquid checking reserves cover only 2.1 months of fixed expenses. Model benchmarks recommend 6 months of expense coverage to protect against income disruptions.",
       financialHealth: "Your savings rate of 24.8% is strong. However, low allocation of these savings to liquid reserve sweeps limits emergency buffer accumulation.",
       creditAnalysis: "Debt levels are current but EMI-to-income metrics represent a moderate burden on monthly cash reserves.",

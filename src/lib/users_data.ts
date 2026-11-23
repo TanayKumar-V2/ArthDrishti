@@ -130,10 +130,10 @@ export interface ActivityItem {
 export const INITIAL_USERS: UserInfo[] = [
   {
     id: "usr-1",
-    fullName: "Super Admin (Rahul Chahar)",
-    avatar: "RC",
+    fullName: "Super Administrator",
+    avatar: "SA",
     employeeId: "EMP-2026-0001",
-    email: "rahul.chahar@arthdrishti.in",
+    email: "admin@arthdrishti.in",
     phone: "+91 98765 43210",
     organization: "ArthDrishti Bank",
     department: "Platform Operations",
@@ -250,10 +250,10 @@ export const INITIAL_USERS: UserInfo[] = [
   },
   {
     id: "usr-5",
-    fullName: "Officer Rahul",
+    fullName: "Officer Rohan",
     avatar: "OR",
     employeeId: "EMP-2026-0112",
-    email: "rahul.ro@arthdrishti.in",
+    email: "rohan.ro@arthdrishti.in",
     phone: "+91 98765 43214",
     organization: "ArthDrishti Bank",
     department: "Commercial Lending Desk",
@@ -366,12 +366,12 @@ export const INITIAL_USERS: UserInfo[] = [
   },
   {
     id: "usr-9",
-    fullName: "Rahul Sen",
-    avatar: "RS",
+    fullName: "Aarav Sen",
+    avatar: "AS",
     employeeId: "CST-2026-0810",
-    email: "rahulsen@wholesale.in",
+    email: "aaravsen@wholesale.in",
     phone: "+91 98765 43218",
-    organization: "Rahul Sen Wholesale",
+    organization: "Aarav Sen Wholesale",
     department: "Sole Proprietorship",
     branch: "External Small Business Client",
     role: "Customer",
@@ -576,5 +576,5 @@ export const MOCK_PERMISSIONS: Record<string, string[]> = {
 };
 
 export const MOCK_DEPARTMENTS = ["Platform Operations", "Retail Lending Underwriting", "Risk Intelligence Unit", "Risk Operations Control", "Commercial Lending Desk", "Compliance & Auditing", "Executive Board", "Founder Desk", "Retail Accounts"];
-export const MOCK_ORGANIZATIONS = ["ArthDrishti Bank", "Kunal Enterprises Ltd", "Finserv Global Corp", "Rahul Sen Wholesale", "Individual Retail", "Sharma Steel Industry", "Malhotra Tech Solutions"];
+export const MOCK_ORGANIZATIONS = ["ArthDrishti Bank", "Kunal Enterprises Ltd", "Finserv Global Corp", "Aarav Sen Wholesale", "Individual Retail", "Sharma Steel Industry", "Malhotra Tech Solutions"];
 export const MOCK_BRANCHES = ["Delhi Corporate Office", "Mumbai Zonal Office", "Kolkata Regional Branch", "Chennai Regional Branch", "External Corporate Client", "External Small Business Client", "External Retail Client", "External SME Client"];

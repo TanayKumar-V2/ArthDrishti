@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   ResponsiveContainer,
@@ -42,6 +42,7 @@ import { Sheet, Tooltip } from "@/components/ui/Overlays";
 import { RiskBadge, StatusBadge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { mockFraudTransactions, FraudTransaction } from "@/lib/fraudData";
+import { fraudApi } from "@/lib/api";
 
 export default function FraudIntelligencePage() {
   // ==========================================
@@ -67,6 +68,59 @@ export default function FraudIntelligencePage() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Hydrate live fraud alerts from backend
+  useEffect(() => {
+    let isMounted = true;
+    fraudApi
+      .listAlerts()
+      .then((alerts: any) => {
+        if (!isMounted || !Array.isArray(alerts) || alerts.length === 0) return;
+        const mapped: FraudTransaction[] = alerts.map((a: any, idx: number) => {
+          const score = typeof a.risk_score === "number" ? a.risk_score : 85;
+          const risk: "Low" | "Medium" | "High" | "Critical" =
+            score >= 90 ? "Critical" : score >= 70 ? "High" : score >= 35 ? "Medium" : "Low";
+          const status: "completed" | "under_review" | "approved" | "rejected" =
+            a.status === "resolved" ? "approved" : a.status === "dismissed" ? "completed" : "under_review";
+          const anomalyType: FraudTransaction["anomalyType"] =
+            a.anomaly_type === "Unusual Amount" ? "Unusual Amount" :
+            a.anomaly_type === "Unusual Time" ? "Unusual Time" :
+            a.anomaly_type === "Location Anomaly" ? "Location Anomaly" :
+            "Behavior Deviation";
+
+          return {
+            id: String(a.id || `frd-${idx}`),
+            merchant: a.merchant || a.location || "Monitored Merchant Terminal",
+            amount: typeof a.amount === "number" ? a.amount : 12500,
+            date: a.created_at || new Date().toISOString(),
+            account: a.account || "HDFC Savings Account •••• 8902",
+            anomalyType,
+            aiScore: score,
+            risk,
+            status,
+            location: a.location || "Online IP Gateway",
+            region: "Delhi NCR Hub" as const,
+            whyFlagged: [
+              { factor: a.anomaly_type || "Behavior Deviation", weight: 65 },
+              { factor: "Isolation Forest Anomaly Score", weight: 35 }
+            ],
+            behavioralComparison: [
+              { metric: "Risk Score Delta", historicalAverage: "14/100", currentTransaction: `${score}/100` },
+              { metric: "Verification State", historicalAverage: "Known Device", currentTransaction: "Audit Session" }
+            ]
+          };
+        });
+        setTransactions((prev) => {
+          const ids = new Set(prev.map((item) => item.id));
+          const unique = mapped.filter((item) => !ids.has(item.id));
+          return [...unique, ...prev];
+        });
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Active Transaction computation
   const selectedTxn = useMemo(() => {
@@ -972,7 +1026,7 @@ export default function FraudIntelligencePage() {
                     setIsDrawerOpen(true);
                   }}
                   className={cn(
-                    "p-4 space-y-3.5 hover:bg-surface-elevated transition-colors cursor-pointer border-l-4",
+                    "p-4 space-y-3.5 hover:bg-surface-elevated transition-colors cursor-pointer border border-transparent",
                     selectedTxnId === txn.id ? "bg-surface-elevated border-l-primary" : "border-l-transparent"
                   )}
                 >

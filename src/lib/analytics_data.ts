@@ -137,7 +137,7 @@ export const APPLICATIONS_METRICS_DATA = [
 // 5. UNDERWRITING OFFICERS LEADERBOARD
 export const TOP_OFFICERS_LEADERBOARD: OfficerPerformance[] = [
   { name: "Siddharth Mehta", avatar: "SM", approvalRate: 94.5, avgTime: "18 mins", cases: 284, pending: 8 },
-  { name: "Rahul Chahar", avatar: "RC", approvalRate: 88.2, avgTime: "24 mins", cases: 242, pending: 15 },
+  { name: "Rohan Mehta", avatar: "RM", approvalRate: 88.2, avgTime: "24 mins", cases: 242, pending: 15 },
   { name: "Sarah Jenkins", avatar: "SJ", approvalRate: 91.0, avgTime: "21 mins", cases: 221, pending: 4 },
   { name: "Marcus Vance", avatar: "MV", approvalRate: 85.6, avgTime: "29 mins", cases: 194, pending: 18 },
   { name: "Auditor Roy", avatar: "AR", approvalRate: 97.4, avgTime: "15 mins", cases: 145, pending: 2 }

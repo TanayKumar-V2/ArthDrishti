@@ -184,7 +184,7 @@ export default function AIModelDetailsPage(props: PageProps) {
       id: `act-dt-${Date.now()}`,
       type: activityType,
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 16),
-      operator: "Rahul Chahar (AI Engineer)",
+      operator: "MLOps Platform Engineer",
       detail
     };
     const saved = {

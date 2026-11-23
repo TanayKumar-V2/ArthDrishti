@@ -44,8 +44,8 @@ export interface ApplicantDetail {
 export const OFFICER_APPLICANTS: ApplicantDetail[] = [
   {
     id: "app1",
-    name: "Rahul Sen",
-    avatar: "RS",
+    name: "Aarav Sen",
+    avatar: "AS",
     age: 34,
     amount: 650000,
     purpose: "Business Expansion Loan",
@@ -95,7 +95,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-07-02 02:15 PM", action: "AI Prediction Completed", user: "Ensemble Models", notes: "Default probability estimated at 42%." }
     ],
     employmentType: "Business Owner",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "High"
   },
   {
@@ -243,7 +243,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-06-29 02:40 PM", action: "Application Intake", user: "System", notes: "Identity alert: Multi-device session login." }
     ],
     employmentType: "Salaried",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "High"
   },
   {
@@ -381,7 +381,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-07-08 02:00 PM", action: "Business Desk Routing", user: "System", notes: "Auto-routed to Commercial loan category." }
     ],
     employmentType: "Self-Employed",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "High"
   },
   {
@@ -521,7 +521,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-07-02 01:10 PM", action: "Auto-Reject Run Triggered", user: "System", notes: "Default score exceeds 80% limit." }
     ],
     employmentType: "Salaried",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "Low"
   },
   {
@@ -656,7 +656,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-06-20 02:00 PM", action: "Audit Complete", user: "System", notes: "Archived after disbursal verification." }
     ],
     employmentType: "Business Owner",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "Low"
   },
   {
@@ -793,7 +793,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-07-08 05:00 PM", action: "Risk Checked", user: "System", notes: "Low risk verified." }
     ],
     employmentType: "Self-Employed",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "Medium"
   },
   {
@@ -935,7 +935,7 @@ export const OFFICER_APPLICANTS: ApplicantDetail[] = [
       { date: "2026-07-09 11:20 AM", action: "Debt Desk Routing", user: "System", notes: "Assigned alert: Debt Restructuring request." }
     ],
     employmentType: "Salaried",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     priority: "Critical"
   },
   {

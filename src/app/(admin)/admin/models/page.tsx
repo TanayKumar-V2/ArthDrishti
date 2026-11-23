@@ -206,7 +206,7 @@ export default function AIModelRegistryPage() {
       id: `act-m-${Date.now()}`,
       type,
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 16),
-      operator: "Rahul Chahar (AI Engineer)",
+      operator: "MLOps Platform Engineer",
       detail
     };
     const updatedModel = {
@@ -482,7 +482,7 @@ export default function AIModelRegistryPage() {
       predictions: 0,
       tags: [...newModelData.tags],
       activities: [
-        { id: `act-cl-${Date.now()}`, type: "Model Registered", timestamp: new Date().toISOString().replace("T", " ").substring(0, 16), operator: "Rahul Chahar", detail: `Cloned model registered from baseline ${selectedModel.name}.` }
+        { id: `act-cl-${Date.now()}`, type: "Model Registered", timestamp: new Date().toISOString().replace("T", " ").substring(0, 16), operator: "MLOps Platform Engineer", detail: `Cloned model registered from baseline ${selectedModel.name}.` }
       ]
     };
 
@@ -549,7 +549,7 @@ export default function AIModelRegistryPage() {
         { id: `v-${newId}-1`, version: newModelData.version, status: targetStatus, health: "Healthy", accuracy: 0.900, latency: 20.0, predictions: 0, updatedDate: new Date().toISOString().split("T")[0], description: "Baseline model release." }
       ],
       activities: [
-        { id: `act-${newId}-1`, type: "Model Registered", timestamp: new Date().toISOString().replace("T", " ").substring(0, 16), operator: "Rahul Chahar", detail: `Baseline model provisioned on framework ${newModelData.framework}.` }
+        { id: `act-${newId}-1`, type: "Model Registered", timestamp: new Date().toISOString().replace("T", " ").substring(0, 16), operator: "MLOps Platform Engineer", detail: `Baseline model provisioned on framework ${newModelData.framework}.` }
       ]
     };
 

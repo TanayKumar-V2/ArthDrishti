@@ -135,17 +135,19 @@ export function XaiShowcase() {
                     const isActive = activeIdx === i;
                     
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={f.name}
                         onMouseEnter={() => setActiveIdx(i)}
                         onFocus={() => setActiveIdx(i)}
+                        onClick={() => setActiveIdx(i)}
+                        aria-pressed={isActive}
                         className={cn(
-                          "p-2.5 rounded-sm border cursor-pointer transition-all flex flex-col gap-1 select-none border-l-2",
+                          "p-2.5 rounded-sm border cursor-pointer transition-all flex flex-col gap-1 select-none text-left",
                           isActive
-                            ? cn("bg-surface-elevated border-border-strong shadow-xs", isPositive ? "border-l-critical" : "border-l-positive")
-                            : "bg-transparent border-transparent border-l-transparent hover:bg-surface-hover/50"
+                            ? "bg-surface-elevated border-border-strong shadow-xs"
+                            : "bg-transparent border-transparent hover:bg-surface-hover/50"
                         )}
-                        tabIndex={0}
                       >
                         <div className="flex items-center justify-between text-xs font-sans">
                           <span className="font-semibold text-foreground">{f.name}</span>
@@ -163,7 +165,7 @@ export function XaiShowcase() {
                             className={cn("h-full rounded-full", isPositive ? "bg-critical" : "bg-positive")} 
                           />
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

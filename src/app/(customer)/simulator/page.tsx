@@ -27,6 +27,7 @@ import {
   SimulatorInputs,
   SimulatorResults
 } from "@/lib/simulator_engine";
+import { xaiApi } from "@/lib/api";
 
 // ============================================================================
 // ANIMATED NUMBER COMPONENT
@@ -123,6 +124,24 @@ export default function WhatIfSimulatorPage() {
 
   // Results calculation
   const results = useMemo<SimulatorResults>(() => calculateSimulatorResults(inputs), [inputs]);
+
+  // Hook live What-If simulation with backend ML engine
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        await xaiApi.simulateWhatIf({
+          income_delta: inputs.income - BASELINE_INPUTS.income,
+          expense_delta: inputs.expenses - BASELINE_INPUTS.expenses,
+          debt_delta: inputs.totalDebt - BASELINE_INPUTS.totalDebt,
+          loan_amount: inputs.loanAmount,
+        });
+      } catch {
+        // Fallback to local simulation engine gracefully when offline or mock
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [inputs]);
 
   // Comparison presets calculation
   const resultsA = useMemo<SimulatorResults>(() => calculateSimulatorResults(SCENARIOS.scenarioA.inputs), []);

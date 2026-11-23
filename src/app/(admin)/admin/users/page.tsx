@@ -1567,7 +1567,7 @@ export default function PlatformUserManagementPage() {
                     required
                     value={inviteForm.fullName}
                     onChange={(e) => setInviteForm({ ...inviteForm, fullName: e.target.value })}
-                    placeholder="E.g. Officer Rahul"
+                    placeholder="E.g. Priya Sharma"
                     className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm"
                   />
                 </div>
@@ -1578,7 +1578,7 @@ export default function PlatformUserManagementPage() {
                     required
                     value={inviteForm.email}
                     onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                    placeholder="rahul.ro@arthdrishti.in"
+                    placeholder="officer@arthdrishti.in"
                     className="w-full h-10 px-3 bg-surface border border-border focus:border-primary rounded-xs outline-none text-foreground text-sm"
                   />
                 </div>

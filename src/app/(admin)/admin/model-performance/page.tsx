@@ -755,7 +755,7 @@ export default function AIModelPerformanceDashboard() {
                   {[
                     { timestamp: "2026-07-13 14:05:40", type: "Performance improved", detail: "Ensemble risk scoring XGBoost model retraining complete. Model accuracy climbed +0.4%.", op: "System Pipeline" },
                     { timestamp: "2026-07-13 10:20:00", type: "Latency spike warning", detail: "Container latency metrics exceeded 50ms during batch forecast calculation.", op: "Drift Monitor" },
-                    { timestamp: "2026-07-12 11:30:15", type: "Model Deployed", detail: "Promoted PyTorch deep autoencoder version weights to active Staging Canary Pods.", op: "Rahul Chahar" },
+                    { timestamp: "2026-07-12 11:30:15", type: "Model Deployed", detail: "Promoted PyTorch deep autoencoder version weights to active Staging Canary Pods.", op: "AI Operations Lead" },
                     { timestamp: "2026-07-10 09:00:00", type: "Rollback Completed", detail: "Rolled back transaction categorization engine weights to previous stable baseline version.", op: "Admin" }
                   ].map((evt, idx) => (
                     <div key={idx} className="relative space-y-1">

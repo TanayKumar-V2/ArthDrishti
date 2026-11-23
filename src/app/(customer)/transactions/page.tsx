@@ -48,6 +48,7 @@ import { Skeleton, EmptyState, ErrorState } from "@/components/ui/FeedbackState"
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { cn } from "@/lib/utils";
 import { mockExtendedTransactions, ExtendedTransaction } from "@/lib/transactions_data";
+import { transactionsApi } from "@/lib/api";
 
 // Helper to determine Risk Rating from Score
 function getRiskRating(score: number): "Low" | "Medium" | "High" | "Critical" {
@@ -118,12 +119,47 @@ export default function TransactionsExplorerPage() {
   const [editedNotes, setEditedNotes] = useState("");
   const [selectedCategoryInDrawer, setSelectedCategoryInDrawer] = useState("");
 
-  // Initial load skeleton simulation
+  // Fetch real transactions from backend on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    let isMounted = true;
+    transactionsApi
+      .list({ skip: 0, limit: 100 })
+      .then((data: any) => {
+        if (!isMounted) return;
+        const items = data?.items || (Array.isArray(data) ? data : null);
+        if (items && items.length > 0) {
+          const mapped: ExtendedTransaction[] = items.map((t: any) => {
+            const riskRating = t.is_flagged || (t.risk_score && t.risk_score > 70) ? "High" : (t.risk_score && t.risk_score > 30) ? "Medium" : "Low";
+            return {
+              id: String(t.id),
+              date: t.date || t.timestamp || new Date().toISOString(),
+              merchant: t.description || t.merchant || "Transaction Record",
+              amount: typeof t.amount === "number" ? Math.abs(t.amount) : 0,
+              type: (t.amount < 0 || t.type === "debit") ? "debit" : "credit",
+              category: (t.category || "utilities").toLowerCase(),
+              account: t.account_number || "Verified Account",
+              status: t.is_flagged ? "Flagged" : "Completed",
+              riskRating: riskRating as any,
+              riskScore: t.risk_score ?? (t.is_flagged ? 82 : 12),
+              isRecurring: Boolean(t.is_recurring),
+              merchantLogo: "Bank",
+              location: t.location || "Online",
+              paymentMethod: t.payment_method || "Direct Bank",
+              notes: t.notes || "",
+              tags: t.tags || [t.category || "Verified"],
+              impactOnScore: (t.amount < 0 || t.type === "debit") ? -1 : 1
+            };
+          });
+          setTransactions(mapped);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Brief loading trigger when filter settings change
@@ -1357,7 +1393,7 @@ export default function TransactionsExplorerPage() {
               <h4 className="text-[10px] font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-ai animate-pulse" /> Generative AI Advisor Analysis
               </h4>
-              <p className="p-3 bg-ai/5 border border-ai/20 rounded-sm italic leading-relaxed text-[11px] border-l-2 border-l-ai text-foreground-secondary">
+              <p className="p-3 bg-ai/5 border border-ai/20 rounded-sm italic leading-relaxed text-[11px] text-foreground-secondary">
                 “{selectedTransaction.aiExplanation}”
               </p>
             </div>

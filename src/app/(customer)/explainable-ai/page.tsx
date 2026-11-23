@@ -28,6 +28,9 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Overlays";
 import { cn } from "@/lib/utils";
 
+const getThemeColor = (token: string, fallback: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+
 // ============================================================================
 // DATA TYPES
 // ============================================================================
@@ -679,9 +682,14 @@ export default function ExplainableAIPage() {
       importanceMode === "global" ? d.globalImportance : d.localImportance
     );
 
-    const textColor = isDark ? "#94A3B8" : "#64748B"; // var(--foreground-secondary)
-    const gridLineColor = isDark ? "rgba(30, 41, 59, 0.4)" : "rgba(226, 232, 240, 0.6)";
-    const barColor = activeTab === "health" ? "#22c55e" : activeTab === "fraud" ? "#f97316" : "#4F7CFF";
+    const textColor = getThemeColor("--foreground-secondary", isDark ? "#94A3B8" : "#64748B");
+    const gridLineColor = getThemeColor("--border", isDark ? "#1E293B" : "#E2E8F0");
+    const barColor = activeTab === "health"
+      ? getThemeColor("--positive", isDark ? "#10B981" : "#047857")
+      : activeTab === "fraud"
+        ? getThemeColor("--warning", isDark ? "#F59E0B" : "#A16207")
+        : getThemeColor("--primary", isDark ? "#4F7CFF" : "#2856D8");
+    const foregroundColor = getThemeColor("--foreground", isDark ? "#F8FAFC" : "#0F172A");
 
     const option: echarts.EChartsOption = {
       grid: {
@@ -718,7 +726,7 @@ export default function ExplainableAIPage() {
             position: "right",
             formatter: "{c}%",
             fontSize: 9,
-            color: isDark ? "#F8FAFC" : "#0F172A",
+            color: foregroundColor,
             fontFamily: "var(--font-mono)"
           }
         }
@@ -763,8 +771,12 @@ export default function ExplainableAIPage() {
 
     const timeline = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
-    const isDarkTheme = isDark;
-    const primaryColor = activeTab === "health" ? "#22c55e" : "#4F7CFF";
+    const textColor = getThemeColor("--foreground-secondary", isDark ? "#94A3B8" : "#64748B");
+    const primaryColor = activeTab === "health"
+      ? getThemeColor("--positive", isDark ? "#10B981" : "#047857")
+      : getThemeColor("--primary", isDark ? "#4F7CFF" : "#2856D8");
+    const borderColor = getThemeColor("--border-strong", isDark ? "#334155" : "#CBD5E1");
+    const gridLineColor = getThemeColor("--border", isDark ? "#1E293B" : "#E2E8F0");
 
     const option: echarts.EChartsOption = {
       grid: {
@@ -776,13 +788,13 @@ export default function ExplainableAIPage() {
       xAxis: {
         type: "category",
         data: timeline,
-        axisLine: { lineStyle: { color: isDarkTheme ? "#334155" : "#CBD5E1" } },
-        axisLabel: { color: isDarkTheme ? "#94A3B8" : "#64748B", fontSize: 9 }
+        axisLine: { lineStyle: { color: borderColor } },
+        axisLabel: { color: textColor, fontSize: 9 }
       },
       yAxis: {
         type: "value",
-        splitLine: { lineStyle: { color: isDarkTheme ? "rgba(51, 65, 85, 0.4)" : "rgba(226, 232, 240, 0.6)" } },
-        axisLabel: { color: isDarkTheme ? "#94A3B8" : "#64748B", fontSize: 9 }
+        splitLine: { lineStyle: { color: gridLineColor } },
+        axisLabel: { color: textColor, fontSize: 9 }
       },
       series: [
         {
@@ -987,10 +999,10 @@ export default function ExplainableAIPage() {
                     fill="transparent"
                     stroke={
                       activeData.statusVariant === "critical"
-                        ? "#EF4444"
+                        ? "var(--critical)"
                         : activeData.statusVariant === "warning"
-                        ? "#F97316"
-                        : "#22C55E"
+                        ? "var(--warning)"
+                        : "var(--positive)"
                     }
                     strokeWidth="8"
                     strokeDasharray={251.2}
@@ -1345,7 +1357,7 @@ export default function ExplainableAIPage() {
             </div>
 
             <div className="flex-1 flex flex-col justify-start space-y-4">
-              <p className="text-xs text-foreground-secondary leading-relaxed font-sans border-l-2 border-primary pl-3 bg-surface-elevated py-2 rounded-r-xs">
+              <p className="text-xs text-foreground-secondary leading-relaxed font-sans px-3 bg-surface-elevated py-2 rounded-sm">
                 {activeData.plainEnglishSummary}
               </p>
 

@@ -64,7 +64,7 @@ export const mockScatterPoints: ScatterPointData[] = [
   { id: "p-yi4", x: 13.2, y: 42, label: "Young Investor #4", clusterId: "young_investor", clusterName: "Young Investors", isCurrentUser: false },
   { id: "p-yi5", x: 16.0, y: 48, label: "Young Investor #5", clusterId: "young_investor", clusterName: "Young Investors", isCurrentUser: false },
   { id: "p-yi6", x: 11.0, y: 39, label: "Young Investor #6", clusterId: "young_investor", clusterName: "Young Investors", isCurrentUser: false },
-  { id: "p-user", x: 14.0, y: 42, label: "You (Rahul)", clusterId: "young_investor", clusterName: "Young Investors", isCurrentUser: true },
+  { id: "p-user", x: 14.0, y: 42, label: "You (Your Profile)", clusterId: "young_investor", clusterName: "Young Investors", isCurrentUser: true },
 
   // Luxury Spenders
   { id: "p-lx1", x: 22.0, y: 18, label: "Luxury Spender #1", clusterId: "luxury", clusterName: "Luxury Spenders", isCurrentUser: false },

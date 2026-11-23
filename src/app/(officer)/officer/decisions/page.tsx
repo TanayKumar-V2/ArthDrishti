@@ -110,7 +110,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Low",
     fraudScore: 8,
     decision: "Approved",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-12",
     status: "Completed",
     aiRec: "Approve",
@@ -146,7 +146,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Medium",
     fraudScore: 32,
     decision: "Rejected",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-11",
     status: "Completed",
     aiRec: "Deny",
@@ -182,7 +182,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Low",
     fraudScore: 5,
     decision: "Approved",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-10",
     status: "Completed",
     aiRec: "Approve",
@@ -254,7 +254,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "High",
     fraudScore: 78,
     decision: "Rejected",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-08",
     status: "Completed",
     aiRec: "Deny",
@@ -387,7 +387,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
   {
     id: "DEC-2026-009",
     applicantId: "app9",
-    name: "Rahul Sen",
+    name: "Aarav Sen",
     avatar: "RS",
     age: 34,
     loanAmount: 650000,
@@ -398,7 +398,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Low",
     fraudScore: 18,
     decision: "Approved",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-04",
     status: "Completed",
     aiRec: "Manual Review",
@@ -506,7 +506,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Medium",
     fraudScore: 52,
     decision: "Rejected",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-01",
     status: "Completed",
     aiRec: "Deny",
@@ -614,7 +614,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Low",
     fraudScore: 12,
     decision: "Approved",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-06-28",
     status: "Completed",
     aiRec: "Approve",
@@ -783,8 +783,8 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
   {
     id: "DEC-2026-020",
     applicantId: "app20",
-    name: "Rahul Chahar",
-    avatar: "RC",
+    name: "Rohan Mehta",
+    avatar: "RM",
     age: 35,
     loanAmount: 2200000,
     purpose: "Commercial Purchase",
@@ -794,7 +794,7 @@ const INITIAL_DECISIONS: DecisionHistoryItem[] = [
     fraudRisk: "Low",
     fraudScore: 3,
     decision: "Approved",
-    officer: "Officer Rahul",
+    officer: "Officer Rohan",
     decisionDate: "2026-07-12",
     status: "Pending",
     aiRec: "Approve",
@@ -2050,7 +2050,7 @@ export default function DecisionsHistoryPage() {
                           className="w-full bg-surface border border-border rounded-sm py-1 px-2 font-semibold text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
                         >
                           <option value="All">All Officers</option>
-                          <option value="Officer Rahul">Officer Rahul</option>
+                          <option value="Officer Rohan">Officer Rohan</option>
                           <option value="Officer Priya">Officer Priya</option>
                           <option value="Officer Sanjay">Officer Sanjay</option>
                         </select>
@@ -2402,7 +2402,7 @@ export default function DecisionsHistoryPage() {
                   <CardContent className="p-4 space-y-2.5">
                     <div className="flex justify-between items-center text-[10px] text-foreground-secondary font-bold uppercase tracking-wider">
                       <span>Approval Rate</span>
-                      <TrendingUp className="h-3.5 w-3.5 text-positive animate-bounce" />
+                      <TrendingUp className="h-3.5 w-3.5 text-positive" />
                     </div>
                     <div>
                       <span className="text-xl font-mono font-extrabold text-foreground">65.2%</span>

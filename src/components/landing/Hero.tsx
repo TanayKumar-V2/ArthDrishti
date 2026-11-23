@@ -30,7 +30,7 @@ export function Hero({ onViewDemo }: HeroProps) {
             <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight text-foreground leading-[1.08]">
               Understand Risk. <br className="hidden sm:inline" />
               Detect Fraud. <br />
-              <span className="bg-gradient-to-r from-primary via-[#748CFF] to-ai bg-clip-text text-transparent">
+              <span className="text-primary">
                 {"Predict What's Next."}
               </span>
             </h1>
