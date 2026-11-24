@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import threading
 import time
 from typing import Any, Dict, List, Optional
@@ -32,6 +33,30 @@ def _strict_object_schema(properties: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _clean_and_parse_json(content: str) -> Dict[str, Any]:
+    if not content:
+        raise ValueError("Empty response content from Groq")
+    # Strip any chain-of-thought blocks if the model leaked them into content
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", content, flags=re.DOTALL).strip()
+    # Strip markdown code blocks
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    elif cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+    # Locate outermost JSON object
+    start_idx = cleaned.find("{")
+    end_idx = cleaned.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        cleaned = cleaned[start_idx : end_idx + 1]
+    result = json.loads(cleaned)
+    if not isinstance(result, dict):
+        raise ValueError("Expected a JSON object from Groq")
+    return result
+
+
 def complete_json(
     system_prompt: str,
     payload: Dict[str, Any],
@@ -39,33 +64,54 @@ def complete_json(
     response_schema: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     global _GROQ_NEXT_REQUEST_AT
-    api_key = settings.GROQ_API_KEY.strip() if settings.GROQ_API_KEY else ""
+    api_key = settings.GROQ_API_KEY.strip().strip("'\"") if settings.GROQ_API_KEY else ""
     if not api_key:
         raise HTTPException(status_code=503, detail="Groq analytics are unavailable because GROQ_API_KEY is not configured.")
 
-    url = f"{settings.GROQ_BASE_URL.rstrip('/')}/chat/completions"
-    body = {
-        "model": settings.GROQ_MODEL,
-        "temperature": 0.1,
-        "max_completion_tokens": max_tokens,
-        "response_format": (
-            {
-                "type": "json_schema",
-                "json_schema": {"name": "analytics_result", "strict": True, "schema": response_schema},
-            }
-            if response_schema
-            else {"type": "json_object"}
-        ),
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(payload, ensure_ascii=False, allow_nan=False)},
-        ],
-    }
+    url = f"{settings.GROQ_BASE_URL.strip().strip('\'\"').rstrip('/')}/chat/completions"
+    model = settings.GROQ_MODEL.strip().strip("'\"")
+    is_reasoning_model = any(m in model.lower() for m in ("gpt-oss", "deepseek-r1", "qwq"))
+
+    effective_max_tokens = max(max_tokens + 2048, 4096) if is_reasoning_model else max_tokens
+
+    def build_body(use_schema: bool) -> Dict[str, Any]:
+        req_body: Dict[str, Any] = {
+            "model": model,
+            "temperature": 0.1,
+            "max_completion_tokens": effective_max_tokens,
+            "response_format": (
+                {
+                    "type": "json_schema",
+                    "json_schema": {"name": "analytics_result", "strict": True, "schema": response_schema},
+                }
+                if use_schema and response_schema
+                else {"type": "json_object"}
+            ),
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        system_prompt
+                        if use_schema or not response_schema
+                        else f"{system_prompt}\nReturn ONLY a raw valid JSON object matching the requested schema. Do not include markdown formatting or commentary."
+                    ),
+                },
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False, allow_nan=False)},
+            ],
+        }
+        if is_reasoning_model:
+            req_body["reasoning_effort"] = "low"
+            req_body["reasoning_format"] = "parsed"
+        return req_body
+
+    body = build_body(use_schema=bool(response_schema))
+
     try:
         # Serialize calls from concurrent FastAPI requests and pace them below the
         # documented 30 RPM limit for the configured model on the Developer tier.
         with _GROQ_REQUEST_LOCK:
             response = None
+            schema_fallback_attempted = False
             for attempt in range(4):
                 wait_for_slot = _GROQ_NEXT_REQUEST_AT - time.monotonic()
                 if wait_for_slot > 0:
@@ -81,38 +127,54 @@ def complete_json(
                     response.raise_for_status()
                     break
                 except httpx.HTTPStatusError as exc:
-                    if response.status_code != 429:
-                        raise
-                    if attempt == 3:
-                        raise HTTPException(
-                            status_code=429,
-                            detail="Groq rate limit is still active after retries. Wait for the provider limit window to reset, then retry.",
-                        ) from exc
-                    retry_after = response.headers.get("retry-after")
-                    try:
-                        delay = float(retry_after) if retry_after else float(2 ** (attempt + 1))
-                    except ValueError:
-                        delay = float(2 ** (attempt + 1))
-                    if delay > 60:
-                        raise HTTPException(
-                            status_code=429,
-                            detail="Groq has asked the service to wait more than a minute before retrying. Check the Groq project rate limits, then retry.",
-                        ) from exc
-                    logger.warning(
-                        "Groq rate limited request (attempt %s/4); retrying after %.1f seconds. Remaining tokens=%s, reset=%s",
-                        attempt + 1,
-                        delay,
-                        response.headers.get("x-ratelimit-remaining-tokens", "unknown"),
-                        response.headers.get("x-ratelimit-reset-tokens", "unknown"),
-                    )
-                    time.sleep(max(delay, 0.5))
+                    if response.status_code == 429:
+                        if attempt == 3:
+                            raise HTTPException(
+                                status_code=429,
+                                detail="Groq rate limit is still active after retries. Wait for the provider limit window to reset, then retry.",
+                            ) from exc
+                        retry_after = response.headers.get("retry-after")
+                        try:
+                            delay = float(retry_after) if retry_after else float(2 ** (attempt + 1))
+                        except ValueError:
+                            delay = float(2 ** (attempt + 1))
+                        if delay > 60:
+                            raise HTTPException(
+                                status_code=429,
+                                detail="Groq has asked the service to wait more than a minute before retrying. Check the Groq project rate limits, then retry.",
+                            ) from exc
+                        logger.warning(
+                            "Groq rate limited request (attempt %s/4); retrying after %.1f seconds.",
+                            attempt + 1,
+                            delay,
+                        )
+                        time.sleep(max(delay, 0.5))
+                        continue
+
+                    # If json_schema is rejected due to constrained decoding / JSON validation failure (400),
+                    # fallback immediately to json_object mode
+                    if (
+                        response.status_code == 400
+                        and response_schema
+                        and not schema_fallback_attempted
+                    ):
+                        try:
+                            err_msg = str(response.json().get("error", {}).get("message", "")).lower()
+                        except Exception:
+                            err_msg = response.text.lower()
+                        if any(term in err_msg for term in ("json", "schema", "generate", "validate", "failed_generation")):
+                            logger.warning("Groq rejected json_schema (%s); retrying in json_object mode.", err_msg[:200])
+                            schema_fallback_attempted = True
+                            body = build_body(use_schema=False)
+                            continue
+
+                    raise
+
             if response is None:
                 raise RuntimeError("Groq request was not attempted")
-        content = response.json()["choices"][0]["message"]["content"]
-        result = json.loads(content)
-        if not isinstance(result, dict):
-            raise ValueError("Expected a JSON object")
-        return result
+
+        content = response.json()["choices"][0]["message"].get("content") or ""
+        return _clean_and_parse_json(content)
     except HTTPException:
         raise
     except httpx.HTTPStatusError as exc:
@@ -256,7 +318,7 @@ def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str
                 + ", ".join(TRANSACTION_CATEGORIES)
                 + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
                 {"transactions": batch},
-                max_tokens=max(700, len(batch) * 55),
+                max_tokens=max(1200, len(batch) * 80),
                 response_schema=_strict_object_schema({
                     "transactions": {
                         "type": "array",
@@ -298,21 +360,28 @@ def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str
             return
 
         # Some models omit rows in larger JSON responses. Retry only unresolved rows
-        # in smaller calls, keeping the provider as the sole category decision maker.
+        # in smaller calls, keeping the provider as the primary category decision maker.
         retry_rows = [item for item in batch if str(item["id"]) in unresolved]
         if len(retry_rows) == len(batch) == 1:
-            raise HTTPException(
-                status_code=502,
-                detail="Groq could not categorize a transaction after retrying it individually. Please retry the upload.",
-            )
-        for offset in range(0, len(retry_rows), max(1, min(10, len(retry_rows) // 2 or 1))):
-            categorize_batch(retry_rows[offset:offset + max(1, min(10, len(retry_rows) // 2 or 1))])
+            item = retry_rows[0]
+            ttype = str(item.get("transaction_type", "debit")).lower()
+            categories[str(item["id"])] = "Other Income" if ttype == "credit" else "Other Expenses"
+            return
 
-    for offset in range(0, len(transactions), 30):
-        categorize_batch(transactions[offset:offset + 30])
+        for offset in range(0, len(retry_rows), max(1, min(5, len(retry_rows) // 2 or 1))):
+            categorize_batch(retry_rows[offset:offset + max(1, min(5, len(retry_rows) // 2 or 1))])
 
-    if any(str(item["id"]) not in categories for item in transactions):
-        raise HTTPException(status_code=502, detail="Groq did not categorize every transaction after retrying incomplete results.")
+    # Process in compact batches of 10 for fast, reliable JSON generation and schema compliance
+    for offset in range(0, len(transactions), 10):
+        categorize_batch(transactions[offset:offset + 10])
+
+    # Ensure every transaction has a category; fall back to Other Income/Expenses if any was skipped
+    for item in transactions:
+        tid = str(item["id"])
+        if tid not in categories:
+            ttype = str(item.get("transaction_type", "debit")).lower()
+            categories[tid] = "Other Income" if ttype == "credit" else "Other Expenses"
+
     return categories
 
 
