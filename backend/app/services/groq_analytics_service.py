@@ -248,24 +248,38 @@ def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str
     def categorize_batch(batch: List[Dict[str, Any]]) -> None:
         if not batch:
             return
-        result = complete_json(
-            "Classify each bank transaction from its description and debit/credit direction. Return a JSON object "
-            "with a transactions array. Return exactly one object for every input transaction, preserving each id "
-            "exactly as supplied. Each object has only id and category. Categories must be selected from: "
-            + ", ".join(TRANSACTION_CATEGORIES)
-            + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
-            {"transactions": batch},
-            max_tokens=max(700, len(batch) * 55),
-            response_schema=_strict_object_schema({
-                "transactions": {
-                    "type": "array",
-                    "items": _strict_object_schema({
-                        "id": {"type": "string", "enum": [str(item["id"]) for item in batch]},
-                        "category": {"type": "string", "enum": TRANSACTION_CATEGORIES},
-                    }),
-                },
-            }),
-        )
+        try:
+            result = complete_json(
+                "Classify each bank transaction from its description and debit/credit direction. Return a JSON object "
+                "with a transactions array. Return exactly one object for every input transaction, preserving each id "
+                "exactly as supplied. Each object has only id and category. Categories must be selected from: "
+                + ", ".join(TRANSACTION_CATEGORIES)
+                + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
+                {"transactions": batch},
+                max_tokens=max(700, len(batch) * 55),
+                response_schema=_strict_object_schema({
+                    "transactions": {
+                        "type": "array",
+                        "items": _strict_object_schema({
+                            "id": {"type": "string", "enum": [str(item["id"]) for item in batch]},
+                            "category": {"type": "string", "enum": TRANSACTION_CATEGORIES},
+                        }),
+                    },
+                }),
+            )
+        except HTTPException as exc:
+            is_groq_validation_error = (
+                exc.status_code == 502
+                and isinstance(exc.detail, str)
+                and exc.detail.startswith("Groq rejected this analytics request:")
+            )
+            if is_groq_validation_error and len(batch) > 1:
+                midpoint = len(batch) // 2
+                logger.warning("Groq rejected a transaction-category batch; retrying as smaller batches (size=%s).", len(batch))
+                categorize_batch(batch[:midpoint])
+                categorize_batch(batch[midpoint:])
+                return
+            raise
         rows = result.get("transactions")
         if not isinstance(rows, list):
             raise HTTPException(status_code=502, detail="Groq returned invalid transaction categories.")
