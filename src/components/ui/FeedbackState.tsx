@@ -16,7 +16,7 @@ export function Skeleton({ className, variant = "rectangle", ...props }: Skeleto
   return (
     <div
       className={cn(
-        "animate-pulse bg-border/50",
+        "skeleton-shimmer bg-border/60",
         variant === "circle" ? "rounded-full" : "rounded-sm",
         className
       )}
@@ -43,11 +43,30 @@ interface LoadingStateProps extends React.HTMLAttributes<HTMLDivElement> {
   message?: string;
 }
 
-export function LoadingState({ message = "Retrieving secure financial records...", className, ...props }: LoadingStateProps) {
+export function LoadingState({ message = "Loading data...", className, ...props }: LoadingStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center p-8 text-center min-h-[200px]", className)} {...props}>
-      <Spinner className="mb-3 h-8 w-8" />
-      <p className="text-sm text-foreground-secondary font-sans font-medium">{message}</p>
+    <div className={cn("flex flex-col items-center justify-center p-8 text-center min-h-[220px] gap-4 select-none", className)} {...props}>
+      <div className="relative flex items-center justify-center">
+        <span className="absolute h-12 w-12 rounded-full bg-primary/10 animate-ping [animation-duration:2.2s]" />
+        <svg
+          className="relative h-9 w-9 text-primary fill-none"
+          viewBox="0 0 24 24"
+          strokeWidth="1.8"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="2.2" className="fill-primary text-primary animate-pulse" />
+          <circle cx="12" cy="12" r="9" className="opacity-15" strokeWidth="1.2" />
+          <path d="M5.5 12a6.5 6.5 0 0 1 11.4-4.2" className="animate-orbit" strokeWidth="2.1" />
+        </svg>
+      </div>
+      <div className="h-[2.5px] w-24 overflow-hidden rounded-full bg-border/80">
+        <div className="h-full w-1/2 rounded-full bg-primary animate-progress-indeterminate" />
+      </div>
+      {message && (
+        <p className="text-xs text-foreground-secondary font-sans font-medium tracking-wide">{message}</p>
+      )}
     </div>
   );
 }

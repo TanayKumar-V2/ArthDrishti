@@ -7,6 +7,8 @@ import { CheckCircle2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
+import { WorkspaceSkeleton } from "@/components/ui/PageLoader";
 import { recommendationsApi } from "@/lib/api";
 import { useUploadedAnalysis } from "@/hooks/useUploadedAnalysis";
 
@@ -49,7 +51,7 @@ export default function RecommendationsCenterPage() {
     }
   };
 
-  if (uploaded.isLoading) return <PageContainer><p className="py-12 text-sm text-foreground-secondary">Loading uploaded transaction data…</p></PageContainer>;
+  if (uploaded.isLoading) return <WorkspaceSkeleton />;
   if (uploaded.error) return <PageContainer><div role="alert" className="mt-6 rounded-2xl border border-critical/20 bg-critical/5 p-5 text-[13px] text-critical">{uploaded.error}</div></PageContainer>;
   if (!uploaded.data) return <PageContainer><div className="mx-auto max-w-xl py-20 text-center"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">AI tools</p><h1 className="mt-4 text-4xl font-semibold text-foreground">Recommendations for your profile</h1><p className="mt-4 text-[15px] leading-7 text-foreground-secondary">Upload a statement to generate suggestions from your transaction metrics.</p><Button variant="primary" className="mt-7 rounded-full px-6" onClick={() => router.push("/onboarding/upload")}>Upload a statement</Button></div></PageContainer>;
 
@@ -63,7 +65,7 @@ export default function RecommendationsCenterPage() {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-foreground-muted"><span>{uploaded.data.summary.transaction_count.toLocaleString()} transactions analyzed</span><span className="text-border-strong">·</span><span>{items.length} active {items.length === 1 ? "suggestion" : "suggestions"}</span></div>
       {error && <div role="alert" className="rounded-2xl border border-critical/20 bg-critical/5 p-5 text-[13px] text-critical">{error}</div>}
 
-      {loading && !items.length ? <div className="grid min-h-64 place-items-center text-[13px] text-foreground-secondary">Preparing recommendations…</div> : items.length ? <Bezel>
+      {loading && !items.length ? <LoadingState message="Preparing recommendations..." /> : items.length ? <Bezel>
         <div className="divide-y divide-border/70 px-5 sm:px-7">
           {items.map((item) => <article key={item.id} className="grid gap-4 py-6 first:pt-7 last:pb-7 lg:grid-cols-[minmax(14rem,0.72fr)_1.28fr_auto] lg:items-start lg:gap-8">
             <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">{item.category} <span className="px-1 text-border-strong">·</span> {item.impact_level} priority</p><h2 className="mt-2 text-[16px] font-semibold leading-snug text-foreground">{item.title}</h2></div>

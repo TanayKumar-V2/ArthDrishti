@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Brain } from "lucide-react";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { WorkspaceSkeleton } from "@/components/ui/PageLoader";
 import { useUploadedAnalysis } from "@/hooks/useUploadedAnalysis";
 import { xaiApi } from "@/lib/api";
 
@@ -49,10 +50,10 @@ export default function ExplainableAIPage() {
     return () => { active = false; };
   }, [uploaded.data]);
 
-  if (uploaded.isLoading) return <PageContainer><p className="py-12 text-sm text-foreground-secondary">Loading uploaded transaction data…</p></PageContainer>;
+  if (uploaded.isLoading) return <WorkspaceSkeleton />;
   if (uploaded.error) return <PageContainer><div role="alert" className="mt-6 rounded-2xl border border-critical/20 bg-critical/5 p-5 text-[13px] text-critical">{uploaded.error}</div></PageContainer>;
   if (!uploaded.data) return <PageContainer><EmptyState onUpload={() => router.push("/onboarding/upload")} /></PageContainer>;
-  if (loading) return <PageContainer><p className="py-12 text-sm text-foreground-secondary">Preparing your explanation…</p></PageContainer>;
+  if (loading) return <WorkspaceSkeleton />;
   if (error) return <PageContainer><div role="alert" className="mt-6 rounded-2xl border border-critical/20 bg-critical/5 p-5 text-[13px] text-critical">{error}</div></PageContainer>;
 
   const score = explanation?.default_probability ?? uploaded.data.risk?.default_probability;

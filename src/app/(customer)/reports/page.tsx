@@ -6,6 +6,7 @@ import { Download, FileText, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { reportsApi } from "@/lib/api";
 
@@ -127,7 +128,7 @@ export default function ReportsCenterPage() {
 
         <Card>
           <CardContent className="p-0">
-            {isLoading ? <p className="p-6 text-sm text-foreground-secondary">Loading saved reports…</p> : filteredReports.length ? (
+            {isLoading ? <LoadingState message="Loading saved reports..." /> : filteredReports.length ? (
               <div className="divide-y divide-border/70">
                 {filteredReports.map((report) => (
                   <div key={report.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">

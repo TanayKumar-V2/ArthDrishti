@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { MotionConfig } from "framer-motion";
+import { NavigationProgress } from "./NavigationProgress";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
@@ -28,6 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <MotionConfig reducedMotion="user">
+          <React.Suspense fallback={null}>
+            <NavigationProgress />
+          </React.Suspense>
           {children}
           <Toaster position="top-right" closeButton richColors />
         </MotionConfig>

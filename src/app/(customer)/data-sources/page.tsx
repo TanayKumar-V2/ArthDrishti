@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Database, FileUp, RefreshCw, Trash2 } from "lucide-react";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { documentsApi, type UploadedDocument } from "@/lib/api";
 
@@ -124,7 +125,7 @@ export default function DataSourcesPage() {
             </div>
           )}
 
-          {loading ? <p className="text-sm text-foreground-secondary">Loading document records…</p> : documents.length ? (
+          {loading ? <LoadingState message="Loading document records..." /> : documents.length ? (
             <div className="divide-y divide-border/70">
               {documents.map((document) => {
                 const id = document.id || document.document_id || "";

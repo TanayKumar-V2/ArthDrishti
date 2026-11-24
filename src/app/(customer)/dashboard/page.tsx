@@ -6,6 +6,7 @@ import type { ComponentType, ReactNode } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, HeartPulse, ShieldCheck } from "lucide-react";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { WorkspaceSkeleton } from "@/components/ui/PageLoader";
 import { useUploadedAnalysis } from "@/hooks/useUploadedAnalysis";
 
 const analysisLinks = [
@@ -21,7 +22,7 @@ export default function CustomerCommandCenter() {
   const router = useRouter();
   const { data, isLoading, error, refresh } = useUploadedAnalysis();
 
-  if (isLoading) return <PageContainer><p className="py-12 text-sm text-foreground-secondary">Loading your uploaded financial profile…</p></PageContainer>;
+  if (isLoading) return <WorkspaceSkeleton />;
   if (error) return <PageContainer><div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-critical/20 bg-critical/5 p-5 text-sm text-critical">{error}<Button variant="outline" onClick={() => void refresh()}>Retry</Button></div></PageContainer>;
   if (!data) return <PageContainer><div className="mx-auto max-w-xl py-20 text-center"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your workspace</p><h1 className="mt-4 text-4xl font-semibold text-foreground">Your financial overview</h1><p className="mt-4 text-[15px] leading-7 text-foreground-secondary">Upload a bank statement to populate this dashboard with your transactions and analysis.</p><Button variant="primary" className="group mt-7 rounded-full px-5" onClick={() => router.push("/onboarding/upload")}>Upload a statement<span className="ml-1 grid h-7 w-7 place-items-center rounded-full bg-primary-foreground/15"><ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" /></span></Button></div></PageContainer>;
 

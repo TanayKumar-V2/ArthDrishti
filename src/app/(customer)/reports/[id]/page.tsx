@@ -6,6 +6,7 @@ import { ArrowLeft, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent } from "@/components/ui/Card";
 import { reportsApi } from "@/lib/api";
 
@@ -53,7 +54,7 @@ export default function ReportViewerPage() {
   return (
     <PageContainer className="pb-20">
       <Button variant="outline" onClick={() => router.push("/reports")}><ArrowLeft className="mr-2 h-4 w-4" />All reports</Button>
-      {loading ? <p className="mt-8 text-sm text-foreground-secondary">Loading saved report…</p> : error ? (
+      {loading ? <LoadingState message="Loading saved report..." /> : error ? (
         <div role="alert" className="mt-6 rounded-md border border-critical/30 bg-critical/5 p-4 text-sm text-critical">{error}</div>
       ) : !report ? (
         <Card className="mt-6"><CardContent className="py-12 text-center">

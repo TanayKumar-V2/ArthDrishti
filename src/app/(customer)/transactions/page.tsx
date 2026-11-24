@@ -5,6 +5,7 @@ import { Download, Search, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent } from "@/components/ui/Card";
 import { transactionsApi } from "@/lib/api";
 
@@ -86,7 +87,7 @@ export default function TransactionsExplorerPage() {
         <tbody className="divide-y divide-border/70">{filtered.map((transaction) => <tr key={transaction.id} className="hover:bg-surface-elevated/30"><td className="whitespace-nowrap px-4 py-3 text-xs text-foreground-secondary">{new Date(transaction.transaction_date).toLocaleDateString("en-IN")}</td><td className="max-w-[280px] truncate px-4 py-3 font-medium text-foreground" title={transaction.description}>{transaction.description || "(No description)"}<span className="mt-1 block truncate font-mono text-[10px] text-foreground-muted">{transaction.id}</span></td><td className={`px-4 py-3 text-xs font-semibold ${transaction.transaction_type === "credit" ? "text-positive" : "text-foreground-secondary"}`}>{transaction.transaction_type}</td><td className="px-4 py-3"><select aria-label={`Category for ${transaction.description}`} value={transaction.category} onChange={(event) => void updateCategory(transaction, event.target.value)} className="max-w-40 rounded-sm border border-border bg-surface px-2 py-1 text-xs text-foreground">{categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}</select></td><td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground">₹{Math.abs(Number(transaction.amount) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</td><td className="px-4 py-3">{transaction.is_flagged ? <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-critical"><ShieldAlert className="h-3.5 w-3.5"/>Flagged</span> : <span className="text-xs text-foreground-muted">No flag</span>}</td></tr>)}</tbody>
       </table>
       {!loading && !error && !filtered.length && <p className="p-10 text-center text-sm text-foreground-secondary">{transactions.length ? "No uploaded transactions match these filters." : "No transactions have been uploaded to this account."}</p>}
-      {loading && <p className="p-10 text-center text-sm text-foreground-secondary">Loading transactions…</p>}
+      {loading && <LoadingState message="Loading transactions..." />}
     </div>
     <p className="mt-3 text-xs text-foreground-muted">Showing {filtered.length.toLocaleString()} of {transactionCount.toLocaleString()} uploaded records. Category edits are saved to the backend. “No flag” means the record is not currently marked by the fraud scan; it is not a guarantee of safety.</p>
   </PageContainer>;

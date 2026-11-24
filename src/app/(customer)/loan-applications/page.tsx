@@ -6,6 +6,7 @@ import { ArrowUpRight, CheckCircle2, Clock3, FileText, HandCoins, XCircle } from
 import { toast } from "sonner";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { loansApi, type LoanRecord } from "@/lib/api";
 
@@ -87,7 +88,7 @@ export default function CustomerLoanApplicationsPage() {
           <h2 id="my-applications-heading" className="mb-3 text-lg font-semibold text-foreground">Your applications</h2>
           <Card>
             <CardContent className="p-0">
-              {loading ? <p className="p-5 text-sm text-foreground-secondary">Loading applications…</p> : loans.length ? (
+              {loading ? <LoadingState message="Loading applications..." /> : loans.length ? (
                 <ul className="divide-y divide-border/70">
                   {loans.map((loan) => <li key={loan.id} className="p-4">
                     <div className="flex items-start justify-between gap-3">

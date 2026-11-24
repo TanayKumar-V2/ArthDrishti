@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, ClipboardList, RefreshCw, ShieldCheck } from "lucide-react";
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { LoadingState } from "@/components/ui/FeedbackState";
 import { Card, CardContent } from "@/components/ui/Card";
 import { loanOfficerApi, type LoanReviewRecord } from "@/lib/api";
 
@@ -68,7 +69,7 @@ export default function LoanOfficerCommandCenterPage() {
 
         <Card>
           <CardContent className="p-0">
-            {loading ? <p className="p-6 text-sm text-foreground-secondary">Loading live application queue...</p> : recent.length ? (
+            {loading ? <LoadingState message="Loading application queue..." /> : recent.length ? (
               <div className="divide-y divide-border/70">
                 {recent.map((application) => <div key={application.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                   <div className="min-w-0">

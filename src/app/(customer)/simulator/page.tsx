@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
+import { WorkspaceSkeleton } from "@/components/ui/PageLoader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { transactionsApi, xaiApi } from "@/lib/api";
 
@@ -71,7 +72,7 @@ export default function WhatIfSimulatorPage() {
     setError(null);
   };
 
-  if (loading) return <PageContainer><p className="py-12 text-center text-sm text-foreground-secondary">Loading your uploaded financial metrics…</p></PageContainer>;
+  if (loading) return <WorkspaceSkeleton />;
   if (!features) return <PageContainer><div className="mx-auto max-w-xl py-16 text-center"><h1 className="text-2xl font-heading font-bold text-foreground">No statement analytics available</h1><p className="mt-3 text-sm text-foreground-secondary">Upload and process a bank statement before simulating changes to your financial profile.</p>{error && <p className="mt-3 text-sm text-critical">{error}</p>}</div></PageContainer>;
 
   return (
