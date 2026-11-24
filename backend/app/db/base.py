@@ -8,6 +8,7 @@ from app.models import (
     Transaction,
     Loan,
     LoanRepayment,
+    LoanAnalysisSnapshot,
     RiskScore,
     FraudAlert,
     Forecast,

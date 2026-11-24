@@ -25,7 +25,8 @@ def apply_for_loan(
         amount=payload.amount,
         purpose=payload.purpose,
         term_months=payload.term_months,
-        interest_rate=payload.interest_rate or 10.5
+        interest_rate=payload.interest_rate or 10.5,
+        document_ids=payload.document_ids,
     )
 
 

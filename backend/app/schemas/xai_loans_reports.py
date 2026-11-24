@@ -74,6 +74,7 @@ class LoanApplicationCreate(BaseModel):
     purpose: str = Field(..., min_length=3)
     term_months: int = Field(..., ge=1, le=120)
     interest_rate: Optional[float] = 10.5
+    document_ids: Optional[List[str]] = None
 
 
 class RepaymentScheduleItem(BaseModel):
@@ -98,6 +99,33 @@ class LoanOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class LoanReviewOut(LoanOut):
+    applicant_name: str
+    applicant_email: str
+    financial_health_score: Optional[float] = None
+    default_probability: Optional[float] = None
+
+
+class LoanApplicantAnalysisOut(BaseModel):
+    application: LoanReviewOut
+    credit_risk: Dict[str, Any]
+    transaction_count: int
+    period_start: Optional[datetime] = None
+    period_end: Optional[datetime] = None
+    source_document_ids: List[str] = Field(default_factory=list)
+    source_document_names: List[str] = Field(default_factory=list)
+    features: Dict[str, Any] = Field(default_factory=dict)
+    spending_breakdown: List[Dict[str, Any]] = Field(default_factory=list)
+    monthly_cash_flow: List[Dict[str, Any]] = Field(default_factory=list)
+    fraud_summary: Dict[str, Any] = Field(default_factory=dict)
+    fraud_alerts: List[Dict[str, Any]] = Field(default_factory=list)
+    segment: Optional[Dict[str, Any]] = None
+    xai_contributions: List[Dict[str, Any]] = Field(default_factory=list)
+    recommendations: List[Dict[str, Any]] = Field(default_factory=list)
+    analysis_basis: str
+    generated_at: datetime
+
+
 class LoanDecisionRequest(BaseModel):
     decision: str = Field(..., description="approved | rejected")
     officer_notes: Optional[str] = None
@@ -118,6 +146,7 @@ class RecommendationOut(BaseModel):
 
 class ReportGenerateRequest(BaseModel):
     report_type: str = "comprehensive"  # credit_risk, financial_health, comprehensive
+    document_ids: Optional[List[str]] = None
 
 
 class ReportOut(BaseModel):

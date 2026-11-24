@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric, Integer, Index
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric, Integer, Index, JSON
 from sqlalchemy.orm import relationship
 from app.db.session import Base
 
@@ -76,3 +76,29 @@ class LoanRepayment(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     loan = relationship("Loan", back_populates="repayments")
+
+
+class LoanAnalysisSnapshot(Base):
+    __tablename__ = "loan_analysis_snapshots"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    loan_id = Column(String(36), ForeignKey("loans.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    source_document_ids = Column(JSON, nullable=False, default=list)
+    source_document_names = Column(JSON, nullable=False, default=list)
+    transaction_count = Column(Integer, nullable=False, default=0)
+    period_start = Column(DateTime, nullable=True)
+    period_end = Column(DateTime, nullable=True)
+    financial_health_score = Column(Numeric(5, 2), nullable=False)
+    default_probability = Column(Numeric(5, 4), nullable=False)
+    risk_band = Column(String(50), nullable=False)
+    model_version = Column(String(100), nullable=False)
+    features = Column(JSON, nullable=False, default=dict)
+    spending_breakdown = Column(JSON, nullable=False, default=list)
+    monthly_cash_flow = Column(JSON, nullable=False, default=list)
+    fraud_summary = Column(JSON, nullable=False, default=dict)
+    fraud_alerts = Column(JSON, nullable=False, default=list)
+    segment = Column(JSON, nullable=True)
+    xai_contributions = Column(JSON, nullable=False, default=list)
+    recommendations = Column(JSON, nullable=False, default=list)
+    analysis_basis = Column(String(40), nullable=False, default="application_time")
+    generated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

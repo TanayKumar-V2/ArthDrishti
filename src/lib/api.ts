@@ -297,17 +297,95 @@ export const forecastApi = {
  * Loan Application & Underwriting APIs
  */
 export const loansApi = {
-  async apply(data: { amount: number; purpose: string; term_months: number; interest_rate?: number }): Promise<any> {
-    return apiRequest("/loans/apply", {
+  async apply(data: { amount: number; purpose: string; term_months: number; interest_rate?: number }): Promise<LoanRecord> {
+    const documentIds = activeDocumentIds();
+    return apiRequest<LoanRecord>("/loans/apply", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, ...(documentIds ? { document_ids: documentIds } : {}) }),
     });
   },
-  async listLoans(): Promise<any[]> {
-    return apiRequest("/loans");
+  async listLoans(): Promise<LoanRecord[]> {
+    return apiRequest<LoanRecord[]>("/loans");
   },
   async getRepaymentSchedule(loanId: string): Promise<any[]> {
     return apiRequest(`/loans/${loanId}/repayment-schedule`);
+  },
+};
+
+export interface LoanRecord {
+  id: string;
+  user_id: string;
+  amount: number;
+  purpose: string;
+  term_months: number;
+  interest_rate: number;
+  status: string;
+  risk_tier: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoanReviewRecord extends LoanRecord {
+  applicant_name: string;
+  applicant_email: string;
+  financial_health_score: number | null;
+  default_probability: number | null;
+}
+
+export interface LoanApplicantAnalysis {
+  application: LoanReviewRecord;
+  credit_risk: {
+    financial_health_score: number;
+    default_probability: number;
+    risk_band: string;
+    model_version: string;
+  };
+  transaction_count: number;
+  period_start: string | null;
+  period_end: string | null;
+  source_document_ids: string[];
+  source_document_names: string[];
+  features: Record<string, number | null>;
+  spending_breakdown: Array<{ category: string; amount: number; percentage: number; count: number }>;
+  monthly_cash_flow: Array<{ month: string; income: number; expenses: number; net_savings: number }>;
+  fraud_summary: {
+    scan_status: "completed" | "failed" | "not_run";
+    saved_alert_count: number;
+    flagged_transaction_count: number;
+    risk_level_counts: Record<string, number>;
+    basis_note: string;
+  };
+  fraud_alerts: Array<{
+    transaction_id: string;
+    transaction_date: string;
+    description: string;
+    category: string;
+    amount: number;
+    risk_level: string;
+    anomaly_score: number;
+    reasons: string[];
+    status: string;
+  }>;
+  segment: { cluster_id: string; segment_name: string; characteristics: Record<string, unknown> } | null;
+  xai_contributions: Array<{ feature: string; contribution: number; description: string }>;
+  recommendations: Array<{ title: string; reason: string }>;
+  analysis_basis: "application_time" | "review_time_backfill";
+  generated_at: string;
+}
+
+export const loanOfficerApi = {
+  async listApplications(status?: string): Promise<LoanReviewRecord[]> {
+    const query = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
+    return apiRequest<LoanReviewRecord[]>(`/admin/loans${query}`);
+  },
+  async getApplicantAnalysis(applicationId: string): Promise<LoanApplicantAnalysis> {
+    return apiRequest<LoanApplicantAnalysis>(`/admin/loans/${encodeURIComponent(applicationId)}/analysis`);
+  },
+  async decide(applicationId: string, decision: "approved" | "rejected", officer_notes?: string): Promise<LoanRecord> {
+    return apiRequest<LoanRecord>(`/admin/loans/${encodeURIComponent(applicationId)}/decision`, {
+      method: "PATCH",
+      body: JSON.stringify({ decision, officer_notes }),
+    });
   },
 };
 
@@ -316,13 +394,35 @@ export const loansApi = {
  */
 export const reportsApi = {
   async generate(report_type: string = "comprehensive"): Promise<any> {
+    const documentIds = activeDocumentIds();
     return apiRequest("/reports/generate", {
       method: "POST",
-      body: JSON.stringify({ report_type }),
+      body: JSON.stringify({ report_type, ...(documentIds ? { document_ids: documentIds } : {}) }),
     });
   },
-  async listReports(): Promise<any[]> {
+  async listReports(): Promise<Array<{
+    id: string;
+    user_id: string;
+    report_type: string;
+    file_path: string;
+    status: string;
+    created_at: string;
+  }>> {
     return apiRequest("/reports");
+  },
+  async download(reportId: string): Promise<Blob> {
+    const url = `${API_BASE_URL}/reports/${encodeURIComponent(reportId)}/download`;
+    const token = getAccessToken();
+    let response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (response.status === 401 && getRefreshToken()) {
+      const refreshed = await refreshAuthToken();
+      response = await fetch(url, { headers: { Authorization: `Bearer ${refreshed.access_token}` } });
+    }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new ApiError(response.status, errorData.detail || "Could not download this report.", errorData);
+    }
+    return response.blob();
   },
   getDownloadUrl(reportId: string): string {
     return `${API_BASE_URL}/reports/${reportId}/download`;

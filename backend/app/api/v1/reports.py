@@ -21,7 +21,7 @@ def trigger_report_generation(
     current_user: User = Depends(get_current_user)
 ):
     """Generate executive risk and financial health PDF report."""
-    return generate_pdf_report(db, current_user.id, payload.report_type)
+    return generate_pdf_report(db, current_user.id, payload.report_type, payload.document_ids)
 
 
 @router.get("", response_model=List[ReportOut])

@@ -1,5 +1,5 @@
 from app.models.user import User, RefreshToken, CustomerProfile
-from app.models.financial import Document, Transaction, Loan, LoanRepayment
+from app.models.financial import Document, Transaction, Loan, LoanRepayment, LoanAnalysisSnapshot
 from app.models.ml import RiskScore, FraudAlert, Forecast, CustomerSegment, Explanation
 from app.models.system import Recommendation, Report, AuditLog, ModelRegistry
 
@@ -11,6 +11,7 @@ __all__ = [
     "Transaction",
     "Loan",
     "LoanRepayment",
+    "LoanAnalysisSnapshot",
     "RiskScore",
     "FraudAlert",
     "Forecast",

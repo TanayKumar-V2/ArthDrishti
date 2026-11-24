@@ -4,27 +4,19 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authApi, getStoredUser, AuthUser } from "@/lib/api";
+import { RoleAccessGate } from "@/components/shared/RoleAccessGate";
 import {
   LayoutDashboard,
   ClipboardList,
-  Users,
-  ShieldAlert,
-  Sliders,
-  Scale,
   FileText,
-  History,
   Menu,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Bell,
-  Search,
-  UserCheck,
-  Settings
+  UserCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { INITIAL_NOTIFICATIONS } from "@/lib/notifications_data";
 
 interface SidebarItem {
   name: string;
@@ -62,34 +54,6 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
     localStorage.setItem("officer-sidebar-collapsed", (!val).toString());
   };
 
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-
-  useEffect(() => {
-    const checkNotifications = () => {
-      try {
-        const saved = localStorage.getItem("arth-notifications");
-        if (saved) {
-          const list = JSON.parse(saved);
-          const count = list.filter((n: any) => !n.readStatus && !n.muted).length;
-          setUnreadCount(count);
-        } else {
-          setUnreadCount(INITIAL_NOTIFICATIONS.filter((n: any) => !n.readStatus && !n.muted).length);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
-    checkNotifications();
-    window.addEventListener("storage", checkNotifications);
-    window.addEventListener("notifications-updated", checkNotifications);
-    
-    return () => {
-      window.removeEventListener("storage", checkNotifications);
-      window.removeEventListener("notifications-updated", checkNotifications);
-    };
-  }, []);
-
   const handleLogout = () => {
     authApi.logout();
     toast.success("Successfully logged out from officer portal.");
@@ -102,36 +66,13 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
       items: [
         { name: "Command Center", href: "/officer", icon: LayoutDashboard },
         { name: "Applications", href: "/officer/applications", icon: ClipboardList },
-        { name: "Customers", href: "/officer/customers", icon: Users },
-        { name: "Risk Portfolio", href: "/officer/risk-portfolio", icon: ShieldAlert }
-      ]
-    },
-    {
-      title: "Decision Tools",
-      items: [
-        { name: "High-Risk Cases", href: "/officer/risk-portfolio?filter=high", icon: ShieldAlert },
-        { name: "AI Underwriting", href: "/officer/underwriting/default", icon: Sliders },
-        { name: "Compare Tools", href: "/officer/compare", icon: Scale }
-      ]
-    },
-    {
-      title: "History & Logs",
-      items: [
-        { name: "Reports Center", href: "/officer/reports", icon: FileText },
-        { name: "Decision History", href: "/officer/decisions", icon: History },
-        { name: "Audit History", href: "/officer/audit", icon: History }
-      ]
-    },
-    {
-      title: "Account & Control",
-      items: [
-        { name: "Notifications", href: "/officer/notifications", icon: Bell },
-        { name: "Settings", href: "/officer/settings", icon: Settings }
+        { name: "Reports Center", href: "/officer/reports", icon: FileText }
       ]
     }
   ];
 
   return (
+    <RoleAccessGate expectedRole="loan_officer">
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans text-xs select-none">
       
       {/* 1. SIDEBAR SHELL (DESKTOP - HIDDEN ON MOBILE) */}
@@ -194,14 +135,6 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       {expanded && <span className="truncate flex-1">{item.name}</span>}
-                      {item.name === "Notifications" && unreadCount > 0 && (
-                        <span className={cn(
-                          "rounded-full bg-critical text-white text-[9px] font-mono font-bold flex items-center justify-center shrink-0",
-                          expanded ? "px-1.5 py-0.25 min-w-4 h-4" : "absolute top-1 right-1.5 h-2.5 w-2.5"
-                        )}>
-                          {expanded ? unreadCount : ""}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}
@@ -246,32 +179,10 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="relative hidden sm:block w-64 md:w-80">
-              <span className="absolute left-3 top-2.5 text-foreground-muted">
-                <Search className="h-3.5 w-3.5" />
-              </span>
-              <input
-                type="text"
-                placeholder="Search applicants, profiles, loan hashes..."
-                className="w-full bg-surface-elevated/40 border border-border rounded-sm py-1.5 pl-9 pr-3 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary text-foreground font-semibold placeholder-foreground-muted"
-              />
-            </div>
           </div>
 
           {/* Right Topbar actions */}
           <div className="flex items-center gap-4 text-xs font-sans">
-            <Link
-              href="/officer/notifications"
-              className="p-2 rounded-full hover:bg-surface-hover text-foreground-secondary relative cursor-pointer"
-              title="View Notifications"
-            >
-              <Bell className="h-4.5 w-4.5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-3.5 w-3.5 rounded-full bg-critical text-white text-[8px] font-mono font-bold flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
             <Link
               href="/officer/settings"
               className="flex items-center gap-2.5 border-l border-border pl-4 hover:opacity-90 cursor-pointer text-left"
@@ -350,11 +261,6 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
                         >
                           <Icon className="h-4 w-4 shrink-0" />
                           <span className="flex-1">{item.name}</span>
-                          {item.name === "Notifications" && unreadCount > 0 && (
-                            <span className="rounded-full bg-critical text-white text-[9px] font-mono font-bold flex items-center justify-center px-1.5 py-0.25 min-w-4 h-4 shrink-0">
-                              {unreadCount}
-                            </span>
-                          )}
                         </Link>
                       );
                     })}
@@ -380,5 +286,6 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
       )}
 
     </div>
+    </RoleAccessGate>
   );
 }

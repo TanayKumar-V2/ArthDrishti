@@ -21,8 +21,7 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  UserCheck,
-  Shield
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CustomerSidebar } from "@/components/shared/CustomerSidebar";
@@ -31,6 +30,7 @@ import { CommandPalette } from "@/components/shared/CommandPalette";
 import { Sheet } from "@/components/ui/Overlays";
 import { toast } from "sonner";
 import { authApi, getStoredUser, AuthUser } from "@/lib/api";
+import { RoleAccessGate } from "@/components/shared/RoleAccessGate";
 
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -126,15 +126,15 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
       ]
     },
     {
-      title: "System Portals",
+      title: "Borrowing",
       items: [
-        { label: "Loan Officer Portal", href: "/officer", icon: UserCheck },
-        { label: "System Administration", href: "/admin", icon: Shield },
+        { label: "Loan Applications", href: "/loan-applications", icon: HandCoins },
       ]
-    }
+    },
   ];
 
   return (
+    <RoleAccessGate expectedRole="customer">
     <div className="flex h-screen bg-background overflow-hidden">
       {/* 1. Desktop Collapsible Sidebar (Hidden on Mobile) */}
       <div className="hidden md:block flex-shrink-0">
@@ -300,5 +300,6 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
         </div>
       </Sheet>
     </div>
+    </RoleAccessGate>
   );
 }

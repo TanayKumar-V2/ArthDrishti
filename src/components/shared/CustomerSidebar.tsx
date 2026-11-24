@@ -20,6 +20,7 @@ import {
   Settings,
   HelpCircle,
   Database,
+  HandCoins,
   ChevronsLeft,
   ChevronsRight,
   LogOut
@@ -113,6 +114,12 @@ export function CustomerSidebar({ expanded, setExpanded }: SidebarProps) {
       title: "Reports",
       items: [
         { name: "Report Center", href: "/reports", icon: FileText }
+      ]
+    },
+    {
+      title: "Borrowing",
+      items: [
+        { name: "Loan Applications", href: "/loan-applications", icon: HandCoins }
       ]
     }
   ];

@@ -1,16 +1,17 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.financial import Loan
+from app.models.financial import Loan, LoanAnalysisSnapshot
 from app.models.ml import RiskScore
 from app.core.dependencies import require_admin, require_officer_or_admin
 from app.schemas.user import UserOut
-from app.schemas.xai_loans_reports import LoanOut, LoanDecisionRequest
-from app.services.loan_service import decide_loan_application
+from app.schemas.xai_loans_reports import LoanApplicantAnalysisOut, LoanOut, LoanReviewOut, LoanDecisionRequest
+from app.services.loan_service import capture_loan_analysis, decide_loan_application
 from app.ml.inference.model_loader import model_registry
 from app.ml.monitoring.drift_detector import detect_feature_drift
 import numpy as np
@@ -33,17 +34,39 @@ def list_all_users(
     return query.offset(skip).limit(limit).all()
 
 
-@router.get("/loans", response_model=List[LoanOut])
+@router.get("/loans", response_model=List[LoanReviewOut])
 def get_loan_underwriting_queue(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: Session = Depends(get_db),
     officer: User = Depends(require_officer_or_admin)
 ):
     """Loan review and underwriting queue (Loan Officer / Admin)."""
-    query = db.query(Loan)
+    latest_risk = db.query(
+        Loan.id.label("loan_id"),
+        func.max(RiskScore.created_at).label("created_at"),
+    ).join(
+        RiskScore,
+        and_(RiskScore.user_id == Loan.user_id, RiskScore.created_at <= Loan.created_at),
+    ).group_by(Loan.id).subquery()
+    query = db.query(Loan, User, RiskScore).join(User, User.id == Loan.user_id).outerjoin(
+        latest_risk, latest_risk.c.loan_id == Loan.id
+    ).outerjoin(
+        RiskScore,
+        and_(RiskScore.user_id == Loan.user_id, RiskScore.created_at == latest_risk.c.created_at),
+    )
     if status_filter:
-        query = query.filter(Loan.status == status_filter.lower())
-    return query.order_by(Loan.created_at.desc()).all()
+        query = query.filter(func.lower(Loan.status) == status_filter.lower())
+    records = query.order_by(Loan.created_at.desc()).all()
+    return [
+        LoanReviewOut(
+            **LoanOut.model_validate(loan).model_dump(),
+            applicant_name=user.full_name or user.email,
+            applicant_email=user.email,
+            financial_health_score=float(risk.financial_health_score) if risk else None,
+            default_probability=float(risk.default_probability) if risk else None,
+        )
+        for loan, user, risk in records
+    ]
 
 
 @router.patch("/loans/{loan_id}/decision", response_model=LoanOut)
@@ -54,7 +77,72 @@ def decide_loan(
     officer: User = Depends(require_officer_or_admin)
 ):
     """Approve or reject a loan application with decision audit trail."""
-    return decide_loan_application(db, loan_id, payload.decision)
+    try:
+        return decide_loan_application(db, loan_id, payload.decision)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND if str(exc) == "Loan not found" else status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get("/loans/{loan_id}/analysis", response_model=LoanApplicantAnalysisOut)
+def get_loan_applicant_analysis(
+    loan_id: str,
+    db: Session = Depends(get_db),
+    officer: User = Depends(require_officer_or_admin),
+):
+    """Return the transaction analytics snapshot associated with a loan application."""
+    loan = db.query(Loan).filter(Loan.id == loan_id).first()
+    if not loan:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Loan application not found")
+
+    snapshot = db.query(LoanAnalysisSnapshot).filter(LoanAnalysisSnapshot.loan_id == loan.id).first()
+    if not snapshot:
+        try:
+            snapshot = capture_loan_analysis(
+                db,
+                loan,
+                loan.user_id,
+                analysis_basis="review_time_backfill",
+            )
+            db.commit()
+        except ValueError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    applicant = db.query(User).filter(User.id == loan.user_id).first()
+    if not applicant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Applicant account not found")
+
+    application = LoanReviewOut(
+        **LoanOut.model_validate(loan).model_dump(),
+        applicant_name=applicant.full_name or applicant.email,
+        applicant_email=applicant.email,
+        financial_health_score=float(snapshot.financial_health_score),
+        default_probability=float(snapshot.default_probability),
+    )
+    return LoanApplicantAnalysisOut(
+        application=application,
+        credit_risk={
+            "financial_health_score": float(snapshot.financial_health_score),
+            "default_probability": float(snapshot.default_probability),
+            "risk_band": snapshot.risk_band,
+            "model_version": snapshot.model_version,
+        },
+        transaction_count=snapshot.transaction_count,
+        period_start=snapshot.period_start,
+        period_end=snapshot.period_end,
+        source_document_ids=snapshot.source_document_ids or [],
+        source_document_names=snapshot.source_document_names or [],
+        features=snapshot.features or {},
+        spending_breakdown=snapshot.spending_breakdown or [],
+        monthly_cash_flow=snapshot.monthly_cash_flow or [],
+        fraud_summary=snapshot.fraud_summary or {},
+        fraud_alerts=snapshot.fraud_alerts or [],
+        segment=snapshot.segment,
+        xai_contributions=snapshot.xai_contributions or [],
+        recommendations=snapshot.recommendations or [],
+        analysis_basis=snapshot.analysis_basis,
+        generated_at=snapshot.generated_at,
+    )
 
 
 @router.get("/models")
