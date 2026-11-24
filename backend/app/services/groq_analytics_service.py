@@ -33,7 +33,7 @@ def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int =
     body = {
         "model": settings.GROQ_MODEL,
         "temperature": 0.1,
-        "max_tokens": max_tokens,
+        "max_completion_tokens": max_tokens,
         "response_format": {"type": "json_object"},
         "messages": [
             {"role": "system", "content": system_prompt},
@@ -94,6 +94,23 @@ def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int =
         return result
     except HTTPException:
         raise
+    except httpx.HTTPStatusError as exc:
+        try:
+            error_data = exc.response.json().get("error", {})
+            upstream_message = error_data.get("message", "") if isinstance(error_data, dict) else str(error_data)
+        except Exception:
+            upstream_message = exc.response.text
+        upstream_message = str(upstream_message).strip()[:700] or "No error details returned."
+        logger.error(
+            "Groq rejected analytics request (status=%s, model=%s): %s",
+            exc.response.status_code,
+            settings.GROQ_MODEL,
+            upstream_message,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail=f"Groq rejected this analytics request: {upstream_message}",
+        ) from exc
     except Exception as exc:
         logger.exception("Groq analytics request failed")
         raise HTTPException(status_code=502, detail="Groq could not complete this analysis. Please retry.") from exc
