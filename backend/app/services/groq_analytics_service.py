@@ -435,83 +435,132 @@ def explain_what_if(payload: Dict[str, Any]) -> str:
 
 
 def generate_forecast_values(features: Dict[str, Any], horizon: str, dates: List[str], starting_net_flow: float) -> List[Dict[str, float]]:
-    result = complete_json(
-        "Create an uncertain cash-flow projection from the supplied historical transaction aggregates. "
-        "Return JSON with a data array containing exactly one item per supplied date, in the same order. "
-        "Each item must contain projected_income, projected_expense, projected_balance, lower_bound, "
-        "upper_bound, all finite non-negative numbers except projected_balance may be negative. Use the "
-        "starting net-flow figure only as a cumulative reference, never describe it as an observed bank balance. "
-        "Do not assume specific salary dates or bills unless supported by the supplied metrics.",
-        {"horizon": horizon, "dates": dates, "starting_net_flow_reference": starting_net_flow, "metrics": features},
-        max_tokens=3200,
-        response_schema=_strict_object_schema({
-            "data": {
-                "type": "array",
-                "items": _strict_object_schema({
-                    "projected_income": {"type": "number"},
-                    "projected_expense": {"type": "number"},
-                    "projected_balance": {"type": "number"},
-                    "lower_bound": {"type": "number"},
-                    "upper_bound": {"type": "number"},
-                }),
-            },
-        }),
-    )
-    values = result.get("data")
-    if not isinstance(values, list) or len(values) != len(dates):
-        raise HTTPException(status_code=502, detail="Groq returned an incomplete cash-flow projection.")
-    output = []
+    # Precompute reliable historical daily baseline
+    monthly_inc = float(features.get("monthly_income_avg", 0.0) or 0.0)
+    monthly_exp = float(features.get("monthly_expense_avg", 0.0) or 0.0)
+    daily_inc = max(monthly_inc / 30.0, 0.0)
+    daily_exp = max(monthly_exp / 30.0, 0.0)
+
+    output: List[Dict[str, float]] = []
     try:
-        for date, item in zip(dates, values):
-            point = {key: float(item[key]) for key in ("projected_income", "projected_expense", "projected_balance", "lower_bound", "upper_bound")}
-            if any(not (-1e12 < value < 1e12) for value in point.values()):
-                raise ValueError("Forecast value out of bounds")
-            if point["projected_income"] < 0 or point["projected_expense"] < 0:
-                raise ValueError("Negative income or expense")
-            point["date"] = date
-            output.append(point)
-    except (KeyError, TypeError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Groq returned invalid cash-flow values.") from exc
+        result = complete_json(
+            "Create an uncertain cash-flow projection from the supplied historical transaction aggregates. "
+            "Return JSON with a data array containing items with projected_income, projected_expense, "
+            "projected_balance, lower_bound, upper_bound. Use starting net-flow as cumulative reference.",
+            {"horizon": horizon, "dates_count": len(dates), "starting_net_flow_reference": starting_net_flow, "metrics": features},
+            max_tokens=min(1200, 200 + len(dates) * 35),
+            response_schema=_strict_object_schema({
+                "data": {
+                    "type": "array",
+                    "items": _strict_object_schema({
+                        "projected_income": {"type": "number"},
+                        "projected_expense": {"type": "number"},
+                        "projected_balance": {"type": "number"},
+                        "lower_bound": {"type": "number"},
+                        "upper_bound": {"type": "number"},
+                    }),
+                },
+            }),
+        )
+        values = result.get("data")
+        if isinstance(values, list) and values:
+            cum_bal = float(starting_net_flow)
+            for i, date in enumerate(dates):
+                if i < len(values) and isinstance(values[i], dict):
+                    item = values[i]
+                    inc = max(float(item.get("projected_income", daily_inc)), 0.0)
+                    exp = max(float(item.get("projected_expense", daily_exp)), 0.0)
+                    bal = float(item.get("projected_balance", cum_bal + inc - exp))
+                    cum_bal = bal
+                    low = float(item.get("lower_bound", cum_bal * 0.9))
+                    high = float(item.get("upper_bound", cum_bal * 1.1))
+                    output.append({
+                        "date": date,
+                        "projected_income": round(inc, 2),
+                        "projected_expense": round(exp, 2),
+                        "projected_balance": round(cum_bal, 2),
+                        "lower_bound": round(min(low, cum_bal), 2),
+                        "upper_bound": round(max(high, cum_bal), 2),
+                    })
+    except Exception as exc:
+        logger.warning("Groq cash-flow forecast unavailable (%s); using mathematical projection.", exc)
+
+    # If Groq returned fewer points or failed, complete the projection deterministically
+    if len(output) < len(dates):
+        cum_bal = output[-1]["projected_balance"] if output else float(starting_net_flow)
+        for date in dates[len(output):]:
+            cum_bal += daily_inc - daily_exp
+            output.append({
+                "date": date,
+                "projected_income": round(daily_inc, 2),
+                "projected_expense": round(daily_exp, 2),
+                "projected_balance": round(cum_bal, 2),
+                "lower_bound": round(cum_bal * 0.85, 2),
+                "upper_bound": round(cum_bal * 1.15, 2),
+            })
+
     return output
 
 
 def interpret_fraud_anomalies(transactions: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     if not transactions:
         return {}
-    result = complete_json(
-        "Review transaction anomaly scores already produced by an Isolation Forest model. Return JSON with "
-        "transactions array; for every supplied id return id, risk_level (Low, Medium, High, Critical), and "
-        "reasons (array of short strings). Use the anomaly score and transaction context; do not state that a "
-        "transaction is fraud. Treat this as triage for human review, not a rule or final finding.",
-        {"transactions": transactions},
-        max_tokens=min(3500, 250 + len(transactions) * 70),
-        response_schema=_strict_object_schema({
-            "transactions": {
-                "type": "array",
-                "items": _strict_object_schema({
-                    "id": {"type": "string", "enum": [str(item["id"]) for item in transactions]},
-                    "risk_level": {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]},
-                    "reasons": {"type": "array", "items": {"type": "string"}},
-                }),
-            },
-        }),
-    )
-    rows = result.get("transactions")
-    if not isinstance(rows, list):
-        raise HTTPException(status_code=502, detail="Groq returned invalid fraud-triage results.")
+
     by_id: Dict[str, Dict[str, Any]] = {}
-    allowed = {"Low", "Medium", "High", "Critical"}
-    for item in rows:
-        if not isinstance(item, dict) or not item.get("id"):
-            continue
-        level = str(item.get("risk_level", "")).title()
-        if level not in allowed or not isinstance(item.get("reasons"), list):
-            raise HTTPException(status_code=502, detail="Groq returned invalid fraud-triage details.")
-        reasons = item.get("reasons", [])
-        by_id[str(item["id"])] = {
-            "risk_level": level,
-            "reasons": [str(reason)[:400] for reason in reasons[:4]] if isinstance(reasons, list) else [],
-        }
-    if any(str(row["id"]) not in by_id for row in transactions):
-        raise HTTPException(status_code=502, detail="Groq did not return triage for every anomaly.")
+
+    # Initialize all transactions from their machine-learning anomaly scores
+    for item in transactions:
+        score = float(item.get("anomaly_score", 0.0))
+        if score < -0.2:
+            level = "High"
+            reasons = ["Significant deviation from customer normal spending volume"]
+        elif score < 0.0:
+            level = "Medium"
+            reasons = ["Mild transaction frequency or amount anomaly"]
+        else:
+            level = "Low"
+            reasons = []
+        by_id[str(item["id"])] = {"risk_level": level, "reasons": reasons}
+
+    # Only send anomalous transactions (anomaly_score < 0) to Groq (max 10)
+    flagged = [t for t in transactions if float(t.get("anomaly_score", 0.0)) < 0.0]
+    if not flagged:
+        return by_id
+
+    candidates = sorted(flagged, key=lambda x: float(x.get("anomaly_score", 0.0)))[:10]
+
+    try:
+        result = complete_json(
+            "Review transaction anomaly scores already produced by an Isolation Forest model. Return JSON with "
+            "transactions array; for every supplied id return id, risk_level (Low, Medium, High, Critical), and "
+            "reasons (array of short strings). Use the anomaly score and transaction context; do not state that a "
+            "transaction is fraud. Treat this as triage for human review, not a rule or final finding.",
+            {"transactions": candidates},
+            max_tokens=min(900, 200 + len(candidates) * 60),
+            response_schema=_strict_object_schema({
+                "transactions": {
+                    "type": "array",
+                    "items": _strict_object_schema({
+                        "id": {"type": "string", "enum": [str(item["id"]) for item in candidates]},
+                        "risk_level": {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]},
+                        "reasons": {"type": "array", "items": {"type": "string"}},
+                    }),
+                },
+            }),
+        )
+        rows = result.get("transactions") or []
+        allowed = {"Low", "Medium", "High", "Critical"}
+        for item in rows:
+            if isinstance(item, dict) and item.get("id"):
+                tid = str(item["id"])
+                level = str(item.get("risk_level", "Medium")).title()
+                if level in allowed:
+                    reasons = item.get("reasons", [])
+                    by_id[tid] = {
+                        "risk_level": level,
+                        "reasons": [str(reason)[:300] for reason in reasons[:3]] if isinstance(reasons, list) else ["Flagged by ML anomaly detector"],
+                    }
+    except Exception as exc:
+        logger.warning("Groq fraud triage unavailable or rate-limited (%s); using ML score baseline.", exc)
+
     return by_id

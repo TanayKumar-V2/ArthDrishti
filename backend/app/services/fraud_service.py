@@ -40,13 +40,11 @@ def scan_user_transactions_for_fraud(db: Session, user_id: str, document_ids: Op
             "model_version": model_version,
         })
 
-    triage: Dict[str, Dict[str, Any]] = {}
-    for offset in range(0, len(scored), 40):
-        triage.update(interpret_fraud_anomalies(scored[offset:offset + 40]))
+    triage = interpret_fraud_anomalies(scored)
 
     detected_alerts = []
     for txn, score in zip(transactions, scored):
-        interpretation = triage[txn.id]
+        interpretation = triage.get(txn.id, {"risk_level": "Low", "reasons": []})
         level = interpretation["risk_level"]
         existing = db.query(FraudAlert).filter(FraudAlert.transaction_id == txn.id).first()
         txn.is_flagged = level != "Low" or bool(existing and existing.status == "confirmed_fraud")

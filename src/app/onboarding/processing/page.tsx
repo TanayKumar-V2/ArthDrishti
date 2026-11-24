@@ -44,11 +44,35 @@ export default function AIProcessingPage() {
     setError("");
     setTasks(initialTasks.map((task) => ({ ...task, status: "running" })));
 
-    const results = await Promise.allSettled([
-      riskApi.evaluateCreditRisk(documentIds),
-      fraudApi.triggerScan(documentIds),
-      forecastApi.generateForecast("30d", documentIds),
-    ]);
+    // Run analyses sequentially with state updates to prevent Groq burst rate limits
+    const riskRes = await riskApi.evaluateCreditRisk(documentIds)
+      .then(val => ({ status: "fulfilled" as const, value: val }))
+      .catch(err => ({ status: "rejected" as const, reason: err }));
+    setTasks(prev => prev.map((t, i) => i === 0 ? {
+      ...t,
+      status: riskRes.status === "fulfilled" ? "done" as const : "error" as const,
+      detail: riskRes.status === "fulfilled" ? "Completed using the uploaded transaction records." : (riskRes.reason instanceof Error ? riskRes.reason.message : "The backend could not complete this analysis.")
+    } : t));
+
+    const fraudRes = await fraudApi.triggerScan(documentIds)
+      .then(val => ({ status: "fulfilled" as const, value: val }))
+      .catch(err => ({ status: "rejected" as const, reason: err }));
+    setTasks(prev => prev.map((t, i) => i === 1 ? {
+      ...t,
+      status: fraudRes.status === "fulfilled" ? "done" as const : "error" as const,
+      detail: fraudRes.status === "fulfilled" ? "Completed using the uploaded transaction records." : (fraudRes.reason instanceof Error ? fraudRes.reason.message : "The backend could not complete this analysis.")
+    } : t));
+
+    const forecastRes = await forecastApi.generateForecast("30d", documentIds)
+      .then(val => ({ status: "fulfilled" as const, value: val }))
+      .catch(err => ({ status: "rejected" as const, reason: err }));
+    setTasks(prev => prev.map((t, i) => i === 2 ? {
+      ...t,
+      status: forecastRes.status === "fulfilled" ? "done" as const : "error" as const,
+      detail: forecastRes.status === "fulfilled" ? "Completed using the uploaded transaction records." : (forecastRes.reason instanceof Error ? forecastRes.reason.message : "The backend could not complete this analysis.")
+    } : t));
+
+    const results = [riskRes, fraudRes, forecastRes];
 
     const nextTasks = initialTasks.map((task, index) => {
       const result = results[index];
