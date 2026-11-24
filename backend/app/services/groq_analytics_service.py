@@ -4,7 +4,7 @@ import json
 import logging
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import HTTPException
@@ -23,7 +23,21 @@ TRANSACTION_CATEGORIES = [
 ]
 
 
-def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int = 1800) -> Dict[str, Any]:
+def _strict_object_schema(properties: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties),
+        "additionalProperties": False,
+    }
+
+
+def complete_json(
+    system_prompt: str,
+    payload: Dict[str, Any],
+    max_tokens: int = 1800,
+    response_schema: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     global _GROQ_NEXT_REQUEST_AT
     api_key = settings.GROQ_API_KEY.strip() if settings.GROQ_API_KEY else ""
     if not api_key:
@@ -34,7 +48,14 @@ def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int =
         "model": settings.GROQ_MODEL,
         "temperature": 0.1,
         "max_completion_tokens": max_tokens,
-        "response_format": {"type": "json_object"},
+        "response_format": (
+            {
+                "type": "json_schema",
+                "json_schema": {"name": "analytics_result", "strict": True, "schema": response_schema},
+            }
+            if response_schema
+            else {"type": "json_object"}
+        ),
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False, allow_nan=False)},
@@ -123,6 +144,11 @@ def assess_financial_health(features: Dict[str, Any]) -> Dict[str, Any]:
         "AI estimate, not a lending decision. Do not infer account balances, bureau data, or facts absent from input.",
         {"metrics": features},
         max_tokens=450,
+        response_schema=_strict_object_schema({
+            "score": {"type": "number"},
+            "rating": {"type": "string"},
+            "explanation": {"type": "string"},
+        }),
     )
     try:
         score = float(result["score"])
@@ -142,6 +168,9 @@ def classify_credit_risk(probability: float, features: Dict[str, Any]) -> str:
         "recalculate the supplied model probability; this is a qualitative interpretation, not a lending decision.",
         {"trained_model_default_probability": probability, "transaction_metrics": features},
         max_tokens=150,
+        response_schema=_strict_object_schema({
+            "risk_band": {"type": "string", "enum": ["Low", "Medium", "High", "Severe"]},
+        }),
     )
     band = str(result.get("risk_band", "")).title()
     if band not in {"Low", "Medium", "High", "Severe"}:
@@ -156,6 +185,11 @@ def describe_customer_segment(cluster_id: int, features: Dict[str, Any]) -> Dict
         "trained model; do not infer facts absent from the supplied metrics.",
         {"trained_model_cluster_id": cluster_id, "transaction_metrics": features},
         max_tokens=300,
+        response_schema=_strict_object_schema({
+            "segment_name": {"type": "string"},
+            "description": {"type": "string"},
+            "risk_profile": {"type": "string"},
+        }),
     )
     name = str(result.get("segment_name", "")).strip()
     description = str(result.get("description", "")).strip()
@@ -173,6 +207,17 @@ def generate_recommendations(features: Dict[str, Any]) -> List[Dict[str, str]]:
         "invent balances/debts, or return generic advice unsupported by the metrics.",
         {"metrics": features},
         max_tokens=1100,
+        response_schema=_strict_object_schema({
+            "recommendations": {
+                "type": "array",
+                "items": _strict_object_schema({
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "category": {"type": "string"},
+                    "impact_level": {"type": "string", "enum": ["Low", "Medium", "High"]},
+                }),
+            },
+        }),
     )
     recommendations = result.get("recommendations")
     if not isinstance(recommendations, list):
@@ -211,6 +256,15 @@ def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str
             + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
             {"transactions": batch},
             max_tokens=max(700, len(batch) * 55),
+            response_schema=_strict_object_schema({
+                "transactions": {
+                    "type": "array",
+                    "items": _strict_object_schema({
+                        "id": {"type": "string", "enum": [str(item["id"]) for item in batch]},
+                        "category": {"type": "string", "enum": TRANSACTION_CATEGORIES},
+                    }),
+                },
+            }),
         )
         rows = result.get("transactions")
         if not isinstance(rows, list):
@@ -256,6 +310,15 @@ def explain_credit_risk(features: Dict[str, Any], probability: float, risk_band:
         "or invent additive contributions. Explicitly distinguish observed statement metrics from estimates.",
         {"default_probability": probability, "risk_band": risk_band, "features": features},
         max_tokens=1000,
+        response_schema=_strict_object_schema({
+            "insights": {
+                "type": "array",
+                "items": _strict_object_schema({
+                    "feature": {"type": "string"},
+                    "description": {"type": "string"},
+                }),
+            },
+        }),
     )
     insights = result.get("insights")
     if not isinstance(insights, list):
@@ -275,6 +338,7 @@ def explain_what_if(payload: Dict[str, Any]) -> str:
         "without inventing causes or guaranteeing outcomes.",
         payload,
         max_tokens=350,
+        response_schema=_strict_object_schema({"summary": {"type": "string"}}),
     )
     summary = str(result.get("summary", "")).strip()
     if not summary:
@@ -292,6 +356,18 @@ def generate_forecast_values(features: Dict[str, Any], horizon: str, dates: List
         "Do not assume specific salary dates or bills unless supported by the supplied metrics.",
         {"horizon": horizon, "dates": dates, "starting_net_flow_reference": starting_net_flow, "metrics": features},
         max_tokens=3200,
+        response_schema=_strict_object_schema({
+            "data": {
+                "type": "array",
+                "items": _strict_object_schema({
+                    "projected_income": {"type": "number"},
+                    "projected_expense": {"type": "number"},
+                    "projected_balance": {"type": "number"},
+                    "lower_bound": {"type": "number"},
+                    "upper_bound": {"type": "number"},
+                }),
+            },
+        }),
     )
     values = result.get("data")
     if not isinstance(values, list) or len(values) != len(dates):
@@ -321,6 +397,16 @@ def interpret_fraud_anomalies(transactions: List[Dict[str, Any]]) -> Dict[str, D
         "transaction is fraud. Treat this as triage for human review, not a rule or final finding.",
         {"transactions": transactions},
         max_tokens=min(3500, 250 + len(transactions) * 70),
+        response_schema=_strict_object_schema({
+            "transactions": {
+                "type": "array",
+                "items": _strict_object_schema({
+                    "id": {"type": "string", "enum": [str(item["id"]) for item in transactions]},
+                    "risk_level": {"type": "string", "enum": ["Low", "Medium", "High", "Critical"]},
+                    "reasons": {"type": "array", "items": {"type": "string"}},
+                }),
+            },
+        }),
     )
     rows = result.get("transactions")
     if not isinstance(rows, list):
