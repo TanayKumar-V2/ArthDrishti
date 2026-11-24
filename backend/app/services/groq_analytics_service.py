@@ -73,7 +73,7 @@ def complete_json(
     model = settings.GROQ_MODEL.strip().strip('"').strip("'")
     is_reasoning_model = any(m in model.lower() for m in ("gpt-oss", "deepseek-r1", "qwq"))
 
-    effective_max_tokens = max(max_tokens + 2048, 4096) if is_reasoning_model else max_tokens
+    effective_max_tokens = min(max(max_tokens + 250, 600), 1200) if is_reasoning_model else max_tokens
 
     def build_body(use_schema: bool) -> Dict[str, Any]:
         req_body: Dict[str, Any] = {
@@ -304,79 +304,83 @@ def generate_recommendations(features: Dict[str, Any]) -> List[Dict[str, str]]:
     return cleaned
 
 
+_RULE_PATTERNS = [
+    (re.compile(r"\b(salary|payroll|stipend|direct\s*dep|bonus|wage|incentive)\b", re.I), "Salary & Income"),
+    (re.compile(r"\b(swiggy|zomato|mcdonald|starbucks|restaurant|cafe|coffee|food|dining|kfc|domino|burger|pizza|diner|eats|bakery|subway)\b", re.I), "Food & Dining"),
+    (re.compile(r"\b(amazon|flipkart|myntra|walmart|target|retail|mall|store|supermarket|mart|fashion|clothing|zara|h&m|blinkit|zepto|instamart|grocer)\b", re.I), "Shopping & Retail"),
+    (re.compile(r"\b(electric|water|gas|utility|bill|airtel|jio|vodafone|broadband|wifi|telecom|dth|recharge|power|bescom|tneb)\b", re.I), "Utilities & Bills"),
+    (re.compile(r"\b(rent|lease|mortgage|landlord|maintenance|society|apartment|housing|flat)\b", re.I), "Housing & Rent"),
+    (re.compile(r"\b(uber|ola|lyft|metro|rail|irctc|train|flight|airline|indigo|fuel|petrol|diesel|shell|toll|fastag|parking|cab|taxi)\b", re.I), "Transportation & Travel"),
+    (re.compile(r"\b(netflix|spotify|prime|hotstar|hulu|disney|movie|cinema|pvr|theatre|youtube|apple|subscription|gaming|steam)\b", re.I), "Entertainment & Subscriptions"),
+    (re.compile(r"\b(hospital|pharmacy|chemist|medical|clinic|doctor|apollo|1mg|practo|dentist|health|meds|pharma|diagnostic)\b", re.I), "Health & Medical"),
+    (re.compile(r"\b(zerodha|groww|upstox|mutual\s*fund|sip|investment|stocks|shares|dividend|sebi|deposit|fixed\s*dep|fd|rd)\b", re.I), "Investments & Savings"),
+    (re.compile(r"\b(atm|cash\s*w/d|cash\s*withdrawal|atw)\b", re.I), "Cash & ATM"),
+]
+
+
+def _classify_by_rules(description: str) -> Optional[str]:
+    desc = description.strip()
+    for pattern, category in _RULE_PATTERNS:
+        if pattern.search(desc):
+            return category
+    return None
+
+
 def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str]:
-    """Classify merchant descriptions with Groq rather than keyword rules."""
+    """Classify transactions efficiently with fast rules and targeted single-shot Groq batching."""
     categories: Dict[str, str] = {}
 
-    def categorize_batch(batch: List[Dict[str, Any]]) -> None:
-        if not batch:
-            return
-        try:
-            result = complete_json(
-                "Classify each bank transaction from its description and debit/credit direction. Return a JSON object "
-                "with a transactions array. Return exactly one object for every input transaction, preserving each id "
-                "exactly as supplied. Each object has only id and category. Categories must be selected from: "
-                + ", ".join(TRANSACTION_CATEGORIES)
-                + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
-                {"transactions": batch},
-                max_tokens=max(1200, len(batch) * 80),
-                response_schema=_strict_object_schema({
-                    "transactions": {
-                        "type": "array",
-                        "items": _strict_object_schema({
-                            "id": {"type": "string", "enum": [str(item["id"]) for item in batch]},
-                            "category": {"type": "string", "enum": TRANSACTION_CATEGORIES},
-                        }),
-                    },
-                }),
-            )
-        except HTTPException as exc:
-            is_groq_validation_error = (
-                exc.status_code == 502
-                and isinstance(exc.detail, str)
-                and exc.detail.startswith("Groq rejected this analytics request:")
-            )
-            if is_groq_validation_error and len(batch) > 1:
-                midpoint = len(batch) // 2
-                logger.warning("Groq rejected a transaction-category batch; retrying as smaller batches (size=%s).", len(batch))
-                categorize_batch(batch[:midpoint])
-                categorize_batch(batch[midpoint:])
-                return
-            raise
-        rows = result.get("transactions")
-        if not isinstance(rows, list):
-            raise HTTPException(status_code=502, detail="Groq returned invalid transaction categories.")
-        expected_ids = {str(item["id"]) for item in batch}
-        unresolved = set(expected_ids)
-        for row in rows:
-            if not isinstance(row, dict) or row.get("id") is None:
-                continue
-            transaction_id = str(row["id"])
-            category = str(row.get("category", ""))
-            if transaction_id in unresolved and category in TRANSACTION_CATEGORIES:
-                categories[transaction_id] = category
-                unresolved.remove(transaction_id)
+    # Step 1: Instant rule-based classification for standard merchant patterns
+    unresolved_items: List[Dict[str, Any]] = []
+    for item in transactions:
+        desc = str(item.get("description", ""))
+        rule_cat = _classify_by_rules(desc)
+        if rule_cat:
+            categories[str(item["id"])] = rule_cat
+        else:
+            unresolved_items.append(item)
 
-        if not unresolved:
-            return
+    # Step 2: If any remain, deduplicate unique descriptions and classify in a single Groq call
+    if unresolved_items:
+        desc_to_ids: Dict[str, List[str]] = {}
+        for item in unresolved_items:
+            clean_desc = str(item.get("description", "Transaction")).strip()[:100] or "Transaction"
+            desc_to_ids.setdefault(clean_desc, []).append(str(item["id"]))
 
-        # Some models omit rows in larger JSON responses. Retry only unresolved rows
-        # in smaller calls, keeping the provider as the primary category decision maker.
-        retry_rows = [item for item in batch if str(item["id"]) in unresolved]
-        if len(retry_rows) == len(batch) == 1:
-            item = retry_rows[0]
-            ttype = str(item.get("transaction_type", "debit")).lower()
-            categories[str(item["id"])] = "Other Income" if ttype == "credit" else "Other Expenses"
-            return
+        unique_descs = list(desc_to_ids.keys())
 
-        for offset in range(0, len(retry_rows), max(1, min(5, len(retry_rows) // 2 or 1))):
-            categorize_batch(retry_rows[offset:offset + max(1, min(5, len(retry_rows) // 2 or 1))])
+        # Classify unique descriptions with Groq (compact batches of 15 unique merchants)
+        for offset in range(0, len(unique_descs), 15):
+            batch_descs = unique_descs[offset:offset + 15]
+            try:
+                result = complete_json(
+                    "Classify each transaction description into one category from: "
+                    + ", ".join(TRANSACTION_CATEGORIES)
+                    + ". Return a JSON object with a categories array where each item has description and category.",
+                    {"descriptions": batch_descs},
+                    max_tokens=600,
+                    response_schema=_strict_object_schema({
+                        "categories": {
+                            "type": "array",
+                            "items": _strict_object_schema({
+                                "description": {"type": "string", "enum": batch_descs},
+                                "category": {"type": "string", "enum": TRANSACTION_CATEGORIES},
+                            }),
+                        },
+                    }),
+                )
+                rows = result.get("categories") or []
+                for row in rows:
+                    if isinstance(row, dict) and row.get("description") in desc_to_ids:
+                        cat = str(row.get("category", ""))
+                        if cat in TRANSACTION_CATEGORIES:
+                            for tid in desc_to_ids[row["description"]]:
+                                categories[tid] = cat
+            except Exception as exc:
+                logger.warning("Groq classification skipped or rate-limited (%s); assigning fallback.", exc)
+                break
 
-    # Process in compact batches of 10 for fast, reliable JSON generation and schema compliance
-    for offset in range(0, len(transactions), 10):
-        categorize_batch(transactions[offset:offset + 10])
-
-    # Ensure every transaction has a category; fall back to Other Income/Expenses if any was skipped
+    # Step 3: Ensure every transaction has a valid category fallback
     for item in transactions:
         tid = str(item["id"])
         if tid not in categories:

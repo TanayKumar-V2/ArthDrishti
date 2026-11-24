@@ -83,7 +83,7 @@ export default function AIProcessingPage() {
       setDocumentNames(ids.map((id) => `Statement ${id.slice(0, 8)}`));
       setPhase("processing");
 
-      const deadline = Date.now() + 120_000;
+      const deadline = Date.now() + 300_000;
       let allCompleted = false;
       while (!allCompleted && Date.now() < deadline) {
         if (cancelled) return;
