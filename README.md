@@ -1,493 +1,142 @@
-# AI Financial Risk Intelligence Platform
+# ArthDrishti
 
-An end-to-end, production-style machine learning platform that analyzes a customer's financial data and returns credit risk scores, fraud alerts, spending insights, cash flow forecasts, and explainable AI reports — the kind of system a bank, NBFC, or fintech risk team would build internally.
+ArthDrishti is a financial analysis and loan review application. Customers can upload bank statements and review analytics generated from their transactions. Loan officers can review submitted applications alongside the applicant's financial analysis and record a decision.
 
-> ⚠️ **Data disclaimer**: This project uses a synthetically generated banking dataset that mimics real transaction histories, loans, and spending patterns. No real customer or financial data is used. Synthetic data generation is documented in [`docs/synthetic-data.md`](docs/synthetic-data.md).
+> **Demo and data note:** Uploaded statements and their parsed transactions are user-provided data stored by this application. The repository also contains bundled machine-learning model files and may use local training datasets or synthetic fallback data to train/load some models. Generated scores and explanations are decision-support outputs, not verified financial advice or a lending decision.
 
----
+## What the application does
 
-## Table of Contents
+### Customer workspace
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Database Schema](#database-schema)
-- [API Reference](#api-reference)
-- [ML Models](#ml-models)
-- [Explainable AI](#explainable-ai)
-- [MLOps Pipeline](#mlops-pipeline)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Running Tests](#running-tests)
-- [Roadmap](#roadmap)
-- [Screenshots](#screenshots)
-- [License](#license)
+- Create a customer account, sign in, and manage an account-scoped workspace.
+- Upload CSV, Excel, or PDF bank statements in **Data Sources**; inspect processing status, parsed transactions, and remove uploaded sources.
+- View financial health, credit risk, spending, cash flow, fraud indicators, customer segments, explainability, recommendations, and reports based on available parsed transactions.
+- Ask the AI Advisor about the financial context available to the application. With a configured Groq API key it can use the configured LLM; without one, the backend provides a grounded fallback response.
+- Submit a loan application and view its status.
 
----
+For the most useful analysis, upload and confirm a statement has finished processing before opening analytics or applying for a loan. When submitting an application, the application captures an analysis snapshot using the selected statement sources where provided; otherwise it uses the customer's available parsed statement data. The officer's review report is tied to that application snapshot.
 
-## Overview
+### Loan officer workspace
 
-A customer uploads or connects their financial data (bank statements, transaction history, salary slips), and within seconds the platform returns:
+- Review real loan applications submitted by customers in the officer dashboard and applications list.
+- Open an application to review its applicant details and financial analysis, including the captured financial health and risk results, cash flow, spending breakdown, fraud scan, segment, explanations, and recommendations where available.
+- Approve or reject an application. Decisions are saved to the application record.
 
-| Output | Description |
-|---|---|
-| **Credit Risk Score** | Probability of loan default |
-| **Fraud Risk** | Anomaly detection on transaction history |
-| **Spending Pattern Analysis** | Categorized spending breakdown |
-| **Customer Segmentation** | Cluster-based customer profiling |
-| **Financial Health Score** | Composite 0–100 score across income, savings, debt, and credit history |
-| **Cash Flow Forecast** | Predicted balance/expenses for next week, month, and 6 months |
-| **Explainable AI Report** | SHAP/LIME-based reasoning for every prediction |
-| **Personalized Recommendations** | Actionable financial advice grounded in model output |
+Customer and officer routes are role-gated. Create separate customer and loan officer accounts for a demo. Public registration supports the customer and loan officer roles; administrative access is separate. Some secondary or administrative screens may be incomplete or use demonstration content, so use the customer analysis and loan application review flows above for a data-backed demonstration.
 
-The project intentionally combines classical ML, deep learning, time-series forecasting, anomaly detection, explainability, and MLOps into a single cohesive product rather than a single-notebook model.
+## Technology
 
----
+- **Web app:** Next.js 16, React 19, TypeScript, Tailwind CSS 4.
+- **API:** FastAPI, Python 3.11, Pydantic, SQLAlchemy.
+- **Storage and background services:** PostgreSQL, Redis, Celery worker; local uploads are persisted under `backend/uploads` in the provided Docker Compose setup.
+- **Analytics:** scikit-learn models plus transaction feature engineering and application rules.
 
-## Features
+## Run locally with Docker
 
-- 🔐 JWT-based authentication with role-based access (Customer / Loan Officer / Admin)
-- 📤 Upload CSV, Excel, or PDF bank/credit card statements
-- 🧹 Automated data cleaning, outlier detection, and feature engineering (20+ engineered features)
-- 🤖 Multiple specialized ML models (not one general-purpose model)
-- 🔍 Explainable AI with per-prediction SHAP/LIME breakdowns
-- 🧪 Interactive "what-if" simulator (e.g. *"what if income increases by ₹20,000?"*)
-- 📈 Time-series cash flow forecasting with confidence intervals
-- 🚨 Real-time fraud alerts on unlabeled, imbalanced transaction data
-- 🧭 Customer segmentation via clustering
-- 💡 Rule-based (and optionally LLM-grounded) financial recommendations
-- 📊 Full analytics dashboard with dark/light themes
-- 🛠️ Full MLOps loop — versioning, drift monitoring, automated retraining hooks
+Prerequisites: Docker Desktop with Compose and Node.js/npm if running the frontend outside Docker.
 
----
+1. Copy `.env.example` to `.env` and set private secrets and database credentials for your environment. Do not commit `.env` or put secrets in `NEXT_PUBLIC_*` variables.
+2. Start the backend dependencies and API:
 
-## Architecture
-
-```
-                           USER
-                             │
-                             ▼
-                  React + Next.js Frontend
-                             │
-                    Authentication (JWT/OAuth)
-                             │
-                             ▼
-                    FastAPI Backend (REST)
-         ┌────────────────────┼────────────────────┐
-         │                    │                    │
-         ▼                    ▼                    ▼
- Financial Service      Prediction API      Report Generator
-         │                    │                    │
-         └──────────────┬─────┴────────────────────┘
-                         │
-                  Feature Engineering
-                         │
-         ┌───────────────┼────────────────────┐
-         │               │                    │
-         ▼               ▼                    ▼
- Loan Model       Fraud Model         Forecast Model
-         │               │                    │
-         └───────────────┼────────────────────┘
-                         ▼
-               Explainability Engine
-                  (SHAP + LIME)
-                         │
-                         ▼
-                  PostgreSQL Database
-                         │
-                         ▼
-                  Analytics Dashboard
-```
-
----
-
-## Tech Stack
-
-**Frontend**
-- React / Next.js, TypeScript
-- Tailwind CSS, shadcn/ui, Framer Motion
-- React Query (TanStack Query), Zustand
-- Recharts / Apache ECharts / Tremor
-
-**Backend**
-- FastAPI, Pydantic, SQLAlchemy, Alembic
-- Celery + Redis (async jobs & caching)
-- JWT authentication
-
-**Database**
-- PostgreSQL
-- Redis (cache + task queue)
-
-**Machine Learning**
-- scikit-learn, XGBoost, LightGBM, CatBoost
-- TensorFlow / PyTorch (forecasting, autoencoders)
-- Optuna (hyperparameter tuning)
-- SHAP, LIME (explainability)
-- pandas, NumPy
-
-**MLOps**
-- MLflow (model registry & experiment tracking)
-- Evidently AI (drift monitoring)
-- Docker, GitHub Actions (CI/CD)
-- Prometheus + Grafana (monitoring)
-
-**Cloud**
-- AWS (EC2, S3, RDS) / GCP / Azure (any one)
-
----
-
-## Project Structure
-
-```
-app/
-├── main.py                        # FastAPI app entrypoint, router registration
-├── core/
-│   ├── config.py                  # environment/settings (Pydantic BaseSettings)
-│   ├── security.py                # JWT encode/decode, password hashing
-│   └── dependencies.py            # get_current_user, get_db, role guards
-├── models/                        # SQLAlchemy ORM models
-├── schemas/                       # Pydantic request/response schemas
-├── api/v1/
-│   ├── auth.py
-│   ├── documents.py
-│   ├── transactions.py
-│   ├── loans.py
-│   ├── predictions.py
-│   ├── forecast.py
-│   ├── explainability.py
-│   ├── recommendations.py
-│   ├── reports.py
-│   └── admin.py
-├── services/
-│   ├── auth_service.py
-│   ├── document_processing_service.py
-│   ├── feature_engineering_service.py
-│   ├── prediction_service.py
-│   ├── fraud_service.py
-│   ├── forecast_service.py
-│   ├── explainability_service.py
-│   ├── recommendation_service.py
-│   └── report_service.py
-├── ml/
-│   ├── models/                    # serialized model bundles (.pkl / .pt)
-│   ├── inference/                 # model-loading + prediction wrappers
-│   └── training/                  # training scripts
-├── tasks/
-│   └── celery_tasks.py            # async jobs (document processing, scoring, reports)
-├── db/
-│   ├── session.py
-│   └── migrations/                # Alembic migrations
-└── tests/
-
-frontend/
-├── app/                           # Next.js app router pages
-├── components/                    # UI components (shadcn/ui based)
-├── lib/                           # API client, utils
-└── store/                         # Zustand state
-```
-
----
-
-## Database Schema
-
-Simplified entity list (full DDL in [`db/migrations/`](db/migrations)):
-
-| Table | Purpose |
-|---|---|
-| `users` | Account records, role (customer/loan_officer/admin) |
-| `refresh_tokens` | JWT refresh token tracking |
-| `customer_profiles` | Income, expenses, debt, savings snapshot |
-| `documents` | Uploaded statements/slips + processing status |
-| `transactions` | Parsed transaction history, categorized, fraud-flagged |
-| `loans` | Loan applications and status |
-| `loan_repayments` | Repayment schedule and late-payment tracking |
-| `risk_scores` | Credit risk output + financial health score |
-| `fraud_alerts` | Fraud predictions per transaction |
-| `forecasts` | Time-series forecast outputs (JSONB series) |
-| `customer_segments` | Cluster assignment per customer |
-| `explanations` | SHAP/LIME feature contributions (polymorphic) |
-| `recommendations` | Generated financial advice |
-| `reports` | Generated PDF report metadata |
-| `audit_logs` | Security/action audit trail |
-| `model_registry` | Deployed model versions + metrics |
-
-Key design decisions:
-- Every ML output table stores a `model_version` string for reproducibility and drift tracking.
-- `explanations` uses a polymorphic reference (`prediction_id` + `prediction_type`) so SHAP/LIME storage is unified across credit risk and fraud predictions.
-- `transactions` is indexed on `(user_id, transaction_date)`; consider monthly partitioning at scale.
-
----
-
-## API Reference
-
-Base URL: `/api/v1`
-
-<details>
-<summary><strong>Auth</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/auth/register` | Create account |
-| POST | `/auth/login` | Login, returns access + refresh token |
-| POST | `/auth/refresh` | Refresh access token |
-| POST | `/auth/logout` | Revoke refresh token |
-| POST | `/auth/verify-email` | Verify email |
-| POST | `/auth/forgot-password` | Trigger reset flow |
-| POST | `/auth/reset-password` | Reset password |
-| GET | `/auth/me` | Current user info |
-
-</details>
-
-<details>
-<summary><strong>Documents & Transactions</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/documents/upload` | Upload statement (async processing, returns 202) |
-| GET | `/documents` | List uploads + status |
-| GET | `/documents/{id}` | Get document detail |
-| DELETE | `/documents/{id}` | Delete document |
-| GET | `/documents/{id}/status` | Poll processing status |
-| GET | `/transactions` | List/filter transactions |
-| GET | `/transactions/{id}` | Transaction detail |
-| PATCH | `/transactions/{id}` | Manual category correction |
-| GET | `/transactions/summary` | Aggregates for dashboard charts |
-
-</details>
-
-<details>
-<summary><strong>Loans</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/loans/apply` | Submit loan application |
-| GET | `/loans` | List user's loans |
-| GET | `/loans/{id}` | Loan detail |
-| GET | `/loans/{id}/repayment-schedule` | Repayment schedule |
-
-</details>
-
-<details>
-<summary><strong>Predictions</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/predictions/credit-risk` | Run credit risk scoring |
-| GET | `/predictions/credit-risk/latest` | Latest score |
-| GET | `/predictions/credit-risk/history` | Score history |
-| POST | `/predictions/fraud/scan` | Trigger fraud scan |
-| GET | `/predictions/fraud/alerts` | List fraud alerts |
-| PATCH | `/predictions/fraud/alerts/{id}` | Update alert status |
-| GET | `/predictions/segment` | Customer segment |
-| GET | `/predictions/financial-health-score` | Composite health score |
-
-</details>
-
-<details>
-<summary><strong>Forecasting & Explainability</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/forecast/generate` | Trigger async forecast job |
-| GET | `/forecast/status/{task_id}` | Poll forecast job |
-| GET | `/forecast?type=&horizon=` | Get forecast results |
-| GET | `/explainability/{prediction_id}` | SHAP/LIME breakdown |
-| POST | `/explainability/what-if` | Simulate feature changes |
-
-</details>
-
-<details>
-<summary><strong>Recommendations, Reports, Admin</strong></summary>
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/recommendations` | List recommendations |
-| PATCH | `/recommendations/{id}/dismiss` | Dismiss a recommendation |
-| POST | `/reports/generate` | Generate PDF report (async) |
-| GET | `/reports` | List reports |
-| GET | `/reports/{id}/download` | Download report |
-| GET | `/admin/users` | List users (admin) |
-| GET | `/admin/loans?status=` | Loan queue (admin) |
-| PATCH | `/admin/loans/{id}/decision` | Approve/reject loan |
-| GET | `/admin/models` | Model registry |
-| POST | `/admin/models/{name}/rollback` | Rollback model version |
-| GET | `/health` | Health check |
-| GET | `/metrics` | Prometheus scrape endpoint |
-
-</details>
-
----
-
-## ML Models
-
-| Task | Algorithms | Notes |
-|---|---|---|
-| **Credit Risk** | Logistic Regression, Random Forest, XGBoost, LightGBM, CatBoost → **Stacking Ensemble** | Outputs default probability |
-| **Fraud Detection** | Isolation Forest, LOF, Autoencoder, One-Class SVM | Unsupervised — fraud data is unlabeled/imbalanced |
-| **Customer Segmentation** | KMeans, DBSCAN, HDBSCAN | Clusters: Luxury Spenders, Young Investors, High-Risk Borrowers, etc. |
-| **Spending Classification** | Random Forest, Gradient Boosting, Neural Network | Categorizes transactions (food, travel, utilities, ...) |
-| **Cash Flow Forecasting** | LSTM, GRU, Transformer / Temporal Fusion Transformer | Forecasts next week / month / 6 months |
-| **Financial Health Score** | Weighted composite (not a trained model) | Combines income stability, savings, debt, credit history, emergency fund |
-
-Models are versioned and served via a model registry loaded once at app startup (see [Serving Models](#serving-a-trained-model) below).
-
-### Serving a trained model
-
-1. Save a bundle (model + preprocessing + metadata), not just the raw model:
-   ```python
-   joblib.dump({
-       "model": trained_model,
-       "scaler": fitted_scaler,
-       "feature_names": [...],
-       "model_version": "credit_stack_v1.0",
-   }, "app/ml/models/credit_risk_v1.pkl")
+   ```bash
+   docker compose up --build -d postgres redis backend celery_worker
    ```
-2. Load all models once at startup into an in-memory registry (`app/ml/inference/model_loader.py`).
-3. Validate input via Pydantic schemas before inference.
-4. Run inference + SHAP explanation in the service layer.
-5. Route heavy models (LSTM, autoencoders) through Celery; keep tree-based models synchronous.
 
----
+3. In another terminal, install frontend packages and start the web app:
 
-## Explainable AI
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-Every prediction returns *why*, not just a score:
+4. Open <http://localhost:3000>. The API health endpoint is <http://localhost:8000/health>; interactive API docs are at <http://localhost:8000/api/v1/docs>.
 
-```json
-{
-  "default_probability": 0.82,
-  "risk_band": "high",
-  "model_version": "credit_stack_v1.3",
-  "explanation": [
-    { "feature": "debt_to_income_ratio", "contribution": 0.24 },
-    { "feature": "late_payments", "contribution": 0.18 },
-    { "feature": "credit_utilization", "contribution": 0.15 },
-    { "feature": "savings_balance", "contribution": 0.12 },
-    { "feature": "salary_stability", "contribution": -0.08 }
-  ]
-}
-```
+Alternatively, start all Compose services, including the web app, with `docker compose up --build`. The web app is available at port 3000 and the API at port 8000. To stop the services, run `docker compose down`. This keeps named database volumes; `docker compose down -v` removes those volumes and their data.
 
-- **SHAP** (`TreeExplainer`) for tree-based models — fast, used synchronously.
-- **LIME** / `KernelExplainer` for non-tree models (autoencoders) — slower, run async.
-- Powers the **What-If Simulator**: adjust an input (e.g. income +₹20,000) and see the score update in real time.
+The Compose file includes local development credentials as fallbacks. Replace them and the JWT secret before using any shared or deployed environment. The seeded local administrator defaults are `admin@arthdrishti.local` / `ChangeMeAdmin123!`; change these credentials and configure `FIRST_SUPERUSER_EMAIL` and `FIRST_SUPERUSER_PASSWORD` before use beyond a disposable local demo.
 
----
+## Run the API without Docker
 
-## MLOps Pipeline
-
-```
-Raw Data → Validation → Feature Engineering → Train/Test Split
-   → Optuna Hyperparameter Search → Model Training → Model Evaluation
-   → MLflow Model Registry → Deployment → Monitoring (Evidently AI)
-```
-
-- **MLflow**: experiment tracking + model registry (mirrored in `model_registry` table for app queries)
-- **Evidently AI**: data/prediction drift monitoring
-- **Prometheus + Grafana**: system and model performance dashboards
-- **GitHub Actions**: CI for tests, linting, and deployment
-- **Docker**: containerized services for reproducible environments
-
----
-
-## Getting Started
-
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-- Docker & Docker Compose (recommended)
-
-### Setup
+The API requires a reachable PostgreSQL database and Redis instance. From the repository root, create a Python 3.11 environment, install `backend/requirements.txt`, configure `DATABASE_URL`, `REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, and `JWT_SECRET_KEY`, then start the API from `backend`:
 
 ```bash
-# clone
-git clone https://github.com/<your-username>/ai-financial-risk-platform.git
-cd ai-financial-risk-platform
+python -m venv .venv
+# Windows PowerShell:
+.venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+Set-Location backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# backend
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env          # fill in secrets/DB URL
-alembic upgrade head          # run migrations
-uvicorn app.main:app --reload
+Run the Celery worker from the `backend` directory if using queued tasks:
 
-# celery worker (separate terminal)
+```bash
 celery -A app.tasks.celery_app worker --loglevel=info
-
-# frontend
-cd ../frontend
-npm install
-npm run dev
 ```
 
-### Or with Docker Compose
+## Configuration
+
+`.env.example` lists the available settings. Common settings include:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | SQLAlchemy connection string for PostgreSQL. |
+| `REDIS_URL` | Redis connection used by the API. |
+| `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND` | Celery queue and result connections. |
+| `JWT_SECRET_KEY` | Signing key for authentication tokens; set a strong private value. |
+| `FIRST_SUPERUSER_EMAIL`, `FIRST_SUPERUSER_PASSWORD` | Initial seeded admin credentials. |
+| `LOCAL_STORAGE_DIR`, `USE_LOCAL_STORAGE` | Local upload storage configuration. |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Optional AI Advisor provider settings. |
+| `NEXT_PUBLIC_API_BASE_URL` | API base URL used by the browser, normally `http://localhost:8000/api/v1`. |
+| `NEXT_PUBLIC_ENABLE_MOCK_DATA` | Enables frontend mock fallbacks in areas that support them. Set to `false` when demonstrating backend-backed customer and officer workflows. |
+
+Only expose values prefixed with `NEXT_PUBLIC_` if they are safe for browser clients to see. Do not use real customer statements in a public or shared demo environment.
+
+## How to demonstrate with your own data
+
+1. Start PostgreSQL, Redis, and the API, then start the frontend.
+2. Register/sign in as a customer. Upload a CSV, XLSX, or supported PDF bank statement in **Data Sources**.
+3. Wait for processing to finish and check that the source contains parsed transactions. If the statement has no readable transaction rows, try CSV/XLSX or a text-based PDF export from the bank.
+4. Open the analytics pages and reports. Their results depend on the selected or available parsed statement transactions.
+5. Register/sign in with a separate loan officer account. Submit a loan application from the customer account and review it in the officer workspace. Open the application report before recording an approval or rejection.
+
+Customer information and uploaded data are scoped to the signed-in account. Do not use another person's statement without authorization.
+
+## Analytics and model limitations
+
+- Statement parsing extracts transaction fields from uploaded CSV, XLSX, and PDF files. Bank export formats vary, so always verify the parsed rows, dates, and debit/credit direction before relying on analytics.
+- Financial health and transaction insights are computed from parsed transaction features and application logic. Credit risk and fraud features use bundled scikit-learn model artifacts; model artifacts can be trained from local datasets when available or use synthetic fallback data during training. Training sources are not the same as the customer's uploaded statement.
+- Fraud flags identify patterns for review; they do not establish fraud. Forecasts are estimates based on historical transaction flow and should not be treated as guarantees.
+- Explainability and recommendations include rule-based logic. They are not a formal SHAP/LIME explanation of every model prediction. AI Advisor output may be generated by an external configured LLM service or by the backend fallback.
+- `data/` may contain local datasets used for model training. It is ignored by Git and is not included when cloning the repository. See [`docs/synthetic-data.md`](docs/synthetic-data.md) for the optional synthetic statement generator.
+- This project is a demo application. It is not a production lending, fraud-detection, or regulatory compliance system.
+
+## Repository layout
+
+```text
+src/app/                 Next.js routes and page layouts
+src/components/          Shared frontend components
+src/lib/                 Frontend API and application utilities
+backend/app/api/         FastAPI route modules
+backend/app/models/      SQLAlchemy database models
+backend/app/schemas/     Pydantic request/response schemas
+backend/app/services/    Parsing, analytics, scoring, and report services
+backend/app/ml/models/   Bundled model artifacts
+backend/uploads/         Local uploaded-file storage
+scripts/                 Data generation and model utility scripts
+docs/                    Supporting project documentation
+```
+
+## Useful commands
 
 ```bash
-docker-compose up --build
+npm run dev        # Start the Next.js development server
+npm run build      # Build the Next.js application
+npm run start      # Serve a production build
+npm run lint       # Run ESLint
+npm run test       # Currently runs `next build`; it is not a unit-test suite
 ```
-
-Backend available at `http://localhost:8000`, frontend at `http://localhost:3000`, API docs (Swagger) at `http://localhost:8000/docs`.
-
----
-
-## Environment Variables
-
-```env
-# Backend
-DATABASE_URL=postgresql://user:password@localhost:5432/finrisk
-REDIS_URL=redis://localhost:6379/0
-JWT_SECRET_KEY=change-me
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-MLFLOW_TRACKING_URI=http://localhost:5000
-AWS_S3_BUCKET=finrisk-documents
-
-# Frontend
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-```
-
----
-
-## Running Tests
-
-```bash
-# backend
-cd backend
-pytest --cov=app tests/
-
-# frontend
-cd frontend
-npm run test
-```
-
----
-
-## Roadmap
-
-| Phase | Weeks | Focus | Status |
-|---|---|---|---|
-| **Phase 1** | 1–2 | Foundation — FastAPI, JWT auth, PostgreSQL (15 tables), Docker, CI, Celery | ✅ Complete |
-| **Phase 2** | 3–4 | Data pipeline — Multi-format parser (CSV/XLSX/PDF), 22 engineered features, synthetic data | ✅ Complete |
-| **Phase 3** | 5–6 | Core ML — Stacking credit risk classifier, Isolation Forest, KMeans clustering | ✅ Complete |
-| **Phase 4** | 7–8 | Advanced APIs — SHAP explainability, cash flow forecasting, loan underwriting, PDF generator | ✅ Complete |
-| **Phase 5** | 9–10 | Dashboard & Live Integration — Next.js live API integration, role auth routing, simulator, reports | ✅ Complete |
-| **Phase 6** | 11 | MLOps — Kolmogorov-Smirnov test, Population Stability Index (PSI) drift detector, model rollback | ✅ Complete |
-| **Phase 7** | 12 | Polish & Verification — Full test suite passing (19/19 pytest, 60/60 Next.js routes compiled) | ✅ Complete |
-
----
-
-## Screenshots
-
-> _Add dashboard, explainability, and forecast page screenshots here once built._
-
----
 
 ## License
 
-This project is for educational/portfolio purposes. Synthetic data only — see [`docs/synthetic-data.md`](docs/synthetic-data.md) for generation methodology.
+No license file is currently provided. Contact the project owner before redistributing or using this project outside its intended demo context.
