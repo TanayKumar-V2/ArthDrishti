@@ -64,12 +64,13 @@ def complete_json(
     response_schema: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     global _GROQ_NEXT_REQUEST_AT
-    api_key = settings.GROQ_API_KEY.strip().strip("'\"") if settings.GROQ_API_KEY else ""
+    api_key = settings.GROQ_API_KEY.strip().strip('"').strip("'") if settings.GROQ_API_KEY else ""
     if not api_key:
         raise HTTPException(status_code=503, detail="Groq analytics are unavailable because GROQ_API_KEY is not configured.")
 
-    url = f"{settings.GROQ_BASE_URL.strip().strip('\'\"').rstrip('/')}/chat/completions"
-    model = settings.GROQ_MODEL.strip().strip("'\"")
+    base_url = settings.GROQ_BASE_URL.strip().strip('"').strip("'").rstrip("/")
+    url = f"{base_url}/chat/completions"
+    model = settings.GROQ_MODEL.strip().strip('"').strip("'")
     is_reasoning_model = any(m in model.lower() for m in ("gpt-oss", "deepseek-r1", "qwq"))
 
     effective_max_tokens = max(max_tokens + 2048, 4096) if is_reasoning_model else max_tokens
