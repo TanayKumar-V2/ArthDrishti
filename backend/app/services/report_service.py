@@ -14,7 +14,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from app.core.config import settings
 from app.models import Report
 from app.models.financial import Transaction
-from app.models.ml import RiskScore
 from app.services.feature_engineering_service import compute_20_financial_features
 
 
@@ -53,24 +52,11 @@ def generate_pdf_report(
     if not features:
         raise HTTPException(status_code=400, detail="No financial features could be calculated from this statement.")
 
-    if document_ids is not None:
-        from app.services.prediction_service import evaluate_customer_credit_risk
-        risk_result = evaluate_customer_credit_risk(db, user_id, document_ids)
-        probability = float(risk_result["default_probability"])
-        risk_band = risk_result["risk_band"]
-        health_score = float(risk_result["financial_health_score"])
-    else:
-        risk = db.query(RiskScore).filter(RiskScore.user_id == user_id).order_by(RiskScore.created_at.desc()).first()
-        if not risk:
-            from app.services.prediction_service import evaluate_customer_credit_risk
-            risk_result = evaluate_customer_credit_risk(db, user_id)
-            probability = float(risk_result["default_probability"])
-            risk_band = risk_result["risk_band"]
-            health_score = float(risk_result["financial_health_score"])
-        else:
-            probability = float(risk.default_probability)
-            risk_band = risk.risk_band
-            health_score = float(risk.financial_health_score)
+    from app.services.prediction_service import evaluate_customer_credit_risk
+    risk_result = evaluate_customer_credit_risk(db, user_id, document_ids)
+    probability = float(risk_result["default_probability"])
+    risk_band = risk_result["risk_band"]
+    health_score = float(risk_result["financial_health_score"])
 
     total_income = sum(float(txn.amount) for txn in transactions if txn.transaction_type == "credit")
     total_expenses = sum(float(txn.amount) for txn in transactions if txn.transaction_type == "debit")

@@ -12,7 +12,7 @@ import {
   ChevronRight,
   FolderMinus,
   Paperclip,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ import PageContainer from "@/components/ui/PageContainer";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Overlays";
 import { cn } from "@/lib/utils";
-import { MOCK_RESPONSES, RichResponse } from "@/lib/advisor_data";
+import type { RichResponse } from "@/lib/advisor_data";
 import { advisorApi, getStoredUser, authApi } from "@/lib/api";
 
 // ============================================================================
@@ -52,14 +52,14 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
     let option: echarts.EChartsOption = {};
     const isDark = document.documentElement.classList.contains("dark") || false;
     const gridLineColor = isDark ? "rgba(30, 41, 59, 0.4)" : "rgba(226, 232, 240, 0.6)";
-    const textColor = isDark ? "#94A3B8" : "#64748B";
+    const textColor = isDark ? "#849087" : "#64716A";
 
     if (type === "bar") {
       const barData = data as { categories: string[]; values: number[] };
       option = {
         grid: { top: 10, right: 15, bottom: 20, left: 80 },
-        xAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: textColor, fontSize: 8 } },
-        yAxis: { type: "category", data: [...barData.categories].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: textColor, fontSize: 8 } },
+        xAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: textColor, fontSize: 10 } },
+        yAxis: { type: "category", data: [...barData.categories].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: textColor, fontSize: 10 } },
         series: [
           {
             type: "bar",
@@ -67,11 +67,11 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
             itemStyle: {
               color: (params: unknown) => {
                 const p = params as { value: number };
-                return p.value >= 0 ? "#EF4444" : "#22C55E";
+                return p.value >= 0 ? "#AD493D" : "#286A4A";
               },
               borderRadius: 3
             },
-            label: { show: true, position: "right", formatter: "{c}%", fontSize: 8 }
+            label: { show: true, position: "right", formatter: "{c}%", fontSize: 10 }
           }
         ]
       };
@@ -79,21 +79,16 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
       const lineData = data as { timeline: string[]; values: number[] };
       option = {
         grid: { top: 15, right: 15, bottom: 20, left: 45 },
-        xAxis: { type: "category", data: lineData.timeline, axisLabel: { color: textColor, fontSize: 8 } },
-        yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: textColor, fontSize: 8 } },
+        xAxis: { type: "category", data: lineData.timeline, axisLabel: { color: textColor, fontSize: 10 } },
+        yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: textColor, fontSize: 10 } },
         series: [
           {
             type: "line",
             data: lineData.values,
             smooth: true,
-            itemStyle: { color: "#4F7CFF" },
+            itemStyle: { color: "#176B55" },
             lineStyle: { width: 1.5 },
-            areaStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: "rgba(79, 124, 255, 0.15)" },
-                { offset: 1, color: "rgba(79, 124, 255, 0)" }
-              ])
-            }
+            areaStyle: { color: "rgba(23, 107, 85, 0.10)" }
           }
         ]
       };
@@ -114,9 +109,9 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
               lineStyle: {
                 width: 6,
                 color: [
-                  [0.3, "#EF4444"],
-                  [0.7, "#F97316"],
-                  [1, "#22C55E"]
+                  [0.3, "#AD493D"],
+                  [0.7, "#95651A"],
+                  [1, "#286A4A"]
                 ]
               }
             },
@@ -125,18 +120,18 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
               length: "75%",
               width: 4,
               offsetCenter: [0, "5%"],
-              itemStyle: { color: isDark ? "#E2E8F0" : "#475569" }
+              itemStyle: { color: isDark ? "#a7b2aa" : "#475569" }
             },
             axisTick: { length: 4, lineStyle: { color: "auto", width: 1 } },
             splitLine: { length: 8, lineStyle: { color: "auto", width: 2 } },
-            axisLabel: { color: textColor, fontSize: 8, distance: -35 },
-            title: { offsetCenter: [0, "-20%"], fontSize: 9, color: textColor },
+            axisLabel: { color: textColor, fontSize: 10, distance: -35 },
+            title: { offsetCenter: [0, "-20%"], fontSize: 10, color: textColor },
             detail: {
               fontSize: 14,
               offsetCenter: [0, "0%"],
               valueAnimation: true,
               formatter: "{value}",
-              color: isDark ? "#F8FAFC" : "#0F172A",
+              color: isDark ? "#edf1eb" : "#1B2622",
               fontWeight: "bold"
             },
             data: [{ value: gaugeData.score, name: "Target Health" }]
@@ -156,7 +151,7 @@ const ChatChart = ({ type, data }: ChatChartProps) => {
     };
   }, [type, data]);
 
-  return <div ref={chartRef} className="w-full h-36 mt-3 bg-surface-elevated/20 border border-border/40 rounded-sm" />;
+  return <div ref={chartRef} className="mt-4 h-52 w-full rounded-2xl border border-border/70 bg-surface p-2" />;
 };
 
 // ============================================================================
@@ -166,12 +161,7 @@ export default function AiAdvisorPage() {
   const router = useRouter();
 
   // Dialog / Chat history list
-  const [history, setHistory] = useState([
-    { id: "h1", title: "Credit Risk Analysis", timestamp: "Today, 10:14 AM", active: true },
-    { id: "h2", title: "Discretionary Overspending Review", timestamp: "Yesterday, 3:45 PM", active: false },
-    { id: "h3", title: "Affordable EMI Diagnostic", timestamp: "July 5, 2026", active: false },
-    { id: "h4", title: "Cash Flow 6M Prediction", timestamp: "July 2, 2026", active: false }
-  ]);
+  const [history, setHistory] = useState<Array<{ id: string; title: string; timestamp: string; active: boolean }>>([]);
 
   // User profile
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
@@ -185,7 +175,7 @@ export default function AiAdvisorPage() {
         id: "m_welcome",
         sender: "assistant",
         timestamp: "10:14 AM",
-        text: `GOOD MORNING, ${name}.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?`
+        text: `Hello, ${name}. Ask me about the transaction data and analysis available in your account.`
       }
     ];
   });
@@ -230,9 +220,7 @@ export default function AiAdvisorPage() {
           setProfileMetrics(data);
         }
       })
-      .catch(() => {
-        // Offline / fallback mode
-      });
+      .catch(() => setProfileMetrics(null));
     return () => {
       isMounted = false;
     };
@@ -240,7 +228,7 @@ export default function AiAdvisorPage() {
 
   // Handle preset prompt click
   const handlePromptSelect = useCallback(
-    async (promptText: string, mockKey: string) => {
+    async (promptText: string, _promptKey: string) => {
       const userMsgId = `user_${Date.now()}`;
       const userMsg: Message = {
         id: userMsgId,
@@ -253,7 +241,6 @@ export default function AiAdvisorPage() {
       setIsLoading(true);
       setIsError(false);
 
-      const richReply = MOCK_RESPONSES[mockKey];
       try {
         const historyPayload = messages.slice(-4).map((m) => ({ sender: m.sender, text: m.text }));
         const res = await advisorApi.chat(promptText, historyPayload);
@@ -261,24 +248,17 @@ export default function AiAdvisorPage() {
           id: `ai_${Date.now()}`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          text: res.response || richReply?.text || "Analysis complete.",
-          richData: richReply,
+          text: res.response,
         };
         setMessages((prev) => [...prev, aiMsg]);
-      } catch {
-        // Fallback to rich mock responses if offline
-        if (richReply) {
-          const aiMsg: Message = {
-            id: `ai_${Date.now()}`,
-            sender: "assistant",
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            text: richReply.text,
-            richData: richReply,
-          };
-          setMessages((prev) => [...prev, aiMsg]);
-        } else {
-          setIsError(true);
-        }
+      } catch (cause) {
+        setIsError(true);
+        setMessages((prev) => [...prev, {
+          id: `ai_${Date.now()}`,
+          sender: "assistant",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: cause instanceof Error ? cause.message : "Groq could not answer. Check the backend configuration and retry.",
+        }]);
       } finally {
         setIsLoading(false);
       }
@@ -306,22 +286,6 @@ export default function AiAdvisorPage() {
       setIsLoading(true);
       setIsError(false);
 
-      // Determine visualization theme by keyword
-      const normalizedQuery = query.toLowerCase();
-      let key = "risk";
-      if (normalizedQuery.includes("spend") || normalizedQuery.includes("buy") || normalizedQuery.includes("expense")) {
-        key = "spending";
-      } else if (normalizedQuery.includes("loan") || normalizedQuery.includes("afford") || normalizedQuery.includes("emi")) {
-        key = "loan";
-      } else if (normalizedQuery.includes("health") || normalizedQuery.includes("score") || normalizedQuery.includes("90")) {
-        key = "health";
-      } else if (normalizedQuery.includes("fraud") || normalizedQuery.includes("alert") || normalizedQuery.includes("anomaly")) {
-        key = "fraud";
-      } else if (normalizedQuery.includes("balance") || normalizedQuery.includes("forecast") || normalizedQuery.includes("6 months")) {
-        key = "forecast";
-      }
-
-      const richReply = MOCK_RESPONSES[key];
       try {
         const historyPayload = messages.slice(-4).map((m) => ({ sender: m.sender, text: m.text }));
         const res = await advisorApi.chat(query, historyPayload);
@@ -329,17 +293,16 @@ export default function AiAdvisorPage() {
           id: `ai_${Date.now()}`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          text: res.response || richReply?.text || "Analysis complete.",
-          richData: richReply,
+          text: res.response,
         };
         setMessages((prev) => [...prev, aiMsg]);
-      } catch {
+      } catch (cause) {
+        setIsError(true);
         const aiMsg: Message = {
           id: `ai_${Date.now()}`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          text: richReply.text,
-          richData: richReply,
+          text: cause instanceof Error ? cause.message : "Groq could not answer. Check the backend configuration and retry.",
         };
         setMessages((prev) => [...prev, aiMsg]);
       } finally {
@@ -353,45 +316,7 @@ export default function AiAdvisorPage() {
   const handleSelectHistory = useCallback((id: string) => {
     setHistory((prev) => prev.map((h) => ({ ...h, active: h.id === id })));
     setIsHistoryOpen(false);
-    
-    // Clear and load mock message history based on topic
-    const userGreetingName = (currentUser?.full_name?.split(" ")[0] || "THERE").toUpperCase();
-    let defaultMsg = `GOOD MORNING, ${userGreetingName}.\n\nI've analyzed your financial health, transactions, risk profile, fraud alerts, and cash flow forecast.\n\nWhat would you like to understand today?`;
-    let datasetKey = "";
-
-    if (id === "h1") {
-      datasetKey = "risk";
-    } else if (id === "h2") {
-      defaultMsg = "I've flagged unusual overspending in Dining & Entertainment relative to your baseline budget.";
-      datasetKey = "spending";
-    } else if (id === "h3") {
-      defaultMsg = "Let's review the affordability parameters for a new term loan credit application.";
-      datasetKey = "loan";
-    } else if (id === "h4") {
-      defaultMsg = "Reviewing cash flow forecasts and liquidity reserves projection curves.";
-      datasetKey = "forecast";
-    }
-
-    const firstMsg: Message = {
-      id: "m_welcome",
-      sender: "assistant",
-      timestamp: "10:14 AM",
-      text: defaultMsg
-    };
-
-    if (datasetKey) {
-      const rich = MOCK_RESPONSES[datasetKey];
-      const detailMsg: Message = {
-        id: "m_detail",
-        sender: "assistant",
-        timestamp: "10:15 AM",
-        text: rich.text,
-        richData: rich
-      };
-      setMessages([firstMsg, detailMsg]);
-    } else {
-      setMessages([firstMsg]);
-    }
+    setMessages([{ id: `history_${id}`, sender: "assistant", timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), text: "Saved conversations are not available in this demo yet." }]);
   }, []);
 
   // Clear active messages
@@ -418,10 +343,10 @@ export default function AiAdvisorPage() {
   ];
 
   return (
-    <PageContainer className="p-3 md:p-4 gap-3 md:gap-4 flex flex-col h-full min-h-0">
+    <PageContainer className="flex h-full min-h-0 flex-col gap-4 p-4 lg:p-6">
       
       {/* MOBILE OPTIMIZED TABS TOOLBAR */}
-      <div className="flex justify-between items-center bg-surface border border-border p-2.5 rounded-sm select-none lg:hidden mb-4">
+      <div className="mb-1 flex items-center justify-between rounded-2xl border border-border/70 bg-surface p-2.5 select-none lg:hidden">
         <button
           onClick={() => setIsHistoryOpen(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-foreground-secondary hover:text-foreground font-sans font-bold cursor-pointer"
@@ -440,87 +365,88 @@ export default function AiAdvisorPage() {
       </div>
 
       {/* CORE WORKSPACE EXPERIENCE */}
-      <div className="flex-1 grid grid-cols-12 grid-rows-[minmax(0,1fr)] gap-3 md:gap-6 min-h-0 overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-12 grid-rows-[minmax(0,1fr)] gap-4 overflow-hidden xl:gap-5">
         
         {/* COLUMN 1: CONVERSATION HISTORY (DESKTOP - 3 COLS) */}
-        <div className="hidden lg:block lg:col-span-3 bg-surface border border-border/80 rounded-sm p-4 flex flex-col justify-between select-none">
+        <div className="hidden min-h-0 flex-col justify-between rounded-[1.6rem] border border-border/70 bg-surface p-4 select-none lg:col-span-3 lg:flex xl:p-5">
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b border-border/60 pb-3">
-              <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-foreground-muted">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground-muted">
                 Audit History
               </span>
               <button
                 onClick={handleNewChat}
-                className="text-[9px] font-sans font-bold hover:underline uppercase text-primary flex items-center gap-0.5 cursor-pointer"
+                className="text-[11px] font-semibold text-primary hover:text-primary/80 flex items-center gap-1 cursor-pointer"
               >
                 + New Chat
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+            <div className="max-h-[min(65vh,680px)] space-y-2 overflow-y-auto pr-1">
               {history.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleSelectHistory(item.id)}
                   className={cn(
-                    "w-full text-left p-3 rounded-xs transition-all border text-xs flex flex-col gap-1 cursor-pointer",
+                    "w-full rounded-xl border p-3.5 text-left text-[13px] transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col gap-1.5 cursor-pointer",
                     item.active
                       ? "bg-surface-elevated border-primary text-foreground font-semibold shadow-xs"
                       : "border-transparent text-foreground-secondary hover:bg-surface-elevated/40 hover:text-foreground"
                   )}
                 >
                   <span className="truncate">{item.title}</span>
-                  <span className="text-[9px] font-mono text-foreground-muted">{item.timestamp}</span>
+                  <span className="text-[10px] font-mono text-foreground-muted">{item.timestamp}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="text-[10px] text-foreground-muted border-t border-border/40 pt-4 mt-2 flex items-center gap-1.5">
+          <div className="mt-3 flex items-center gap-2 border-t border-border/60 pt-4 text-[11px] text-foreground-muted">
             <FolderMinus className="h-4 w-4 text-foreground-secondary" />
             <span>Chat logs stored locally.</span>
           </div>
         </div>
 
         {/* COLUMN 2: AI CONVERSATION WORKSPACE (50% / 6 COLS) */}
-        <div className="col-span-12 lg:col-span-6 bg-surface border border-border/80 rounded-sm flex flex-col overflow-hidden relative min-h-0">
+        <div className="relative col-span-12 flex min-h-0 flex-col overflow-hidden rounded-[1.6rem] border border-border/70 bg-surface lg:col-span-9">
           
           {/* Engine & Status Banner */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-border/60 bg-surface-elevated/40 text-[10px]">
-            <div className="flex items-center gap-1.5 font-sans font-semibold text-foreground-secondary">
-              <Brain className="h-3.5 w-3.5 text-primary" />
+          <div className="flex items-center justify-between gap-4 border-b border-border/70 bg-surface px-4 py-3.5 sm:px-6">
+            <div className="flex items-center gap-3 font-sans font-semibold text-foreground-secondary">
+              <Brain className="h-4 w-4 text-primary" />
               <span>Financial Risk Intelligence</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[9px] px-2 py-0.5 rounded-xs bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 font-semibold">
+              <button type="button" onClick={() => setIsContextOpen(true)} className="hidden items-center gap-2 rounded-full border border-border/70 px-3.5 py-2 text-[11px] font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground lg:inline-flex">Profile context<ChevronRight className="h-3.5 w-3.5 text-primary" /></button>
+              <span className="hidden rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 font-mono text-[10px] font-semibold text-primary sm:flex sm:items-center sm:gap-1">
                 ⚡ Groq • openai/gpt-oss-20b
               </span>
             </div>
           </div>
 
           {/* Scrollable Message stream area */}
-          <div ref={chatLogRef} className="flex-1 p-4 md:p-5 overflow-y-auto space-y-5 scrollbar-none min-h-0">
+          <div ref={chatLogRef} className="flex-1 min-h-0 space-y-6 overflow-y-auto p-4 sm:p-6 lg:p-7">
             {messages.map((msg) => {
               const isAssistant = msg.sender === "assistant";
               return (
                 <div
                   key={msg.id}
                   className={cn(
-                    "flex flex-col max-w-[85%] select-none",
+                    "flex max-w-[92%] flex-col sm:max-w-[82%]",
                     isAssistant ? "self-start items-start" : "self-end items-end ml-auto"
                   )}
                 >
                   {/* Sender title label */}
-                  <span className="text-[9px] font-sans font-extrabold uppercase tracking-wider text-foreground-muted mb-1 px-1">
+                  <span className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">
                     {isAssistant ? "ArthDrishti AI Advisor" : `${currentUser?.full_name || "You"} (You)`}
                   </span>
 
                   {/* Bubble wrapper */}
                   <div
                     className={cn(
-                      "p-4 rounded-sm border text-xs font-sans leading-relaxed shadow-xs w-full",
+                      "w-full rounded-2xl border p-4 text-[13px] leading-6 sm:p-5 sm:text-[14px]",
                       isAssistant
-                        ? "bg-surface-elevated/35 border-border/80 text-foreground"
+                        ? "bg-surface-elevated/55 border-border/70 text-foreground"
                         : "bg-primary text-primary-foreground border-primary"
                     )}
                   >
@@ -529,17 +455,17 @@ export default function AiAdvisorPage() {
 
                     {/* Rich Response components block */}
                     {isAssistant && msg.richData && (
-                      <div className="mt-4 pt-3.5 border-t border-border/50 space-y-4 text-foreground">
+                      <div className="mt-5 space-y-5 border-t border-border/60 pt-5 text-foreground">
                         
                         {/* 1. Metrics Card Grid */}
                         {msg.richData.metrics && (
-                          <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                          <div className="grid grid-cols-2 gap-2.5 font-mono sm:grid-cols-3">
                             {msg.richData.metrics.map((m, idx) => (
-                              <div key={idx} className="bg-surface-elevated/65 border border-border/50 p-2.5 rounded-xs flex flex-col justify-between">
-                                <span className="text-[8px] font-sans text-foreground-muted block uppercase tracking-wider">{m.label}</span>
-                                <div className="flex items-baseline gap-1.5 mt-1">
-                                  <span className="font-extrabold text-foreground">{m.value}</span>
-                                  {m.wasValue && <span className="text-[9px] text-foreground-muted line-through">{m.wasValue}</span>}
+                              <div key={idx} className="flex min-h-20 flex-col justify-between rounded-xl border border-border/60 bg-surface p-3">
+                                <span className="block text-[10px] font-sans font-medium uppercase tracking-[0.1em] text-foreground-muted">{m.label}</span>
+                                <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+                                  <span className="text-[14px] font-semibold text-foreground">{m.value}</span>
+                                  {m.wasValue && <span className="text-[10px] text-foreground-muted line-through">{m.wasValue}</span>}
                                 </div>
                               </div>
                             ))}
@@ -554,15 +480,15 @@ export default function AiAdvisorPage() {
                         {/* 3. Risk Factors list */}
                         {msg.richData.riskFactors && (
                           <div className="border border-border/60 rounded-sm overflow-hidden bg-surface-elevated/25">
-                            <div className="grid grid-cols-12 bg-surface-elevated/60 text-[8px] font-bold text-foreground-muted uppercase p-1.5 border-b border-border/40 font-sans tracking-widest">
+                            <div className="grid grid-cols-12 bg-surface-elevated/60 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">
                               <span className="col-span-5">Risk Factor</span>
                               <span className="col-span-4 text-right">Value</span>
                               <span className="col-span-3 text-right">Impact</span>
                             </div>
                             {msg.richData.riskFactors.map((r, idx) => (
-                              <div key={idx} className="grid grid-cols-12 text-[10.5px] p-2 border-b border-border/20 last:border-b-0 font-sans">
+                              <div key={idx} className="grid grid-cols-12 gap-2 border-b border-border/50 px-3 py-3 text-[12px] last:border-b-0">
                                 <span className="col-span-5 font-semibold text-foreground">{r.name}</span>
-                                <span className="col-span-4 text-right text-foreground-secondary font-mono">{r.current} <span className="text-[8.5px] text-foreground-muted">({r.target})</span></span>
+                                <span className="col-span-4 text-right font-mono text-foreground-secondary">{r.current} <span className="text-[10px] text-foreground-muted">({r.target})</span></span>
                                 <span className={cn("col-span-3 text-right font-bold font-mono", r.isRisk ? "text-critical" : "text-positive")}>
                                   {r.impact}
                                 </span>
@@ -574,14 +500,14 @@ export default function AiAdvisorPage() {
                         {/* 4. Transactions List */}
                         {msg.richData.transactions && (
                           <div className="space-y-2">
-                            <span className="text-[9px] font-sans font-extrabold uppercase tracking-widest text-foreground-muted">Audited Transactions</span>
+                            <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.12em] text-foreground-muted">Audited Transactions</span>
                             {msg.richData.transactions.map((tx, idx) => (
-                              <div key={idx} className="bg-surface-elevated/45 border border-border p-3 rounded-xs flex justify-between items-center text-xs">
+                              <div key={idx} className="flex items-center justify-between gap-4 rounded-xl border border-border/70 bg-surface-elevated/50 p-3.5 text-[12px]">
                                 <div className="space-y-0.5">
-                                  <span className="font-bold text-foreground block">{tx.name}</span>
+                                  <span className="text-[13px] font-semibold text-foreground block">{tx.name}</span>
                                   <span className="text-[9px] text-foreground-muted block">{tx.date} • {tx.category}</span>
                                 </div>
-                                <span className="font-mono font-extrabold text-critical">
+                                <span className="shrink-0 font-mono text-[13px] font-semibold text-critical">
                                   -₹{tx.amount.toLocaleString("en-IN")}
                                 </span>
                               </div>
@@ -591,9 +517,9 @@ export default function AiAdvisorPage() {
 
                         {/* 5. Recommendations List */}
                         {msg.richData.recommendations && (
-                          <div className="space-y-1.5 font-sans">
-                            <span className="text-[9px] font-extrabold uppercase tracking-widest text-foreground-muted block">Advisor Recommendations</span>
-                            <ul className="list-disc pl-4 space-y-1 text-foreground-secondary text-[11px] leading-relaxed">
+                          <div className="space-y-2 font-sans">
+                            <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">Advisor recommendations</span>
+                            <ul className="list-disc space-y-2 pl-5 text-[12px] leading-5 text-foreground-secondary">
                               {msg.richData.recommendations.map((rec, idx) => (
                                 <li key={idx}>{rec}</li>
                               ))}
@@ -609,9 +535,9 @@ export default function AiAdvisorPage() {
                                 toast.info(`Redirecting to simulator page...`);
                                 router.push(msg.richData?.ctaHref ?? "/simulator");
                               }}
-                              className="w-full text-[10px] font-sans font-extrabold py-2 uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+                              className="group w-full rounded-full py-2.5 text-[12px] font-semibold"
                             >
-                              {msg.richData.ctaText} <ArrowRight className="h-3.5 w-3.5 animate-pulse" />
+                              {msg.richData.ctaText}<span className="ml-1 grid h-7 w-7 place-items-center rounded-full bg-primary-foreground/15"><ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" /></span>
                             </Button>
                           </div>
                         )}
@@ -621,7 +547,7 @@ export default function AiAdvisorPage() {
                   </div>
                   
                   {/* Timestamp label */}
-                  <span className="text-[8px] font-mono text-foreground-muted mt-1 px-1">
+                  <span className="mt-1 px-1 text-[10px] font-mono text-foreground-muted">
                     {msg.timestamp}
                   </span>
                 </div>
@@ -631,10 +557,10 @@ export default function AiAdvisorPage() {
             {/* Simulated typing loader state */}
             {isLoading && (
               <div className="flex flex-col max-w-[85%] self-start items-start select-none">
-                <span className="text-[9px] font-sans font-extrabold uppercase tracking-wider text-foreground-muted mb-1 px-1">
+                <span className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">
                   Advisor is analyzing...
                 </span>
-                <div className="p-4 rounded-sm border border-border/80 bg-surface-elevated/35 text-xs text-foreground flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-surface-elevated/55 p-4 text-[13px] text-foreground">
                   <div className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:-0.3s]" />
                   <div className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:-0.15s]" />
                   <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
@@ -644,10 +570,10 @@ export default function AiAdvisorPage() {
 
             {/* Error banner state */}
             {isError && (
-              <div className="flex flex-col max-w-full self-center select-none text-center py-2 bg-critical/10 border border-critical/20 p-4 rounded-sm">
+              <div className="flex max-w-full flex-col self-center rounded-2xl border border-critical/20 bg-critical/5 p-5 text-center">
                 <AlertTriangle className="h-6 w-6 text-critical mx-auto mb-2" />
-                <span className="text-xs font-bold text-critical font-sans">Attribution request failed</span>
-                <p className="text-[10px] text-foreground-secondary mt-1 font-sans">
+                <span className="text-[13px] font-semibold text-critical">Attribution request failed</span>
+                <p className="mt-1 text-[12px] text-foreground-secondary">
                   The network experienced timeout parameters. Please try again.
                 </p>
               </div>
@@ -656,15 +582,15 @@ export default function AiAdvisorPage() {
           </div>
 
           {/* COMPOSER INPUT DRAWER (BOTTOM AREA) */}
-          <div className="shrink-0 border-t border-border/80 bg-surface-elevated/45 p-3 md:p-4 space-y-3 md:space-y-4">
-            
+          <div className="shrink-0 space-y-3 border-t border-border/70 bg-surface-elevated/45 p-4 sm:p-5">
+
             {/* Pill-shaped prompt buttons */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1.5 border-b border-border/30 select-none">
+            <div className="flex gap-2 overflow-x-auto border-b border-border/50 pb-2 select-none scrollbar-none">
               {suggestedPrompts.map((p, idx) => (
                 <button
                   key={idx}
                   onClick={() => handlePromptSelect(p.text, p.key)}
-                  className="shrink-0 bg-surface border border-border hover:border-primary/80 transition-all px-3 py-1.5 rounded-sm text-[10px] text-foreground-secondary hover:text-foreground font-semibold cursor-pointer"
+                  className="shrink-0 rounded-full border border-border/70 bg-surface px-4 py-2 text-[11px] font-medium text-foreground-secondary transition-colors hover:border-primary/40 hover:bg-surface-hover hover:text-foreground cursor-pointer"
                 >
                   {p.text}
                 </button>
@@ -681,7 +607,7 @@ export default function AiAdvisorPage() {
                   toast.info(attachContext ? "Detached financial profile context from chat composer." : "Attached real-time financial diagnostic logs to composer.");
                 }}
                 className={cn(
-                  "p-2 rounded-xs border transition-all cursor-pointer",
+                  "grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition-all cursor-pointer",
                   attachContext
                     ? "bg-primary/10 text-primary border-primary/25"
                     : "bg-surface text-foreground-secondary border-border"
@@ -696,20 +622,20 @@ export default function AiAdvisorPage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Ask advisor (e.g. Can I afford another loan?)"
-                className="flex-1 bg-surface border border-border text-xs rounded-sm py-2 px-3 text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-sans font-medium"
+                className="h-11 flex-1 rounded-xl border border-border/80 bg-surface px-4 text-[13px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-sans"
               />
 
               <Button
                 type="submit"
                 size="sm"
-                className="text-[10px] uppercase font-bold py-2.5 px-3 flex items-center justify-center shrink-0 cursor-pointer"
+                className="h-11 w-11 shrink-0 rounded-xl cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
               </Button>
             </form>
 
             {/* RESTRICTED DISCLAIMER WARNING */}
-            <p className="text-[9.5px] text-foreground-muted leading-relaxed font-sans text-center select-none pt-1">
+            <p className="pt-1 text-center text-[10px] leading-5 text-foreground-muted font-sans select-none">
               ✦ ArthDrishti AI Advisor provides informational assessments derived from automated models. Output does not constitute guaranteed or registered financial advice.
             </p>
           </div>
@@ -717,7 +643,7 @@ export default function AiAdvisorPage() {
         </div>
 
         {/* COLUMN 3: FINANCIAL CONTEXT PANEL (DESKTOP - 3 COLS) */}
-        <div className="hidden lg:block lg:col-span-3 bg-surface border border-border/80 rounded-sm p-4 flex flex-col justify-between select-none">
+        <div className="hidden">
           <div className="space-y-4">
             <div className="border-b border-border/60 pb-3">
               <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-foreground-muted flex items-center gap-1">
@@ -726,88 +652,7 @@ export default function AiAdvisorPage() {
             </div>
 
             {/* Stats list linking to pages */}
-            <div className="space-y-3.5 font-sans">
-              {[
-                {
-                  label: "Financial Health",
-                  value: profileMetrics ? `${profileMetrics.financial_health_score}/100` : "82/100",
-                  href: "/financial-health",
-                  status: Number(profileMetrics?.financial_health_score ?? 82) >= 70 ? "positive" : "critical",
-                },
-                {
-                  label: "Default Risk Rating",
-                  value: profileMetrics
-                    ? `${profileMetrics.default_probability_pct}% (${profileMetrics.credit_risk_band})`
-                    : "18% (Low)",
-                  href: "/credit-risk",
-                  status:
-                    profileMetrics?.credit_risk_band === "HIGH" || profileMetrics?.credit_risk_band === "SEVERE"
-                      ? "critical"
-                      : "positive",
-                },
-                {
-                  label: "Pending Fraud Alerts",
-                  value: profileMetrics ? `${profileMetrics.pending_fraud_alerts} Alerts` : "2 Alerts",
-                  href: "/credit-risk",
-                  status: Number(profileMetrics?.pending_fraud_alerts ?? 0) > 0 ? "critical" : "positive",
-                },
-                {
-                  label: "Monthly Savings Rate",
-                  value: profileMetrics ? `${profileMetrics.savings_rate_pct}%` : "24.8%",
-                  href: "/explainable-ai",
-                  status: Number(profileMetrics?.savings_rate_pct ?? 24.8) >= 20 ? "positive" : "critical",
-                },
-                {
-                  label: "Emergency Cushion",
-                  value: profileMetrics ? `${profileMetrics.emergency_fund_months} Mo` : "3.2 Mo",
-                  href: "/cash-flow",
-                  status: "positive",
-                },
-              ].map((stat, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => {
-                    toast.info(`Redirecting client profile to ${stat.label} page...`);
-                    router.push(stat.href);
-                  }}
-                  className="bg-surface-elevated/40 hover:bg-surface-elevated transition-all border border-border/60 p-3 rounded-xs flex justify-between items-center text-xs cursor-pointer group"
-                >
-                  <span className="font-semibold text-foreground-secondary group-hover:text-primary transition-all">
-                    {stat.label}
-                  </span>
-                  <span className={cn(
-                    "font-mono font-bold text-[11px]",
-                    stat.status === "critical" ? "text-critical" : "text-positive"
-                  )}>
-                    {stat.value}
-                  </span>
-                </div>
-              ))}
-            </div>
 
-            {/* Top Risk Factor details */}
-            <div className="bg-surface-elevated/35 border border-border/60 p-3 rounded-xs space-y-2">
-              <span className="text-[9.5px] font-bold text-foreground-muted block uppercase tracking-wider">Top Risk Factor</span>
-              <div className="flex justify-between items-start text-xs">
-                <span className="font-semibold text-foreground">Debt-to-Income (42%)</span>
-                <span className="text-[9.5px] font-mono text-critical font-bold">+24% Risk</span>
-              </div>
-              <p className="text-[10px] text-foreground-secondary leading-relaxed">
-                Repay credit card balances below ₹60,000 immediately to reduce this DTI factor.
-              </p>
-            </div>
-
-            {/* Top Recommendation details */}
-            <div className="bg-surface-elevated/35 border border-border/60 p-3 rounded-xs space-y-2">
-              <span className="text-[9.5px] font-bold text-foreground-muted block uppercase tracking-wider">Top Recommendation</span>
-              <div className="flex justify-between items-start text-xs">
-                <span className="font-semibold text-foreground">Build Reserves Buffer</span>
-                <span className="text-[9.5px] font-mono text-positive font-bold">+15 Health</span>
-              </div>
-              <p className="text-[10px] text-foreground-secondary leading-relaxed">
-                Establish a cash sweep buffer equivalent to 6 months of outgoings.
-              </p>
-            </div>
           </div>
 
           <div className="bg-primary/5 border border-primary/20 p-3.5 rounded-xs flex items-start gap-2.5">
@@ -827,17 +672,17 @@ export default function AiAdvisorPage() {
         onClose={() => setIsHistoryOpen(false)}
         title="Audit History"
         side="left"
-        className="w-full max-w-xs font-sans text-xs select-none"
+        className="w-full max-w-sm font-sans text-[13px] select-none"
       >
         <div className="space-y-4 py-3">
           <div className="flex justify-between items-center border-b border-border/40 pb-3">
-            <span className="text-[9.5px] font-bold text-foreground-muted uppercase tracking-wider">Chat Sessions list</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">Chat sessions</span>
             <button
               onClick={() => {
                 handleNewChat();
                 setIsHistoryOpen(false);
               }}
-              className="text-[9px] font-bold hover:underline text-primary uppercase cursor-pointer"
+              className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
             >
               + New Chat
             </button>
@@ -848,14 +693,14 @@ export default function AiAdvisorPage() {
                 key={item.id}
                 onClick={() => handleSelectHistory(item.id)}
                 className={cn(
-                  "w-full text-left p-3 rounded-xs transition-all border text-xs flex flex-col gap-1 cursor-pointer",
+                  "w-full rounded-xl border p-3.5 text-left text-[13px] transition-all flex flex-col gap-1.5 cursor-pointer",
                   item.active
                     ? "bg-surface-elevated border-primary text-foreground font-semibold"
                     : "border-transparent text-foreground-secondary hover:bg-surface-elevated/40"
                 )}
               >
                 <span>{item.title}</span>
-                <span className="text-[9px] font-mono text-foreground-muted">{item.timestamp}</span>
+                <span className="text-[10px] font-mono text-foreground-muted">{item.timestamp}</span>
               </button>
             ))}
           </div>
@@ -868,18 +713,18 @@ export default function AiAdvisorPage() {
         onClose={() => setIsContextOpen(false)}
         title="Financial Context Logs"
         side="right"
-        className="w-full max-w-xs font-sans text-xs select-none"
+        className="w-full max-w-sm font-sans text-[13px] select-none"
       >
         <div className="space-y-5 py-3">
           <div className="space-y-3">
-            <span className="text-[9.5px] font-bold text-foreground-muted uppercase tracking-wider block border-b border-border/40 pb-2.5">Active Client Metrics</span>
+            <span className="text-[11px] font-semibold text-foreground-muted uppercase tracking-[0.12em] block border-b border-border/50 pb-3">Active Client Metrics</span>
             <div className="space-y-3">
               {[
-                { label: "Financial Health", value: "82/100", href: "/financial-health", status: "positive" },
-                { label: "Default Risk Rating", value: "18% (Low)", href: "/credit-risk", status: "positive" },
-                { label: "Pending Fraud Alerts", value: "2 Alerts", href: "/credit-risk", status: "critical" },
-                { label: "Monthly Savings Rate", value: "24.8%", href: "/explainable-ai", status: "positive" },
-                { label: "30-Day Liquidity Forecast", value: "Positive", href: "/cash-flow", status: "positive" }
+                { label: "Financial Health", value: profileMetrics?.financial_health_score != null ? `${profileMetrics.financial_health_score}/100` : "Unavailable", href: "/financial-health" },
+                { label: "Default Risk Rating", value: profileMetrics?.default_probability_pct != null ? `${profileMetrics.default_probability_pct}% (${profileMetrics.credit_risk_band})` : "Unavailable", href: "/credit-risk" },
+                { label: "Pending Fraud Alerts", value: profileMetrics?.pending_fraud_alerts != null ? `${profileMetrics.pending_fraud_alerts} alerts` : "Unavailable", href: "/fraud" },
+                { label: "Monthly Savings Rate", value: profileMetrics?.savings_rate_pct != null ? `${profileMetrics.savings_rate_pct}%` : "Unavailable", href: "/explainable-ai" },
+                { label: "Emergency Cushion", value: profileMetrics?.emergency_fund_months != null ? `${profileMetrics.emergency_fund_months} months` : "Unavailable", href: "/cash-flow" }
               ].map((stat, idx) => (
                 <div
                   key={idx}
@@ -888,15 +733,12 @@ export default function AiAdvisorPage() {
                     setIsContextOpen(false);
                     router.push(stat.href);
                   }}
-                  className="bg-surface-elevated/40 hover:bg-surface-elevated transition-all border border-border/60 p-3 rounded-xs flex justify-between items-center cursor-pointer"
+                  className="bg-surface-elevated/40 hover:bg-surface-elevated transition-colors border border-border/60 p-3.5 rounded-xl flex justify-between items-center gap-4 cursor-pointer"
                 >
                   <span className="font-semibold text-foreground-secondary">
                     {stat.label}
                   </span>
-                  <span className={cn(
-                    "font-mono font-bold text-[11px]",
-                    stat.status === "critical" ? "text-critical" : "text-positive"
-                  )}>
+                  <span className="font-mono font-semibold text-[12px] text-foreground">
                     {stat.value}
                   </span>
                 </div>
@@ -904,27 +746,7 @@ export default function AiAdvisorPage() {
             </div>
           </div>
 
-          <div className="bg-surface-elevated/35 border border-border/60 p-3 rounded-xs space-y-2">
-            <span className="text-[9.5px] font-bold text-foreground-muted block uppercase tracking-wider">Top Risk Factor</span>
-            <div className="flex justify-between items-start text-xs">
-              <span className="font-semibold text-foreground">Debt-to-Income (42%)</span>
-              <span className="text-[9.5px] font-mono text-critical font-bold">+24% Risk</span>
-            </div>
-            <p className="text-[10px] text-foreground-secondary leading-relaxed">
-              Repay credit card balances below ₹60,000 immediately to reduce this DTI factor.
-            </p>
-          </div>
 
-          <div className="bg-surface-elevated/35 border border-border/60 p-3 rounded-xs space-y-2">
-            <span className="text-[9.5px] font-bold text-foreground-muted block uppercase tracking-wider">Top Recommendation</span>
-            <div className="flex justify-between items-start text-xs">
-              <span className="font-semibold text-foreground">Build Reserves Buffer</span>
-              <span className="text-[9.5px] font-mono text-positive font-bold">+15 Health</span>
-            </div>
-            <p className="text-[10px] text-foreground-secondary leading-relaxed">
-              Establish a cash sweep buffer equivalent to 6 months of outgoings.
-            </p>
-          </div>
         </div>
       </Sheet>
 

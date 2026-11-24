@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { AlertTriangle, ArrowRight, BadgeCheck, LoaderCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import PageContainer from "@/components/ui/PageContainer";
 import { riskApi } from "@/lib/api";
 import type { UploadedAnalysis } from "@/hooks/useUploadedAnalysis";
 
+const relatedReports = [
+  ["Fraud scan", "/fraud"],
+  ["Cash flow", "/cash-flow"],
+  ["Customer segment", "/segments"],
+] as const;
+
 export function UploadedRiskReport({ data, refresh }: { data: UploadedAnalysis; refresh: () => Promise<void> }) {
-  const router = useRouter();
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const probability = typeof data.risk?.default_probability === "number" ? data.risk.default_probability * 100 : null;
@@ -40,63 +45,55 @@ export function UploadedRiskReport({ data, refresh }: { data: UploadedAnalysis; 
   ];
 
   return (
-    <PageContainer className="pb-20">
-      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-positive">Uploaded data · {data.summary.transaction_count.toLocaleString()} transactions</p>
-          <h1 className="mt-2 text-3xl font-heading font-bold text-foreground">Credit risk</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-foreground-secondary">The backend model scores features derived from this ledger. It is not a bureau report and the upload does not contain verified loans or credit limits.</p>
-        </div>
-        <Button variant="outline" onClick={() => router.push("/transactions")}>Review transactions</Button>
+    <PageContainer className="gap-9 pb-20 sm:gap-11">
+      <header className="flex flex-col gap-5 border-b border-border/70 pb-7 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Risk profile · {data.summary.transaction_count.toLocaleString()} transactions</p><h1 className="mt-3 text-4xl font-semibold text-foreground sm:text-[2.65rem]">Credit risk</h1><p className="mt-3 max-w-2xl text-[14px] leading-6 text-foreground-secondary">A model estimate using features calculated from this ledger. This is not a credit-bureau report.</p></div>
+        <Link href="/transactions" className="group inline-flex h-10 items-center justify-center gap-2 rounded-full border border-border-strong/80 pl-5 pr-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-surface-hover">Review transactions<span className="grid h-7 w-7 place-items-center rounded-full bg-primary/8 text-primary"><ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" /></span></Link>
       </header>
 
-      {error && <div role="alert" className="mt-5 rounded-md border border-critical/30 bg-critical/5 p-3 text-sm text-critical">{error}</div>}
+      {error && <div role="alert" className="rounded-2xl border border-critical/20 bg-critical/5 p-5 text-[13px] text-critical">{error}</div>}
 
-      <section className="mt-7 grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><ShieldCheck className="h-4 w-4 text-primary" /> Default probability</CardTitle></CardHeader>
-          <CardContent>
-            {probability === null ? <><p className="text-sm text-foreground-secondary">No score has been generated for this upload yet.</p><Button className="mt-4" variant="primary" disabled={running} onClick={runScoring}>{running && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Run credit scoring</Button></> : <>
-              <p className="text-5xl font-heading font-bold tabular-nums text-foreground">{probability.toFixed(1)}<span className="ml-1 text-base font-medium text-foreground-secondary">%</span></p>
-              <p className={`mt-2 text-sm font-semibold ${riskColor(riskBand)}`}>{riskBand} risk band</p>
-              <p className="mt-3 text-xs text-foreground-secondary">Model: {data.risk.model_version || "version unavailable"}</p>
-              <Button className="mt-4" variant="outline" disabled={running} onClick={runScoring}>{running && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Re-run scoring</Button>
-            </>}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><BadgeCheck className="h-4 w-4 text-positive" /> Financial health</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-5xl font-heading font-bold tabular-nums text-foreground">{Number(features.financial_health_score || 0).toFixed(0)}<span className="ml-1 text-base font-medium text-foreground-secondary">/100</span></p>
-            <p className="mt-2 text-sm text-foreground-secondary">Backend feature score calculated from uploaded transactions.</p>
-            <p className="mt-3 flex items-center gap-2 text-xs text-foreground-muted"><AlertTriangle className="h-4 w-4" />No bureau history or repayment records were included in the upload.</p>
-          </CardContent>
-        </Card>
+      <section className="grid gap-5 xl:grid-cols-[1fr_1fr]" aria-label="Risk assessment">
+        <Bezel>
+          <div className="flex h-full flex-col justify-between gap-8 p-6 sm:p-8">
+            <div className="flex items-center justify-between gap-4"><div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">Default probability</p><h2 className="mt-2 text-xl font-semibold text-foreground">Credit-risk estimate</h2></div><ShieldCheck className="h-5 w-5 text-primary" /></div>
+            {probability === null ? <div className="py-3"><p className="max-w-md text-[14px] leading-6 text-foreground-secondary">No score has been generated for this upload yet. Run the model against the parsed transaction features.</p><Button className="group mt-5 rounded-full px-4" variant="primary" disabled={running} onClick={runScoring}>{running && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Run credit scoring<span className="ml-1 grid h-7 w-7 place-items-center rounded-full bg-primary-foreground/15"><ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" /></span></Button></div> : <div className="flex flex-wrap items-end justify-between gap-5"><div><p className="text-[3.5rem] font-semibold leading-none tracking-[-0.07em] tabular-nums text-foreground">{probability.toFixed(1)}<span className="ml-1 text-xl tracking-normal text-foreground-secondary">%</span></p><span className={`mt-4 inline-flex rounded-full px-3 py-1.5 text-[11px] font-semibold ${riskClass(riskBand)}`}>{riskBand} risk</span></div><Button variant="outline" className="rounded-full px-4" disabled={running} onClick={runScoring}>{running && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}Re-run model</Button></div>}
+            <p className="border-t border-border/70 pt-4 text-[11px] text-foreground-muted">Model version: {data.risk?.model_version || "not available"}</p>
+          </div>
+        </Bezel>
+
+        <Bezel>
+          <div className="flex h-full flex-col justify-between gap-8 p-6 sm:p-8">
+            <div className="flex items-center justify-between gap-4"><div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">Related measure</p><h2 className="mt-2 text-xl font-semibold text-foreground">Financial health</h2></div><BadgeCheck className="h-5 w-5 text-primary" /></div>
+            <div><p className="text-[3.5rem] font-semibold leading-none tracking-[-0.07em] tabular-nums text-foreground">{Number(features.financial_health_score || 0).toFixed(0)}<span className="ml-2 text-xl tracking-normal text-foreground-secondary">/100</span></p><p className="mt-4 max-w-md text-[13px] leading-6 text-foreground-secondary">Assessment based on metrics derived from the uploaded transactions.</p></div>
+            <p className="flex items-start gap-2 border-t border-border/70 pt-4 text-[11px] leading-5 text-foreground-muted"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />No bureau history or repayment records were included in this upload.</p>
+          </div>
+        </Bezel>
       </section>
 
-      <section className="mt-8">
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Model input features from this upload</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {observed.map(([label, value]) => <div key={label} className="border-b border-border/60 pb-3"><p className="text-xs text-foreground-secondary">{label}</p><p className="mt-1 text-lg font-bold tabular-nums text-foreground">{value}</p></div>)}
-          </CardContent>
-        </Card>
-      </section>
+      <Bezel>
+        <div className="p-5 sm:p-7">
+          <div className="mb-5"><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">Observed data</p><h2 className="mt-2 text-xl font-semibold text-foreground">Model input features</h2></div>
+          <dl className="grid sm:grid-cols-2 xl:grid-cols-3">
+            {observed.map(([label, value], index) => <div key={label} className={`border-t border-border/70 py-4 sm:px-4 ${index % 3 === 0 ? "xl:pl-0" : ""} ${index % 3 !== 2 ? "xl:border-r" : ""}`}><dt className="text-[11px] font-medium text-foreground-muted">{label}</dt><dd className="mt-1.5 text-[15px] font-semibold tabular-nums text-foreground">{value}</dd></div>)}
+          </dl>
+        </div>
+      </Bezel>
 
-      <section className="mt-8 grid gap-3 sm:grid-cols-3">
-        <Button variant="outline" onClick={() => router.push("/fraud")}>Fraud scan results <ArrowRight className="ml-2 h-4 w-4" /></Button>
-        <Button variant="outline" onClick={() => router.push("/cash-flow")}>Cash-flow forecast <ArrowRight className="ml-2 h-4 w-4" /></Button>
-        <Button variant="outline" onClick={() => router.push("/segments")}>Customer segment <ArrowRight className="ml-2 h-4 w-4" /></Button>
-      </section>
+      <nav aria-label="Related analysis" className="flex flex-col gap-3 border-t border-border/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">Continue exploring</p>
+        <div className="flex flex-wrap gap-x-6 gap-y-3">{relatedReports.map(([label, href]) => <Link key={href} href={href} className="inline-flex items-center gap-2 text-[13px] font-medium text-foreground-secondary hover:text-primary">{label}<ArrowRight className="h-3.5 w-3.5" /></Link>)}</div>
+      </nav>
     </PageContainer>
   );
 }
 
-function currency(value: number | undefined) {
-  return typeof value === "number" && Number.isFinite(value) ? `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : "—";
+function Bezel({ children }: { children: ReactNode }) {
+  return <div className="rounded-[1.8rem] bg-surface-elevated p-1.5 ring-1 ring-border/70"><div className="h-full rounded-[calc(1.8rem-0.375rem)] bg-surface ring-1 ring-inset ring-black/[0.025] dark:ring-white/[0.04]">{children}</div></div>;
 }
 
-function riskColor(value: string) {
+function currency(value: number | undefined) { return typeof value === "number" && Number.isFinite(value) ? `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : "—"; }
+function riskClass(value: string) {
   const band = value.toLowerCase();
-  return band === "low" ? "text-positive" : band === "medium" ? "text-warning" : band === "not scored" ? "text-foreground-secondary" : "text-critical";
+  return band === "low" ? "bg-positive/10 text-positive" : band === "medium" ? "bg-warning/10 text-warning" : band === "not scored" ? "bg-surface-elevated text-foreground-secondary" : "bg-critical/10 text-critical";
 }

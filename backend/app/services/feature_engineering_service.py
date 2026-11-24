@@ -42,7 +42,7 @@ def detect_outliers_iqr(debit_amounts: List[float]) -> Tuple[float, int]:
     iqr = q3 - q1
     threshold = q3 + (2.5 * iqr)
 
-    # Minimum threshold of 25,000 to prevent false flags on small accounts
+    # Preserve the feature definition used when the bundled models were trained.
     effective_threshold = max(threshold, 25000.0)
     outlier_count = sum(1 for val in debit_amounts if val > effective_threshold)
 
@@ -52,7 +52,7 @@ def detect_outliers_iqr(debit_amounts: List[float]) -> Tuple[float, int]:
 def compute_shannon_entropy(category_totals: Dict[str, float], total_debits: float) -> float:
     """Compute Shannon entropy to measure spending diversity across categories."""
     if total_debits <= 0 or not category_totals:
-        return 0.0
+        return 30.0  # Preserve the trained-model feature convention when cadence is unknown.
 
     entropy = 0.0
     for amt in category_totals.values():
@@ -65,7 +65,7 @@ def compute_shannon_entropy(category_totals: Dict[str, float], total_debits: flo
 def calculate_salary_regularity(salary_dates: List[datetime]) -> float:
     """Calculate average days between consecutive salary credits."""
     if len(salary_dates) < 2:
-        return 30.0  # Default assumed monthly cadence
+        return 0.0
 
     sorted_dates = sorted(salary_dates)
     intervals = [
@@ -73,57 +73,6 @@ def calculate_salary_regularity(salary_dates: List[datetime]) -> float:
         for i in range(1, len(sorted_dates))
     ]
     return round(sum(intervals) / len(intervals), 1) if intervals else 30.0
-
-
-def compute_financial_health_score(
-    savings_rate: float,
-    net_cash_flow: float,
-    discretionary_ratio: float,
-    recurring_ratio: float,
-    income_stability: float
-) -> float:
-    """
-    Weighted composite financial health formula (0-100 scale):
-    - 30% Savings Rate (target >= 20%)
-    - 25% Positive Net Cash Flow
-    - 20% Income Stability
-    - 15% Controlled Discretionary Spending (< 35%)
-    - 10% Sustainable Fixed/Recurring Ratio (< 50%)
-    """
-    score = 0.0
-
-    # 1. Savings Rate component (0-30 pts)
-    if savings_rate >= 0.30:
-        score += 30.0
-    elif savings_rate > 0:
-        score += (savings_rate / 0.30) * 30.0
-
-    # 2. Net Cash Flow component (0-25 pts)
-    if net_cash_flow > 0:
-        score += 25.0
-    elif net_cash_flow == 0:
-        score += 10.0
-
-    # 3. Income Stability component (0-20 pts)
-    score += min(max(income_stability * 20.0, 0.0), 20.0)
-
-    # 4. Discretionary spending control (0-15 pts)
-    if discretionary_ratio <= 0.30:
-        score += 15.0
-    elif discretionary_ratio <= 0.50:
-        score += 15.0 - ((discretionary_ratio - 0.30) / 0.20) * 10.0
-    else:
-        score += 3.0
-
-    # 5. Recurring commitment sustainability (0-10 pts)
-    if recurring_ratio <= 0.45:
-        score += 10.0
-    elif recurring_ratio <= 0.65:
-        score += 5.0
-    else:
-        score += 2.0
-
-    return round(min(max(score, 5.0), 100.0), 1)
 
 
 def compute_20_financial_features(transactions: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -225,15 +174,6 @@ def compute_20_financial_features(transactions: List[Dict[str, Any]]) -> Dict[st
     assumed_savings = max(total_income - total_expenses, 0.0)
     emergency_fund_months = round(assumed_savings / monthly_expense_avg, 1) if monthly_expense_avg > 0 else 0.0
 
-    # Health score
-    health_score = compute_financial_health_score(
-        savings_rate=savings_rate,
-        net_cash_flow=net_monthly_cash_flow,
-        discretionary_ratio=discretionary_ratio,
-        recurring_ratio=recurring_ratio,
-        income_stability=income_stability
-    )
-
     return {
         # Feature 1-5: Cash Flow Basics
         "total_income": round(total_income, 2),
@@ -263,9 +203,8 @@ def compute_20_financial_features(transactions: List[Dict[str, Any]]) -> Dict[st
         "emergency_fund_months": emergency_fund_months,
         "outlier_transaction_count": outlier_count,
 
-        # Feature 21-22: Composite Outputs
-        "outlier_threshold_amount": round(outlier_threshold, 2),
-        "financial_health_score": health_score,
+        # Additional calculated data outputs
+        "outlier_threshold_amount": round(outlier_threshold, 2) if math.isfinite(outlier_threshold) else None,
         "active_months_analyzed": active_months,
     }
 
@@ -284,7 +223,7 @@ def compute_and_update_customer_profile(db: Session, user_id: str, transactions:
     profile.annual_income = features["monthly_income_avg"] * 12
     profile.monthly_expenses = features["monthly_expense_avg"]
     profile.savings_balance = max(features["total_income"] - features["total_expenses"], 0.0)
-    profile.credit_score = features["financial_health_score"]
+    # Credit score is produced by the trained risk model, not this feature pass.
 
     db.commit()
     db.refresh(profile)

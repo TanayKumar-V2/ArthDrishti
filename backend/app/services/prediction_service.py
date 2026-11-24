@@ -7,6 +7,7 @@ from app.models.user import User, CustomerProfile
 from app.models.financial import Transaction
 from app.models.ml import RiskScore, CustomerSegment
 from app.services.feature_engineering_service import compute_20_financial_features
+from app.services.groq_analytics_service import assess_financial_health
 from app.ml.inference.model_loader import model_registry
 
 
@@ -36,7 +37,8 @@ def evaluate_customer_credit_risk(db: Session, user_id: str, document_ids: Optio
 
     # Run ML Credit Risk Stacking Ensemble
     default_prob, risk_band, model_version = model_registry.predict_credit_risk(features)
-    health_score = features.get("financial_health_score", 75.0)
+    health_assessment = assess_financial_health(features)
+    health_score = health_assessment["score"]
 
     # Persist risk score record
     risk_record = RiskScore(
@@ -81,6 +83,8 @@ def evaluate_customer_credit_risk(db: Session, user_id: str, document_ids: Optio
         "default_probability": default_prob,
         "risk_band": risk_band,
         "financial_health_score": health_score,
+        "financial_health_rating": health_assessment["rating"],
+        "financial_health_explanation": health_assessment["explanation"],
         "segment": {
             "cluster_id": cluster_id,
             "segment_name": segment_name,

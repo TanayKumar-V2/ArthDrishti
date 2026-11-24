@@ -17,11 +17,14 @@ def list_recommendations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Return active rule-based suggestions grounded in uploaded transaction features."""
-    has_recommendations = db.query(Recommendation.id).filter(
-        Recommendation.user_id == current_user.id
-    ).first()
-    if not has_recommendations:
+    """Return AI-generated recommendations grounded in uploaded transaction features."""
+    existing = db.query(Recommendation).filter(Recommendation.user_id == current_user.id).all()
+    legacy_rule_titles = {
+        "Build a 3-Month Emergency Cushion",
+        "Curtail High Discretionary Outflow",
+        "Maximize Tax-Advantaged Mutual Fund SIPs",
+    }
+    if not existing or any(item.title in legacy_rule_titles for item in existing):
         generate_smart_recommendations(db, current_user.id)
     return db.query(Recommendation).filter(
         Recommendation.user_id == current_user.id,

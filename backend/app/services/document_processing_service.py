@@ -7,71 +7,9 @@ from typing import List, Dict, Any, Tuple
 from fastapi import UploadFile, HTTPException, status
 from app.core.config import settings
 
-# Keyword patterns for auto-categorization
-CATEGORY_RULES = {
-    "Salary & Income": [
-        r"salary", r"payroll", r"direct dep", r"bonus", r"dividend",
-        r"interest credit", r"stipend", r"neft.*cr", r"rtgs.*cr", r"imps.*cr"
-    ],
-    "Food & Dining": [
-        r"swiggy", r"zomato", r"mcdonald", r"starbucks", r"restaurant",
-        r"cafe", r"dining", r"kfc", r"domino", r"burger", r"blinkit",
-        r"zepto", r"instamart", r"grocery", r"supermarket", r"food"
-    ],
-    "Shopping & Retail": [
-        r"amazon", r"flipkart", r"myntra", r"zara", r"h&m", r"decathlon",
-        r"retail", r"store", r"mall", r"ikea", r"clothing", r"ajio"
-    ],
-    "Utilities & Bills": [
-        r"electricity", r"water", r"gas", r"bescom", r"airtel", r"jio",
-        r"broadband", r"billdesk", r"recharge", r"utility", r"tneb"
-    ],
-    "Housing & Rent": [
-        r"rent", r"landlord", r"society", r"maintenance", r"mortgage", r"housing"
-    ],
-    "Transportation & Travel": [
-        r"uber", r"ola", r"irctc", r"makemytrip", r"indigo", r"flight",
-        r"fuel", r"petrol", r"diesel", r"shell", r"metro", r"toll", r"fastag", r"cab"
-    ],
-    "Entertainment & Subscriptions": [
-        r"netflix", r"spotify", r"prime", r"hotstar", r"youtube",
-        r"cinema", r"movie", r"bookmyshow", r"apple\.com", r"subscription"
-    ],
-    "Health & Medical": [
-        r"pharmacy", r"apollo", r"hospital", r"clinic", r"diagnostics",
-        r"1mg", r"doctor", r"medical", r"medplus", r"healthcare"
-    ],
-    "Investments & Savings": [
-        r"zerodha", r"groww", r"mutual fund", r"sip", r"upstox",
-        r"coin", r"bse", r"nse", r"fixed dep", r"fd credit"
-    ],
-    "Cash & ATM": [
-        r"atm wdl", r"cash wdl", r"atm debit", r"cash withdrawal"
-    ]
-}
-
-
 def classify_category(description: str, transaction_type: str) -> str:
-    """Classify transaction category based on description keywords and transaction type."""
-    desc_lower = description.lower()
-    
-    if transaction_type == "credit":
-        for pattern in CATEGORY_RULES["Salary & Income"]:
-            if re.search(pattern, desc_lower):
-                return "Salary & Income"
-        for pattern in CATEGORY_RULES["Investments & Savings"]:
-            if re.search(pattern, desc_lower):
-                return "Investments & Savings"
-        return "Other Income"
-        
-    for category, patterns in CATEGORY_RULES.items():
-        if category == "Salary & Income":
-            continue
-        for pattern in patterns:
-            if re.search(pattern, desc_lower):
-                return category
-                
-    return "Other Expenses"
+    """Use a neutral placeholder; the parsed ledger is categorized by Groq after extraction."""
+    return "Uncategorized"
 
 
 def parse_date_flexible(date_str: str) -> datetime:

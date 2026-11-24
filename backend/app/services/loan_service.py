@@ -9,7 +9,7 @@ from app.models.financial import Document, Loan, LoanAnalysisSnapshot, LoanRepay
 from app.models.ml import FraudAlert
 from app.services.prediction_service import evaluate_customer_credit_risk
 from app.services.feature_engineering_service import compute_20_financial_features
-from app.services.explainability_service import compute_xai_contributions
+from app.services.groq_analytics_service import explain_credit_risk, generate_recommendations
 from app.services.fraud_service import scan_user_transactions_for_fraud
 
 logger = logging.getLogger(__name__)
@@ -126,22 +126,12 @@ def capture_loan_analysis(
 
     document_ids_in_data = list(dict.fromkeys(txn.document_id for txn in transactions if txn.document_id))
     document_names = db.query(Document.file_name).filter(Document.id.in_(document_ids_in_data)).all() if document_ids_in_data else []
-    recommendations = []
-    if float(features.get("emergency_fund_months", 0)) < 3:
-        recommendations.append({
-            "title": "Build a 3-month emergency cushion",
-            "reason": f"The transaction-based surplus estimate covers about {features.get('emergency_fund_months', 0):.1f} months of expenses.",
-        })
-    if float(features.get("discretionary_spending_ratio", 0)) > 0.35:
-        recommendations.append({
-            "title": "Review discretionary spending",
-            "reason": f"Flexible spending is {float(features['discretionary_spending_ratio']) * 100:.1f}% of recorded outflows.",
-        })
-    if float(features.get("savings_rate", 0)) <= 0:
-        recommendations.append({
-            "title": "Address monthly cash-flow pressure",
-            "reason": "Recorded outflows meet or exceed recorded inflows in the analyzed statement data.",
-        })
+    recommendations = generate_recommendations(features)
+    for item in recommendations:
+        item["reason"] = item.pop("description")
+    snapshot_features = dict(features)
+    snapshot_features["financial_health_score"] = risk_result["financial_health_score"]
+    snapshot_features["financial_health_rating"] = risk_result["financial_health_rating"]
 
     snapshot = LoanAnalysisSnapshot(
         loan_id=loan.id,
@@ -156,7 +146,7 @@ def capture_loan_analysis(
         model_version=risk_result["model_version"],
         features={
             key: (None if isinstance(value, float) and not math.isfinite(value) else value)
-            for key, value in features.items()
+            for key, value in snapshot_features.items()
         },
         spending_breakdown=spending_breakdown,
         monthly_cash_flow=monthly_cash_flow,
@@ -169,7 +159,7 @@ def capture_loan_analysis(
         },
         fraud_alerts=fraud_alerts,
         segment=risk_result.get("segment"),
-        xai_contributions=compute_xai_contributions(features),
+        xai_contributions=explain_credit_risk(features, risk_result["default_probability"], risk_result["risk_band"]),
         recommendations=recommendations,
         analysis_basis=analysis_basis,
         generated_at=datetime.now(timezone.utc),

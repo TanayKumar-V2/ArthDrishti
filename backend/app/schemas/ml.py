@@ -56,4 +56,5 @@ class FinancialHealthScoreOut(BaseModel):
     score: float
     rating: str
     components: Dict[str, float]
+    explanation: str
     evaluated_at: datetime

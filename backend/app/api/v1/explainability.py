@@ -18,7 +18,7 @@ def get_prediction_explanation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Return user-scoped, rule-based feature contribution estimates for a prediction."""
+    """Return a user-scoped Groq narrative about a trained model prediction and transaction metrics."""
     ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
     return get_or_generate_explanation(db, prediction_id, current_user.id, ids)
 
@@ -35,6 +35,5 @@ def simulate_what_if_scenario(
         user_id=current_user.id,
         income_delta=payload.income_delta,
         expense_delta=payload.expense_delta,
-        debt_delta=payload.debt_delta,
-        loan_amount=payload.loan_amount
+        document_ids=payload.document_ids,
     )

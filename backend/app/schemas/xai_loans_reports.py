@@ -4,9 +4,8 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 # Explainability & What-If Schemas
-class FeatureContributionItem(BaseModel):
+class FeatureInsightItem(BaseModel):
     feature: str
-    contribution: float
     description: str
 
 
@@ -16,16 +15,15 @@ class ExplanationOut(BaseModel):
     default_probability: float
     risk_band: str
     base_value: Optional[float] = None
-    explanation: List[FeatureContributionItem]
+    explanation: List[FeatureInsightItem]
     model_version: str
     created_at: datetime
 
 
 class WhatIfRequest(BaseModel):
     income_delta: float = Field(0.0, description="Monthly income adjustment in INR")
-    expense_delta: float = Field(0.0, description="Monthly expense reduction/increase in INR")
-    debt_delta: float = Field(0.0, description="Debt payoff/increase in INR")
-    loan_amount: Optional[float] = Field(None, description="Prospective loan amount")
+    expense_delta: float = Field(0.0, description="Monthly expense adjustment in INR")
+    document_ids: Optional[List[str]] = None
 
 
 class WhatIfResponse(BaseModel):

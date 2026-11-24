@@ -18,6 +18,7 @@ from app.schemas.financial import (
     FinancialFeaturesOut,
 )
 from app.services.feature_engineering_service import compute_20_financial_features
+from app.services.groq_analytics_service import assess_financial_health
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -145,6 +146,11 @@ def get_user_features(
     ]
 
     features = compute_20_financial_features(txn_dicts)
+    if features:
+        health = assess_financial_health(features)
+        features["financial_health_score"] = health["score"]
+        features["financial_health_rating"] = health["rating"]
+        features["financial_health_explanation"] = health["explanation"]
 
     return FinancialFeaturesOut(
         user_id=current_user.id,

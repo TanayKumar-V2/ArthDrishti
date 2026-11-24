@@ -12,6 +12,7 @@ from app.core.dependencies import require_admin, require_officer_or_admin
 from app.schemas.user import UserOut
 from app.schemas.xai_loans_reports import LoanApplicantAnalysisOut, LoanOut, LoanReviewOut, LoanDecisionRequest
 from app.services.loan_service import capture_loan_analysis, decide_loan_application
+from app.services.groq_analytics_service import explain_credit_risk, generate_recommendations
 from app.ml.inference.model_loader import model_registry
 from app.ml.monitoring.drift_detector import detect_feature_drift
 import numpy as np
@@ -107,6 +108,16 @@ def get_loan_applicant_analysis(
         except ValueError as exc:
             db.rollback()
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    elif any(isinstance(item, dict) and "contribution" in item for item in (snapshot.xai_contributions or [])):
+        # Rewrite snapshots created by the former hand-authored explanation/recommendation rules.
+        snapshot.xai_contributions = explain_credit_risk(
+            snapshot.features or {}, float(snapshot.default_probability), snapshot.risk_band
+        )
+        snapshot.recommendations = [
+            {"title": item["title"], "reason": item["description"], "category": item["category"], "impact_level": item["impact_level"]}
+            for item in generate_recommendations(snapshot.features or {})
+        ]
+        db.commit()
 
     applicant = db.query(User).filter(User.id == loan.user_id).first()
     if not applicant:

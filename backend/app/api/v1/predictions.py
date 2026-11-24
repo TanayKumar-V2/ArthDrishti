@@ -19,6 +19,7 @@ from app.schemas.ml import (
 from app.services.prediction_service import evaluate_customer_credit_risk, get_latest_risk_score
 from app.services.fraud_service import scan_user_transactions_for_fraud
 from app.services.feature_engineering_service import compute_20_financial_features
+from app.services.groq_analytics_service import assess_financial_health
 
 router = APIRouter(prefix="/predictions", tags=["Predictions & Risk Intelligence"])
 
@@ -43,11 +44,9 @@ def get_latest_credit_score(
 ):
     """Get most recent credit risk score."""
     ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
+    # Re-evaluate so the current Groq interpretation and health assessment are used.
+    evaluate_customer_credit_risk(db, current_user.id, ids)
     score = get_latest_risk_score(db, current_user.id)
-    if not score:
-        # Run first evaluation automatically
-        evaluate_customer_credit_risk(db, current_user.id, ids)
-        score = get_latest_risk_score(db, current_user.id)
     return score
 
 
@@ -126,11 +125,8 @@ def get_customer_segment(
 ):
     """Get customer's behavioral persona segment from KMeans clustering."""
     ids = [value.strip() for value in document_ids.split(",") if value.strip()] if document_ids is not None else None
+    evaluate_customer_credit_risk(db, current_user.id, ids)
     seg = db.query(CustomerSegment).filter(CustomerSegment.user_id == current_user.id).first()
-    if document_ids is not None or not seg:
-        # Run evaluation to cluster customer
-        evaluate_customer_credit_risk(db, current_user.id, ids)
-        seg = db.query(CustomerSegment).filter(CustomerSegment.user_id == current_user.id).first()
     return seg
 
 
@@ -140,7 +136,7 @@ def get_financial_health_score(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get composite 0-100 financial health score across income, savings, debt, and stability."""
+    """Get Groq's 0-100 assessment grounded in transaction-derived metrics."""
     query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
     if document_ids is not None:
         ids = [value.strip() for value in document_ids.split(",") if value.strip()]
@@ -159,21 +155,16 @@ def get_financial_health_score(
     if not features:
         raise HTTPException(status_code=400, detail="Upload a statement with parsed transactions before requesting a financial health score.")
 
-    raw_score = float(features["financial_health_score"])
-
-    if raw_score >= 80:
-        rating = "Excellent"
-    elif raw_score >= 65:
-        rating = "Good"
-    elif raw_score >= 50:
-        rating = "Fair"
-    else:
-        rating = "Needs Attention"
+    health = assess_financial_health(features)
+    raw_score = health["score"]
+    features["financial_health_score"] = raw_score
+    features["financial_health_rating"] = health["rating"]
+    features["financial_health_explanation"] = health["explanation"]
 
     return FinancialHealthScoreOut(
         user_id=current_user.id,
         score=raw_score,
-        rating=rating,
+        rating=health["rating"],
         components={
             "monthly_income_avg": float(features["monthly_income_avg"]),
             "monthly_expense_avg": float(features["monthly_expense_avg"]),
@@ -183,5 +174,6 @@ def get_financial_health_score(
             "discretionary_spending_ratio": float(features["discretionary_spending_ratio"]),
             "emergency_fund_months": float(features["emergency_fund_months"]),
         },
+        explanation=health["explanation"],
         evaluated_at=datetime.now(timezone.utc)
     )

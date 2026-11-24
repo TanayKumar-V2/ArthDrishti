@@ -15,6 +15,8 @@ export default function DataSourcesPage() {
   const [error, setError] = useState("");
   const [activeDocumentId, setActiveDocumentId] = useState("");
   const [deletingDocumentId, setDeletingDocumentId] = useState("");
+  const [recategorizingDocumentId, setRecategorizingDocumentId] = useState("");
+  const [success, setSuccess] = useState("");
 
   const loadDocuments = useCallback(async () => {
     setLoading(true);
@@ -74,6 +76,22 @@ export default function DataSourcesPage() {
     }
   };
 
+  const recategorizeDocument = async (document: UploadedDocument) => {
+    const id = document.id || document.document_id;
+    if (!id) return;
+    setRecategorizingDocumentId(id);
+    setError("");
+    setSuccess("");
+    try {
+      const result = await documentsApi.recategorize(id);
+      setSuccess(`Groq categorized ${result.categorized_transactions.toLocaleString()} transactions. Refresh analytics to see the updated categories.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not categorize this statement with Groq.");
+    } finally {
+      setRecategorizingDocumentId("");
+    }
+  };
+
   return (
     <PageContainer className="pb-20">
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -88,6 +106,7 @@ export default function DataSourcesPage() {
       </header>
 
       {error && <div role="alert" className="mt-5 rounded-md border border-critical/30 bg-critical/5 p-4 text-sm text-critical">{error}</div>}
+      {success && <div role="status" className="mt-5 rounded-md border border-positive/30 bg-positive/5 p-4 text-sm text-positive">{success}</div>}
 
       <Card className="mt-6">
         <CardHeader><CardTitle className="flex items-center gap-2 text-sm"><Database className="h-4 w-4 text-primary" />Uploaded statements</CardTitle></CardHeader>
@@ -118,8 +137,11 @@ export default function DataSourcesPage() {
                       <p className="mt-1 break-all font-mono text-[10px] text-foreground-muted">ID: {id}</p>
                       {document.error_message && <p className="mt-1 text-xs text-critical">{document.error_message}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className={`w-fit rounded-sm border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${document.status === "completed" ? "border-positive/20 bg-positive/10 text-positive" : document.status === "failed" ? "border-critical/20 bg-critical/10 text-critical" : "border-warning/20 bg-warning/10 text-warning"}`}>{document.status}</span>
+                      <Button size="sm" variant="outline" disabled={document.status !== "completed" || !id || recategorizingDocumentId === id} onClick={() => void recategorizeDocument(document)}>
+                        <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${recategorizingDocumentId === id ? "animate-spin" : ""}`} />{recategorizingDocumentId === id ? "Categorizing" : "Reclassify with Groq"}
+                      </Button>
                       <Button size="sm" variant="destructive" disabled={!id || cannotDeleteWhileProcessing || isDeleting} onClick={() => void deleteDocument(document)}>
                         <Trash2 className="mr-1.5 h-3.5 w-3.5" />{isDeleting ? "Deleting" : "Delete"}
                       </Button>
@@ -132,7 +154,7 @@ export default function DataSourcesPage() {
         </CardContent>
       </Card>
 
-      <p className="mt-4 text-xs leading-5 text-foreground-muted">Supported formats: CSV, Excel, and PDF. CSV parsing works best with Date, Description, Credit, and Debit columns. Only upload statements you are authorized to use.</p>
+      <p className="mt-4 text-xs leading-5 text-foreground-muted">Supported formats: CSV, Excel, and PDF. CSV parsing works best with Date, Description, Credit, and Debit columns. Groq classifies transaction descriptions and generates analytics; descriptions and derived financial metrics are sent to the configured Groq service. Only upload statements you are authorized to use.</p>
     </PageContainer>
   );
 }

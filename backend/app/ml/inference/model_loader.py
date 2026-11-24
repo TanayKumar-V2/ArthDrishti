@@ -1,10 +1,11 @@
 import os
 import joblib
 import numpy as np
-from typing import Dict, Any, Tuple, List, Optional
+from typing import Dict, Any, Tuple, Optional
 from datetime import datetime
 
 from app.core.config import settings
+from app.services.groq_analytics_service import classify_credit_risk, describe_customer_segment
 
 
 class ModelRegistryManager:
@@ -62,15 +63,7 @@ class ModelRegistryManager:
         # Predict probability of default (Class 1)
         prob = float(model.predict_proba(X_scaled)[0, 1])
 
-        # Assign risk tier band
-        if prob < 0.15:
-            risk_band = "Low"
-        elif prob < 0.35:
-            risk_band = "Medium"
-        elif prob < 0.65:
-            risk_band = "High"
-        else:
-            risk_band = "Severe"
+        risk_band = classify_credit_risk(prob, features)
 
         return round(prob, 4), risk_band, bundle["model_version"]
 
@@ -80,10 +73,10 @@ class ModelRegistryManager:
         txn_date: datetime,
         category: str,
         user_avg_amount: float
-    ) -> Tuple[float, str, List[str], str]:
+    ) -> Tuple[float, str]:
         """
         Unsupervised anomaly detection on single transaction.
-        Returns: (anomaly_score, risk_level, reasons, model_version)
+        Returns: (anomaly_score, model_version). Groq interprets the score and transaction context.
         """
         bundle = self.fraud_detector_bundle
         model = bundle["model"]
@@ -106,26 +99,7 @@ class ModelRegistryManager:
         denom = (max_s - min_s) if max_s != min_s else 1.0
         normalized_anomaly = float(np.clip(1.0 - ((raw_score - min_s) / denom), 0.0, 1.0))
 
-        reasons = []
-        if ratio >= 4.0 and amount >= 15000:
-            reasons.append(f"Transaction amount is {ratio}x higher than typical customer average.")
-        if hour in (0, 1, 2, 3, 4):
-            reasons.append("Unusual late-night transaction time (12:00 AM - 5:00 AM).")
-        if is_atm and amount >= 20000:
-            reasons.append("High-value physical ATM cash withdrawal spike.")
-        if normalized_anomaly >= 0.70 and not reasons:
-            reasons.append("Isolation Forest multi-feature outlier anomaly detected.")
-
-        if normalized_anomaly >= 0.80 or len(reasons) >= 2:
-            risk_level = "Critical"
-        elif normalized_anomaly >= 0.60 or len(reasons) == 1:
-            risk_level = "High"
-        elif normalized_anomaly >= 0.35:
-            risk_level = "Medium"
-        else:
-            risk_level = "Low"
-
-        return round(normalized_anomaly, 4), risk_level, reasons, bundle["model_version"]
+        return round(normalized_anomaly, 4), bundle["model_version"]
 
     def predict_customer_segment(self, features: Dict[str, Any]) -> Tuple[str, str, Dict[str, Any], str]:
         """
@@ -142,11 +116,7 @@ class ModelRegistryManager:
         X_scaled = scaler.transform(X)
 
         cluster_idx = int(model.predict(X_scaled)[0])
-        metadata = bundle["segment_metadata"].get(cluster_idx, {
-            "name": f"Segment Cluster #{cluster_idx}",
-            "description": "Standard retail customer profile",
-            "risk_profile": "Moderate"
-        })
+        metadata = describe_customer_segment(cluster_idx, features)
 
         return str(cluster_idx), metadata["name"], metadata, bundle["model_version"]
 

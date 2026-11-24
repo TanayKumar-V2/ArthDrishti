@@ -239,6 +239,9 @@ export const documentsApi = {
   async getStatus(documentId: string): Promise<UploadedDocument> {
     return apiRequest<UploadedDocument>(`/documents/${encodeURIComponent(documentId)}/status`);
   },
+  async recategorize(documentId: string): Promise<{ categorized_transactions: number; provider: string }> {
+    return apiRequest(`/documents/${encodeURIComponent(documentId)}/recategorize`, { method: "POST" });
+  },
   async delete(documentId: string): Promise<void> {
     return apiRequest<void>(`/documents/${encodeURIComponent(documentId)}`, { method: "DELETE" });
   },
@@ -269,10 +272,11 @@ export const xaiApi = {
   async getExplanation(predictionId: string = "latest"): Promise<any> {
     return apiRequest(scopeQuery(`/explainability/${predictionId}`));
   },
-  async simulateWhatIf(params: { income_delta?: number; expense_delta?: number; debt_delta?: number; loan_amount?: number }): Promise<any> {
+  async simulateWhatIf(params: { income_delta?: number; expense_delta?: number }): Promise<any> {
+    const documentIds = activeDocumentIds();
     return apiRequest("/explainability/what-if", {
       method: "POST",
-      body: JSON.stringify(params),
+      body: JSON.stringify({ ...params, ...(documentIds ? { document_ids: documentIds } : {}) }),
     });
   },
 };
@@ -367,7 +371,7 @@ export interface LoanApplicantAnalysis {
     status: string;
   }>;
   segment: { cluster_id: string; segment_name: string; characteristics: Record<string, unknown> } | null;
-  xai_contributions: Array<{ feature: string; contribution: number; description: string }>;
+  xai_contributions: Array<{ feature: string; description: string }>;
   recommendations: Array<{ title: string; reason: string }>;
   analysis_basis: "application_time" | "review_time_backfill";
   generated_at: string;
@@ -494,7 +498,7 @@ export const advisorApi = {
   ): Promise<{
     response: string;
     model: string;
-    source: "groq" | "fallback";
+    source: "groq";
     metrics: Record<string, unknown>;
   }> {
     return apiRequest("/advisor/chat", {

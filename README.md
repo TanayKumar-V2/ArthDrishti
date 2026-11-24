@@ -11,7 +11,7 @@ ArthDrishti is a financial analysis and loan review application. Customers can u
 - Create a customer account, sign in, and manage an account-scoped workspace.
 - Upload CSV, Excel, or PDF bank statements in **Data Sources**; inspect processing status, parsed transactions, and remove uploaded sources.
 - View financial health, credit risk, spending, cash flow, fraud indicators, customer segments, explainability, recommendations, and reports based on available parsed transactions.
-- Ask the AI Advisor about the financial context available to the application. With a configured Groq API key it can use the configured LLM; without one, the backend provides a grounded fallback response.
+- Ask the AI Advisor about the financial context available to the application. It requires a configured Groq API key; requests fail clearly if Groq is unavailable.
 - Submit a loan application and view its status.
 
 For the most useful analysis, upload and confirm a statement has finished processing before opening analytics or applying for a loan. When submitting an application, the application captures an analysis snapshot using the selected statement sources where provided; otherwise it uses the customer's available parsed statement data. The officer's review report is tied to that application snapshot.
@@ -86,16 +86,16 @@ celery -A app.tasks.celery_app worker --loglevel=info
 | `JWT_SECRET_KEY` | Signing key for authentication tokens; set a strong private value. |
 | `FIRST_SUPERUSER_EMAIL`, `FIRST_SUPERUSER_PASSWORD` | Initial seeded admin credentials. |
 | `LOCAL_STORAGE_DIR`, `USE_LOCAL_STORAGE` | Local upload storage configuration. |
-| `GROQ_API_KEY`, `GROQ_MODEL` | Optional AI Advisor provider settings. |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Groq provider settings used for generated customer analytics. Set the key for uploads and analysis workflows. |
 | `NEXT_PUBLIC_API_BASE_URL` | API base URL used by the browser, normally `http://localhost:8000/api/v1`. |
 | `NEXT_PUBLIC_ENABLE_MOCK_DATA` | Enables a demo login/registration fallback when the API cannot be reached. Keep it `false` for backend-backed sign-in and registration. |
 
-Only expose values prefixed with `NEXT_PUBLIC_` if they are safe for browser clients to see. Do not use real customer statements in a public or shared demo environment.
+Groq is used to categorize uploaded transaction descriptions and generate financial-health assessments, risk-band and segment interpretations, fraud triage, recommendations, forecasts, and explanations. These workflows require `GROQ_API_KEY`; if the key is missing or Groq fails, the API reports an error instead of substituting rule-based analytics. Transaction descriptions and derived financial metrics are sent to Groq for these requests. Only expose values prefixed with `NEXT_PUBLIC_` if they are safe for browser clients to see. Do not use real customer statements in a public or shared demo environment unless you are comfortable sending this information to the configured Groq service.
 
 ## How to demonstrate with your own data
 
 1. Start PostgreSQL, Redis, and the API, then start the frontend.
-2. Register/sign in as a customer. Upload a CSV, XLSX, or supported PDF bank statement in **Data Sources**.
+2. Register/sign in as a customer. Upload a CSV, XLSX, or supported PDF bank statement in **Data Sources**. Groq must be configured for transaction categorization; existing uploads can be reclassified from the Data Sources page.
 3. Wait for processing to finish and check that the source contains parsed transactions. If the statement has no readable transaction rows, try CSV/XLSX or a text-based PDF export from the bank.
 4. Open the analytics pages and reports. Their results depend on the selected or available parsed statement transactions.
 5. Register/sign in with a separate loan officer account. Submit a loan application from the customer account and review it in the officer workspace. Open the application report before recording an approval or rejection.
@@ -105,9 +105,9 @@ Customer information and uploaded data are scoped to the signed-in account. Do n
 ## Analytics and model limitations
 
 - Statement parsing extracts transaction fields from uploaded CSV, XLSX, and PDF files. Bank export formats vary, so always verify the parsed rows, dates, and debit/credit direction before relying on analytics.
-- Financial health and transaction insights are computed from parsed transaction features and application logic. Credit risk, fraud, and segmentation use bundled scikit-learn model artifacts. If a required artifact is missing, startup invokes the training pipeline, which can use local datasets when available or synthetic fallback data. Training sources are not the same as the customer's uploaded statement.
-- Fraud flags identify patterns for review; they do not establish fraud. Cash flow projections use a simple average-flow estimate from the available transactions, not a sophisticated time-series model, and should not be treated as guarantees or as the bank's actual balance.
-- Explainability and recommendations include rule-based logic. They are not a formal SHAP/LIME explanation of every model prediction. AI Advisor output may be generated by an external configured LLM service or by the backend fallback.
+- Transaction totals and numeric model inputs are calculated from parsed ledger rows. Groq generates transaction categories, the financial-health assessment, customer-facing risk and segment interpretations, fraud triage, recommendations, forecasts, and explanations. Credit probability, anomaly scores, and segment cluster IDs come from bundled scikit-learn artifacts. If a required artifact is missing, startup invokes the training pipeline, which can use local datasets when available or synthetic fallback data. Training sources are not the same as the customer's uploaded statement.
+- Fraud flags are Groq triage of anomaly scores from the trained Isolation Forest model; they do not establish fraud. Cash-flow projections are Groq-generated estimates, not guarantees or the bank's actual balance.
+- Credit-risk probability, fraud anomaly scores, and segmentation cluster IDs come from the bundled trained models. Groq produces their customer-facing interpretations and handles the other generated analytics. Credit-risk explanations are narrative summaries, not formal SHAP/LIME feature attribution. Numeric transaction totals and feature preparation remain calculated from the uploaded ledger.
 - Model training data sources currently used by `backend/app/ml/training/train_all.py` are:
 
   | Dataset file | Model/purpose |

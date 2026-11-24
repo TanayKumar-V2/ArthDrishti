@@ -10,6 +10,7 @@ from app.models.financial import Document, Transaction
 from app.core.dependencies import get_current_user
 from app.schemas.financial import DocumentOut, DocumentUploadResponse
 from app.services.document_processing_service import save_uploaded_file, parse_document_file
+from app.services.groq_analytics_service import categorize_transactions
 from app.services.feature_engineering_service import compute_and_update_customer_profile
 from app.models.ml import FraudAlert
 from app.core.config import settings
@@ -37,6 +38,15 @@ def run_document_processing_pipeline(document_id: str, file_path: str, file_type
             db.commit()
             return
 
+        # Category assignment is performed by Groq; the parser itself only extracts ledger facts.
+        category_rows = categorize_transactions([
+            {"id": str(index), "description": str(txn.get("description", "Transaction"))[:300],
+             "transaction_type": txn["transaction_type"]}
+            for index, txn in enumerate(parsed_txns)
+        ])
+        for index, txn in enumerate(parsed_txns):
+            txn["category"] = category_rows[str(index)]
+
         # Bulk insert transactions
         db_txns = []
         for t in parsed_txns:
@@ -57,9 +67,6 @@ def run_document_processing_pipeline(document_id: str, file_path: str, file_type
 
         # Compute 20+ financial features & update customer profile
         compute_and_update_customer_profile(db, user_id, parsed_txns)
-        from app.services.recommendation_service import generate_smart_recommendations
-        generate_smart_recommendations(db, user_id, [document_id])
-
         doc.status = "completed"
         db.commit()
 
@@ -68,7 +75,7 @@ def run_document_processing_pipeline(document_id: str, file_path: str, file_type
         doc = db.query(Document).filter(Document.id == document_id).first()
         if doc:
             doc.status = "failed"
-            doc.error_message = str(e)
+            doc.error_message = str(e.detail) if isinstance(e, HTTPException) else str(e)
             db.commit()
     finally:
         db.close()
@@ -160,6 +167,38 @@ def get_document_status(
         "error_message": doc.error_message,
         "updated_at": doc.updated_at
     }
+
+
+@router.post("/{document_id}/recategorize")
+def recategorize_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reclassify an existing statement's transactions with Groq."""
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id,
+        Document.status == "completed",
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Completed statement not found.")
+    transactions = db.query(Transaction).filter(
+        Transaction.document_id == document_id,
+        Transaction.user_id == current_user.id,
+    ).all()
+    if not transactions:
+        raise HTTPException(status_code=400, detail="This statement has no parsed transactions to categorize.")
+
+    categories = categorize_transactions([
+        {"id": txn.id, "description": str(txn.description or "Transaction")[:300],
+         "transaction_type": txn.transaction_type}
+        for txn in transactions
+    ])
+    for txn in transactions:
+        txn.category = categories[txn.id]
+    db.commit()
+    return {"document_id": document_id, "categorized_transactions": len(transactions), "provider": "groq"}
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -104,7 +104,7 @@ export default function LoanApplicantAnalysisPage() {
           <CardHeader><CardTitle className="text-sm">Credit and financial health assessment</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-5 sm:grid-cols-3">
-              <Metric label="Financial health" value={`${risk.financial_health_score.toFixed(1)} / 100`} detail={healthRating(risk.financial_health_score)} />
+              <Metric label="Financial health" value={`${risk.financial_health_score.toFixed(1)} / 100`} detail={String(features.financial_health_rating || "Groq assessment")} />
               <Metric label="Predicted default probability" value={`${(risk.default_probability * 100).toFixed(1)}%`} detail={`Model risk: ${title(risk.risk_band)}`} />
               <Metric label="Model version" value={risk.model_version} detail="Score captured for this application" />
             </div>
@@ -163,10 +163,10 @@ export default function LoanApplicantAnalysisPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm">Explainable risk signals</CardTitle></CardHeader>
           <CardContent>
-            <p className="mb-4 text-xs leading-5 text-foreground-secondary">Directional feature estimates calculated from the statement data. They are not SHAP values and do not add up to the predicted probability.</p>
+            <p className="mb-4 text-xs leading-5 text-foreground-secondary">Groq-generated narrative based on the applicant's trained-model risk result and parsed transaction metrics. It is not model feature attribution.</p>
             {analysis.xai_contributions.length ? <ul className="divide-y divide-border/70">{analysis.xai_contributions.map((item) => <li key={item.feature} className="flex gap-4 py-3">
-              <span className={`mt-0.5 w-32 shrink-0 text-[11px] font-semibold ${item.contribution < 0 ? "text-positive" : item.contribution > 0 ? "text-critical" : "text-foreground-secondary"}`}>{item.contribution < 0 ? "Protective signal" : item.contribution > 0 ? "Risk signal" : "Neutral signal"}</span>
-              <div className="min-w-0"><p className="text-xs font-medium text-foreground">{humanize(item.feature)} <span className="font-normal text-foreground-muted">({item.contribution > 0 ? "+" : ""}{item.contribution.toFixed(3)})</span></p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.description}</p></div>
+              <span className="mt-0.5 w-32 shrink-0 text-[11px] font-semibold text-primary">Groq insight</span>
+              <div className="min-w-0"><p className="text-xs font-medium text-foreground">{humanize(item.feature)}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.description}</p></div>
             </li>)}</ul> : <Empty text="No explainability signals are available." />}
           </CardContent>
         </Card>
@@ -199,8 +199,8 @@ export default function LoanApplicantAnalysisPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm">Financial recommendations</CardTitle></CardHeader>
           <CardContent>
-            <p className="mb-3 text-xs leading-5 text-foreground-secondary">Rule-based suggestions derived from the applicant's observed transaction features.</p>
-            {analysis.recommendations.length ? <ul className="space-y-3">{analysis.recommendations.map((item) => <li key={item.title} className="border-b border-border/70 pb-3 last:border-0"><p className="text-xs font-semibold text-foreground">{item.title}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.reason}</p></li>)}</ul> : <Empty text="No rule-based recommendations were triggered by these statement metrics." />}
+            <p className="mb-3 text-xs leading-5 text-foreground-secondary">Groq-generated guidance grounded in the applicant's observed transaction metrics.</p>
+            {analysis.recommendations.length ? <ul className="space-y-3">{analysis.recommendations.map((item) => <li key={item.title} className="border-b border-border/70 pb-3 last:border-0"><p className="text-xs font-semibold text-foreground">{item.title}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.reason}</p></li>)}</ul> : <Empty text="Groq returned no recommendations for these transaction metrics." />}
           </CardContent>
         </Card>
       </div>
@@ -255,13 +255,6 @@ function dateTime(value: string | null | undefined) {
   if (!value) return "date unavailable";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "date unavailable" : date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function healthRating(value: number) {
-  if (value >= 80) return "Excellent";
-  if (value >= 65) return "Good";
-  if (value >= 50) return "Fair";
-  return "Needs attention";
 }
 
 function title(value: string) {
