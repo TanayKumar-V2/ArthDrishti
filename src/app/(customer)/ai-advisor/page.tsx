@@ -257,7 +257,7 @@ export default function AiAdvisorPage() {
           id: `ai_${Date.now()}`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          text: cause instanceof Error ? cause.message : "Groq could not answer. Check the backend configuration and retry.",
+          text: cause instanceof Error ? cause.message : "Unable to generate a response right now. Please try again.",
         }]);
       } finally {
         setIsLoading(false);
@@ -302,7 +302,7 @@ export default function AiAdvisorPage() {
           id: `ai_${Date.now()}`,
           sender: "assistant",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          text: cause instanceof Error ? cause.message : "Groq could not answer. Check the backend configuration and retry.",
+          text: cause instanceof Error ? cause.message : "Unable to generate a response right now. Please try again.",
         };
         setMessages((prev) => [...prev, aiMsg]);
       } finally {
@@ -418,9 +418,6 @@ export default function AiAdvisorPage() {
             </div>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => setIsContextOpen(true)} className="hidden items-center gap-2 rounded-full border border-border/70 px-3.5 py-2 text-[11px] font-medium text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground lg:inline-flex">Profile context<ChevronRight className="h-3.5 w-3.5 text-primary" /></button>
-              <span className="hidden rounded-full border border-primary/20 bg-primary/8 px-3 py-1.5 font-mono text-[10px] font-semibold text-primary sm:flex sm:items-center sm:gap-1">
-                ⚡ Groq • openai/gpt-oss-20b
-              </span>
             </div>
           </div>
 

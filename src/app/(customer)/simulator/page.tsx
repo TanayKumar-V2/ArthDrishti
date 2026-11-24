@@ -79,7 +79,7 @@ export default function WhatIfSimulatorPage() {
       <header className="space-y-2 border-b border-border/70 pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">AI tools · scenario planning</p>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">What-if simulator</h1>
-        <p className="max-w-3xl text-sm leading-6 text-foreground-secondary">Adjust monthly income or spending against the metrics from your uploaded statement. Your trained credit model estimates default probability; Groq assesses financial health and explains the comparison.</p>
+        <p className="max-w-3xl text-sm leading-6 text-foreground-secondary">Adjust monthly income or spending against the metrics from your uploaded statement. Our risk model estimates default probability and overall financial health impact.</p>
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
@@ -100,13 +100,13 @@ export default function WhatIfSimulatorPage() {
             {result ? <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <Metric label="Default probability" value={`${(result.baseline_default_probability * 100).toFixed(1)}% → ${(result.simulated_default_probability * 100).toFixed(1)}%`} detail={`${result.baseline_risk_band} → ${result.simulated_risk_band} risk band`}/>
-                <Metric label="Groq financial health" value={`${result.baseline_health_score.toFixed(1)} → ${result.simulated_health_score.toFixed(1)}`} detail="AI assessment of baseline and scenario metrics"/>
+                <Metric label="Financial health score" value={`${result.baseline_health_score.toFixed(1)} → ${result.simulated_health_score.toFixed(1)}`} detail="Assessment of baseline and scenario metrics"/>
                 <Metric label="Scenario monthly income" value={money(result.feature_shifts.income_adjusted)} detail="Adjusted statement-derived metric"/>
                 <Metric label="Scenario monthly expenses" value={money(result.feature_shifts.expenses_adjusted)} detail="Adjusted statement-derived metric"/>
               </div>
-              <div className="mt-5 rounded-xl border border-primary/15 bg-primary/[0.035] p-4"><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Sparkles className="h-4 w-4 text-primary"/>Groq scenario explanation</div><p className="text-sm leading-6 text-foreground-secondary">{result.impact_summary}</p></div>
+              <div className="mt-5 rounded-xl border border-primary/15 bg-primary/[0.035] p-4"><div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><Sparkles className="h-4 w-4 text-primary"/>Scenario explanation</div><p className="text-sm leading-6 text-foreground-secondary">{result.impact_summary}</p></div>
               <p className="mt-4 text-xs leading-5 text-foreground-muted">This is a model estimate based on the selected statement data, not a lending decision. The statement parser does not provide all liabilities or bureau data.</p>
-            </> : <p className="py-10 text-center text-sm text-foreground-secondary">Change an input and evaluate the scenario to see the trained model and Groq results.</p>}
+            </> : <p className="py-10 text-center text-sm text-foreground-secondary">Change an input and evaluate the scenario to see the simulated risk and health results.</p>}
           </CardContent>
         </Card>
       </div>

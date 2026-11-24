@@ -84,9 +84,9 @@ export default function DataSourcesPage() {
     setSuccess("");
     try {
       const result = await documentsApi.recategorize(id);
-      setSuccess(`Groq categorized ${result.categorized_transactions.toLocaleString()} transactions. Refresh analytics to see the updated categories.`);
+      setSuccess(`Categorized ${result.categorized_transactions.toLocaleString()} transactions. Refresh analytics to see the updated categories.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not categorize this statement with Groq.");
+      setError(cause instanceof Error ? cause.message : "Could not categorize this statement.");
     } finally {
       setRecategorizingDocumentId("");
     }
@@ -140,7 +140,7 @@ export default function DataSourcesPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`w-fit rounded-sm border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${document.status === "completed" ? "border-positive/20 bg-positive/10 text-positive" : document.status === "failed" ? "border-critical/20 bg-critical/10 text-critical" : "border-warning/20 bg-warning/10 text-warning"}`}>{document.status}</span>
                       <Button size="sm" variant="outline" disabled={document.status !== "completed" || !id || recategorizingDocumentId === id} onClick={() => void recategorizeDocument(document)}>
-                        <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${recategorizingDocumentId === id ? "animate-spin" : ""}`} />{recategorizingDocumentId === id ? "Categorizing" : "Reclassify with Groq"}
+                        <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${recategorizingDocumentId === id ? "animate-spin" : ""}`} />{recategorizingDocumentId === id ? "Categorizing" : "Recategorize"}
                       </Button>
                       <Button size="sm" variant="destructive" disabled={!id || cannotDeleteWhileProcessing || isDeleting} onClick={() => void deleteDocument(document)}>
                         <Trash2 className="mr-1.5 h-3.5 w-3.5" />{isDeleting ? "Deleting" : "Delete"}
@@ -154,7 +154,7 @@ export default function DataSourcesPage() {
         </CardContent>
       </Card>
 
-      <p className="mt-4 text-xs leading-5 text-foreground-muted">Supported formats: CSV, Excel, and PDF. CSV parsing works best with Date, Description, Credit, and Debit columns. Groq classifies transaction descriptions and generates analytics; descriptions and derived financial metrics are sent to the configured Groq service. Only upload statements you are authorized to use.</p>
+      <p className="mt-4 text-xs leading-5 text-foreground-muted">Supported formats: CSV, Excel, and PDF. CSV parsing works best with Date, Description, Credit, and Debit columns. Transaction descriptions are classified automatically to generate financial analytics. Only upload statements you are authorized to use.</p>
     </PageContainer>
   );
 }

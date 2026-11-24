@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Menu, User, LogOut, Activity, Search, Shield } from "lucide-react";
+import { Bell, Menu, User, LogOut, Activity, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/InputControls";
 import { IconButton } from "@/components/ui/IconButton";
 import { Dropdown } from "@/components/ui/Overlays";
@@ -167,21 +167,6 @@ export function AdminTopbar({ sidebarExpanded, setSidebarExpanded, onSearchClick
         >
           <Search className="h-4.5 w-4.5" />
         </IconButton>
-
-        {/* SYSTEM LIVE status indicator (Desktop only) */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-positive/10 text-positive text-[10px] font-sans font-bold uppercase tracking-wider px-2 py-1 rounded-xs border border-positive/20 select-none">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-positive opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-positive"></span>
-          </span>
-          SYSTEM LIVE
-        </div>
-
-        {/* Admin control indicator (Desktop only) */}
-        <div className="hidden lg:flex items-center gap-1.5 bg-primary/10 text-primary text-[10px] font-sans font-bold uppercase tracking-wider px-2 py-1 rounded-xs border border-primary/20 select-none">
-          <Shield className="h-3 w-3 text-primary" />
-          ADMIN SYSTEM
-        </div>
 
         {/* Notifications alert icon */}
         <IconButton

@@ -104,7 +104,7 @@ export default function LoanApplicantAnalysisPage() {
           <CardHeader><CardTitle className="text-sm">Credit and financial health assessment</CardTitle></CardHeader>
           <CardContent>
             <div className="grid gap-5 sm:grid-cols-3">
-              <Metric label="Financial health" value={`${risk.financial_health_score.toFixed(1)} / 100`} detail={String(features.financial_health_rating || "Groq assessment")} />
+              <Metric label="Financial health" value={`${risk.financial_health_score.toFixed(1)} / 100`} detail={String(features.financial_health_rating || "Health assessment")} />
               <Metric label="Predicted default probability" value={`${(risk.default_probability * 100).toFixed(1)}%`} detail={`Model risk: ${title(risk.risk_band)}`} />
               <Metric label="Model version" value={risk.model_version} detail="Score captured for this application" />
             </div>
@@ -163,9 +163,9 @@ export default function LoanApplicantAnalysisPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm">Explainable risk signals</CardTitle></CardHeader>
           <CardContent>
-            <p className="mb-4 text-xs leading-5 text-foreground-secondary">Groq-generated narrative based on the applicant's trained-model risk result and parsed transaction metrics. It is not model feature attribution.</p>
+            <p className="mb-4 text-xs leading-5 text-foreground-secondary">Narrative summary based on the applicant's trained-model risk result and parsed transaction metrics.</p>
             {analysis.xai_contributions.length ? <ul className="divide-y divide-border/70">{analysis.xai_contributions.map((item) => <li key={item.feature} className="flex gap-4 py-3">
-              <span className="mt-0.5 w-32 shrink-0 text-[11px] font-semibold text-primary">Groq insight</span>
+              <span className="mt-0.5 w-32 shrink-0 text-[11px] font-semibold text-primary">Risk insight</span>
               <div className="min-w-0"><p className="text-xs font-medium text-foreground">{humanize(item.feature)}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.description}</p></div>
             </li>)}</ul> : <Empty text="No explainability signals are available." />}
           </CardContent>
@@ -199,8 +199,8 @@ export default function LoanApplicantAnalysisPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm">Financial recommendations</CardTitle></CardHeader>
           <CardContent>
-            <p className="mb-3 text-xs leading-5 text-foreground-secondary">Groq-generated guidance grounded in the applicant's observed transaction metrics.</p>
-            {analysis.recommendations.length ? <ul className="space-y-3">{analysis.recommendations.map((item) => <li key={item.title} className="border-b border-border/70 pb-3 last:border-0"><p className="text-xs font-semibold text-foreground">{item.title}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.reason}</p></li>)}</ul> : <Empty text="Groq returned no recommendations for these transaction metrics." />}
+            <p className="mb-3 text-xs leading-5 text-foreground-secondary">Actionable guidance grounded in the applicant's observed transaction metrics.</p>
+            {analysis.recommendations.length ? <ul className="space-y-3">{analysis.recommendations.map((item) => <li key={item.title} className="border-b border-border/70 pb-3 last:border-0"><p className="text-xs font-semibold text-foreground">{item.title}</p><p className="mt-1 text-xs leading-5 text-foreground-secondary">{item.reason}</p></li>)}</ul> : <Empty text="No recommendations available for these transaction metrics." />}
           </CardContent>
         </Card>
       </div>

@@ -22,7 +22,7 @@ interface AnalysisTask {
 const initialTasks: AnalysisTask[] = [
   { id: "risk", label: "Credit risk & financial health", status: "waiting", detail: "Uses features calculated from your uploaded transactions." },
   { id: "fraud", label: "Fraud scan", status: "waiting", detail: "Scans the uploaded transaction history for anomalies." },
-  { id: "forecast", label: "Cash-flow forecast", status: "waiting", detail: "Groq estimates future cash flow from parsed transaction metrics." },
+  { id: "forecast", label: "Cash-flow forecast", status: "waiting", detail: "Estimates future cash flow from parsed transaction metrics." },
 ];
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
