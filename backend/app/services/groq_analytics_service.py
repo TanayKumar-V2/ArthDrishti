@@ -2,6 +2,8 @@
 
 import json
 import logging
+import threading
+import time
 from typing import Any, Dict, List
 
 import httpx
@@ -10,6 +12,9 @@ from fastapi import HTTPException
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+_GROQ_REQUEST_LOCK = threading.Lock()
+_GROQ_NEXT_REQUEST_AT = 0.0
+_GROQ_MIN_REQUEST_INTERVAL_SECONDS = 2.1
 
 TRANSACTION_CATEGORIES = [
     "Salary & Income", "Food & Dining", "Shopping & Retail", "Utilities & Bills",
@@ -19,6 +24,7 @@ TRANSACTION_CATEGORIES = [
 
 
 def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int = 1800) -> Dict[str, Any]:
+    global _GROQ_NEXT_REQUEST_AT
     api_key = settings.GROQ_API_KEY.strip() if settings.GROQ_API_KEY else ""
     if not api_key:
         raise HTTPException(status_code=503, detail="Groq analytics are unavailable because GROQ_API_KEY is not configured.")
@@ -35,13 +41,52 @@ def complete_json(system_prompt: str, payload: Dict[str, Any], max_tokens: int =
         ],
     }
     try:
-        response = httpx.post(
-            url,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json=body,
-            timeout=45.0,
-        )
-        response.raise_for_status()
+        # Serialize calls from concurrent FastAPI requests and pace them below the
+        # documented 30 RPM limit for the configured model on the Developer tier.
+        with _GROQ_REQUEST_LOCK:
+            response = None
+            for attempt in range(4):
+                wait_for_slot = _GROQ_NEXT_REQUEST_AT - time.monotonic()
+                if wait_for_slot > 0:
+                    time.sleep(wait_for_slot)
+                _GROQ_NEXT_REQUEST_AT = time.monotonic() + _GROQ_MIN_REQUEST_INTERVAL_SECONDS
+                response = httpx.post(
+                    url,
+                    headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json=body,
+                    timeout=45.0,
+                )
+                try:
+                    response.raise_for_status()
+                    break
+                except httpx.HTTPStatusError as exc:
+                    if response.status_code != 429:
+                        raise
+                    if attempt == 3:
+                        raise HTTPException(
+                            status_code=429,
+                            detail="Groq rate limit is still active after retries. Wait for the provider limit window to reset, then retry.",
+                        ) from exc
+                    retry_after = response.headers.get("retry-after")
+                    try:
+                        delay = float(retry_after) if retry_after else float(2 ** (attempt + 1))
+                    except ValueError:
+                        delay = float(2 ** (attempt + 1))
+                    if delay > 60:
+                        raise HTTPException(
+                            status_code=429,
+                            detail="Groq has asked the service to wait more than a minute before retrying. Check the Groq project rate limits, then retry.",
+                        ) from exc
+                    logger.warning(
+                        "Groq rate limited request (attempt %s/4); retrying after %.1f seconds. Remaining tokens=%s, reset=%s",
+                        attempt + 1,
+                        delay,
+                        response.headers.get("x-ratelimit-remaining-tokens", "unknown"),
+                        response.headers.get("x-ratelimit-reset-tokens", "unknown"),
+                    )
+                    time.sleep(max(delay, 0.5))
+            if response is None:
+                raise RuntimeError("Groq request was not attempted")
         content = response.json()["choices"][0]["message"]["content"]
         result = json.loads(content)
         if not isinstance(result, dict):
