@@ -137,27 +137,52 @@ def generate_recommendations(features: Dict[str, Any]) -> List[Dict[str, str]]:
 def categorize_transactions(transactions: List[Dict[str, Any]]) -> Dict[str, str]:
     """Classify merchant descriptions with Groq rather than keyword rules."""
     categories: Dict[str, str] = {}
-    for offset in range(0, len(transactions), 60):
-        batch = transactions[offset:offset + 60]
+
+    def categorize_batch(batch: List[Dict[str, Any]]) -> None:
+        if not batch:
+            return
         result = complete_json(
-            "Classify each bank transaction from its description and debit/credit direction. Return JSON with "
-            "transactions array containing every supplied id and category. Categories must be selected from: "
+            "Classify each bank transaction from its description and debit/credit direction. Return a JSON object "
+            "with a transactions array. Return exactly one object for every input transaction, preserving each id "
+            "exactly as supplied. Each object has only id and category. Categories must be selected from: "
             + ", ".join(TRANSACTION_CATEGORIES)
             + ". Do not infer amounts, dates, or account details. Use Other Income or Other Expenses when uncertain.",
             {"transactions": batch},
-            max_tokens=2200,
+            max_tokens=max(700, len(batch) * 55),
         )
         rows = result.get("transactions")
         if not isinstance(rows, list):
             raise HTTPException(status_code=502, detail="Groq returned invalid transaction categories.")
+        expected_ids = {str(item["id"]) for item in batch}
+        unresolved = set(expected_ids)
         for row in rows:
-            if isinstance(row, dict) and row.get("id"):
-                category = str(row.get("category", ""))
-                if category not in TRANSACTION_CATEGORIES:
-                    raise HTTPException(status_code=502, detail="Groq returned an unsupported transaction category.")
-                categories[str(row["id"])] = category
-        if any(str(item["id"]) not in categories for item in batch):
-            raise HTTPException(status_code=502, detail="Groq did not categorize every transaction.")
+            if not isinstance(row, dict) or row.get("id") is None:
+                continue
+            transaction_id = str(row["id"])
+            category = str(row.get("category", ""))
+            if transaction_id in unresolved and category in TRANSACTION_CATEGORIES:
+                categories[transaction_id] = category
+                unresolved.remove(transaction_id)
+
+        if not unresolved:
+            return
+
+        # Some models omit rows in larger JSON responses. Retry only unresolved rows
+        # in smaller calls, keeping the provider as the sole category decision maker.
+        retry_rows = [item for item in batch if str(item["id"]) in unresolved]
+        if len(retry_rows) == len(batch) == 1:
+            raise HTTPException(
+                status_code=502,
+                detail="Groq could not categorize a transaction after retrying it individually. Please retry the upload.",
+            )
+        for offset in range(0, len(retry_rows), max(1, min(10, len(retry_rows) // 2 or 1))):
+            categorize_batch(retry_rows[offset:offset + max(1, min(10, len(retry_rows) // 2 or 1))])
+
+    for offset in range(0, len(transactions), 30):
+        categorize_batch(transactions[offset:offset + 30])
+
+    if any(str(item["id"]) not in categories for item in transactions):
+        raise HTTPException(status_code=502, detail="Groq did not categorize every transaction after retrying incomplete results.")
     return categories
 
 
