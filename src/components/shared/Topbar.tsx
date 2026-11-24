@@ -100,7 +100,7 @@ export function Topbar({ sidebarExpanded, setSidebarExpanded, onSearchClick }: T
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-[72px] border-b border-border bg-surface flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 select-none">
+    <header className="h-16 mx-3 mt-3 rounded-2xl border border-border/80 bg-surface/95 shadow-[0_4px_18px_rgba(24,39,31,0.045)] flex items-center justify-between px-3 sm:px-5 sticky top-3 z-20 select-none">
       
       {/* Left section: Breadcrumbs & Mobile Logo Toggle */}
       <div className="flex items-center gap-3">
@@ -151,7 +151,7 @@ export function Topbar({ sidebarExpanded, setSidebarExpanded, onSearchClick }: T
       <div className="hidden md:flex flex-1 max-w-md mx-6">
         <button
           onClick={onSearchClick}
-          className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-sm bg-surface-elevated hover:bg-surface-hover border border-border hover:border-border-strong text-foreground-secondary hover:text-foreground text-xs font-sans transition-all text-left outline-none cursor-pointer focus-visible:outline-2"
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-surface-elevated hover:bg-surface-hover border border-border/70 hover:border-border-strong text-foreground-secondary hover:text-foreground text-xs font-sans transition-all text-left outline-none cursor-pointer focus-visible:outline-2"
           aria-label="Global search palette"
         >
           <div className="flex items-center gap-2.5">

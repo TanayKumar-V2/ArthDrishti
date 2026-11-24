@@ -176,7 +176,7 @@ export default function AIUnderwritingWorkspacePage() {
 
     const chartInstances: echarts.ECharts[] = [];
     const isDark = document.documentElement.classList.contains("dark");
-    const labelColor = isDark ? "#94A3B8" : "#64748B";
+    const labelColor = isDark ? "#849087" : "#64716A";
     const gridLineColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
 
     const initChart = (ref: React.RefObject<HTMLDivElement | null>, option: echarts.EChartsOption) => {
@@ -189,20 +189,20 @@ export default function AIUnderwritingWorkspacePage() {
     // 1. Cash Flow Area Line Chart
     initChart(cashFlowChartRef, {
       tooltip: { trigger: "axis" },
-      legend: { data: ["Income Forecast", "Expense Forecast", "Net Liquidity"], textStyle: { color: labelColor, fontSize: 8.5 } },
+      legend: { data: ["Income Forecast", "Expense Forecast", "Net Liquidity"], textStyle: { color: labelColor, fontSize: 10 } },
       grid: { top: 35, bottom: 25, left: 55, right: 15 },
-      xAxis: { type: "category", data: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
-        { name: "Income Forecast", type: "line", smooth: true, data: [detailedApplicant.income, detailedApplicant.income, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.05], itemStyle: { color: "#3b82f6" } },
-        { name: "Expense Forecast", type: "line", smooth: true, data: [detailedApplicant.expenses, detailedApplicant.expenses, detailedApplicant.expenses * 0.98, detailedApplicant.expenses, detailedApplicant.expenses, detailedApplicant.expenses], itemStyle: { color: "#ef4444" } },
+        { name: "Income Forecast", type: "line", smooth: true, data: [detailedApplicant.income, detailedApplicant.income, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.05], itemStyle: { color: "#176B55" } },
+        { name: "Expense Forecast", type: "line", smooth: true, data: [detailedApplicant.expenses, detailedApplicant.expenses, detailedApplicant.expenses * 0.98, detailedApplicant.expenses, detailedApplicant.expenses, detailedApplicant.expenses], itemStyle: { color: "#AD493D" } },
         {
           name: "Net Liquidity",
           type: "line",
           smooth: true,
           data: [detailedApplicant.savings, detailedApplicant.savings + 20000, detailedApplicant.savings + 45000, detailedApplicant.savings + 65000, detailedApplicant.savings + 90000, detailedApplicant.savings + 120000],
-          itemStyle: { color: "#22c55e" },
-          areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: "rgba(34, 197, 94, 0.2)" }, { offset: 1, color: "rgba(34, 197, 94, 0)" }]) }
+          itemStyle: { color: "#286A4A" },
+          areaStyle: { color: "rgba(40, 106, 74, 0.10)" }
         }
       ]
     });
@@ -219,19 +219,19 @@ export default function AIUnderwritingWorkspacePage() {
         data: categories,
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: labelColor, fontSize: 8.5, fontWeight: "bold" }
+        axisLabel: { color: labelColor, fontSize: 10, fontWeight: "bold" }
       },
       series: [
         {
           type: "bar",
           data: values.map((val) => ({
             value: val,
-            itemStyle: { color: val >= 0 ? "#ef4444" : "#22c55e", borderRadius: 2 }
+            itemStyle: { color: val >= 0 ? "#AD493D" : "#286A4A", borderRadius: 2 }
           })),
           label: {
             show: true,
             position: "right",
-            fontSize: 8.5,
+            fontSize: 10,
             formatter: (p: unknown) => {
               const param = p as { value: number };
               return (param.value >= 0 ? "+" : "") + param.value + "%";
@@ -252,7 +252,7 @@ export default function AIUnderwritingWorkspacePage() {
           max: 100,
           radius: "100%",
           center: ["50%", "85%"],
-          axisLine: { lineStyle: { width: 5, color: [[0.4, "#ef4444"], [0.7, "#f59e0b"], [1, "#22c55e"]] } },
+          axisLine: { lineStyle: { width: 5, color: [[0.4, "#AD493D"], [0.7, "#95651A"], [1, "#286A4A"]] } },
           pointer: { width: 2, length: "60%", itemStyle: { color: labelColor } },
           axisTick: { show: false },
           splitLine: { show: false },
@@ -274,7 +274,7 @@ export default function AIUnderwritingWorkspacePage() {
           max: 100,
           radius: "100%",
           center: ["50%", "85%"],
-          axisLine: { lineStyle: { width: 5, color: [[0.3, "#22c55e"], [0.6, "#f59e0b"], [1, "#ef4444"]] } },
+          axisLine: { lineStyle: { width: 5, color: [[0.3, "#286A4A"], [0.6, "#95651A"], [1, "#AD493D"]] } },
           pointer: { width: 2, length: "60%", itemStyle: { color: labelColor } },
           axisTick: { show: false },
           splitLine: { show: false },
@@ -296,7 +296,7 @@ export default function AIUnderwritingWorkspacePage() {
           max: 100,
           radius: "100%",
           center: ["50%", "85%"],
-          axisLine: { lineStyle: { width: 5, color: [[0.3, "#22c55e"], [0.6, "#f59e0b"], [1, "#ef4444"]] } },
+          axisLine: { lineStyle: { width: 5, color: [[0.3, "#286A4A"], [0.6, "#95651A"], [1, "#AD493D"]] } },
           pointer: { width: 2, length: "60%", itemStyle: { color: labelColor } },
           axisTick: { show: false },
           splitLine: { show: false },

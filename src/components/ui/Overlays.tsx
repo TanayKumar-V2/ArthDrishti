@@ -111,7 +111,7 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
               )}
               <button
                 onClick={onClose}
-                className="text-foreground-secondary hover:text-foreground p-1 rounded-sm hover:bg-surface-hover transition-colors focus-visible:outline-2"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-foreground-secondary hover:text-foreground hover:bg-surface-hover transition-colors focus-visible:outline-2"
               >
                 <X className="h-4.5 w-4.5" />
               </button>

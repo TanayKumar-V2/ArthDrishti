@@ -145,13 +145,13 @@ export function CustomerSidebar({ expanded, setExpanded }: SidebarProps) {
       <Link
         href={item.href}
         className={cn(
-          "flex items-center rounded-sm text-sm font-sans font-medium transition-all group outline-none",
+          "flex items-center rounded-xl text-[13px] font-sans font-medium transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group outline-none",
           expanded 
             ? "w-full gap-3.5 py-2.5 px-3.5" 
             : "w-10 h-10 justify-center",
           isActive
-            ? "bg-surface-elevated text-foreground border-l-[3px] border-primary shadow-xs pl-3"
-            : "text-foreground-secondary hover:text-foreground hover:bg-surface-hover border-l-[3px] border-transparent"
+            ? "bg-primary/8 text-primary ring-1 ring-primary/10"
+            : "text-foreground-secondary hover:text-foreground hover:bg-surface-hover"
         )}
       >
         <Icon 
@@ -180,7 +180,7 @@ export function CustomerSidebar({ expanded, setExpanded }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 bg-sidebar border-r border-border flex flex-col transition-all duration-300 z-30 select-none",
+        "h-screen sticky top-0 bg-sidebar border-r border-border/70 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] z-30 select-none",
         expanded ? "w-[248px]" : "w-[72px]"
       )}
       aria-label="Sidebar Navigation"

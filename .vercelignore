@@ -1,0 +1,16 @@
+# Vercel Ignore File
+# Prevents backend files, virtual environments, and caches from being uploaded to Vercel
+
+backend/
+backend/**
+**/__pycache__/
+*.pyc
+venv/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+docker-compose*.yml
+Dockerfile
+.dockerignore

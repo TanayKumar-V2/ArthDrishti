@@ -41,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { OFFICER_APPLICANTS, ApplicantDetail } from "@/lib/officer_data";
 
 // Simple Sparkline chart using SVG
-function MiniSparkline({ values, stroke = "#3b82f6" }: { values: number[]; stroke?: string }) {
+function MiniSparkline({ values, stroke = "#176B55" }: { values: number[]; stroke?: string }) {
   if (values.length < 2) return null;
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -331,8 +331,8 @@ export default function ApplicantIntelligenceProfilePage() {
 
     const chartInstances: echarts.ECharts[] = [];
     const isDark = document.documentElement.classList.contains("dark");
-    const textColor = isDark ? "#E2E8F0" : "#0F172A";
-    const labelColor = isDark ? "#94A3B8" : "#64748B";
+    const textColor = isDark ? "#a7b2aa" : "#1B2622";
+    const labelColor = isDark ? "#849087" : "#64716A";
     const gridLineColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
 
     const initChart = (ref: React.RefObject<HTMLDivElement | null>, option: echarts.EChartsOption) => {
@@ -351,9 +351,9 @@ export default function ApplicantIntelligenceProfilePage() {
         xAxis: { type: "category", data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"], axisLabel: { color: labelColor, fontSize: 9 } },
         yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 9 } },
         series: [
-          { name: "Income", type: "line", smooth: true, data: [110000, 112000, 115000, 118000, 120000, detailedApplicant.income], itemStyle: { color: "#3b82f6" } },
-          { name: "Expenses", type: "line", smooth: true, data: [82000, 81000, 79000, 80000, 78500, detailedApplicant.expenses], itemStyle: { color: "#ef4444" } },
-          { name: "Net Savings", type: "bar", data: [28000, 31000, 36000, 38000, 41500, detailedApplicant.income - detailedApplicant.expenses], itemStyle: { color: "#22c55e" } }
+          { name: "Income", type: "line", smooth: true, data: [110000, 112000, 115000, 118000, 120000, detailedApplicant.income], itemStyle: { color: "#176B55" } },
+          { name: "Expenses", type: "line", smooth: true, data: [82000, 81000, 79000, 80000, 78500, detailedApplicant.expenses], itemStyle: { color: "#AD493D" } },
+          { name: "Net Savings", type: "bar", data: [28000, 31000, 36000, 38000, 41500, detailedApplicant.income - detailedApplicant.expenses], itemStyle: { color: "#286A4A" } }
         ]
       });
 
@@ -369,8 +369,8 @@ export default function ApplicantIntelligenceProfilePage() {
             type: "line",
             smooth: true,
             data: [1500000, 1550000, 1610000, 1680000, 1720000, (detailedApplicant.savings * 1.5) + (detailedApplicant.amount * 2) - detailedApplicant.debt],
-            itemStyle: { color: "#a855f7" },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: "rgba(168, 85, 247, 0.3)" }, { offset: 1, color: "rgba(168, 85, 247, 0.0)" }]) }
+            itemStyle: { color: "#5966A5" },
+          areaStyle: { color: "rgba(89, 102, 165, 0.10)" }
           }
         ]
       });
@@ -387,12 +387,12 @@ export default function ApplicantIntelligenceProfilePage() {
             avoidLabelOverlap: false,
             label: { show: false },
             data: [
-              { value: 25000, name: "Rent/Housing", itemStyle: { color: "#3b82f6" } },
-              { value: 12000, name: "Debt Service", itemStyle: { color: "#ef4444" } },
-              { value: 5800, name: "Groceries", itemStyle: { color: "#eab308" } },
-              { value: 4500, name: "Shopping", itemStyle: { color: "#ec4899" } },
-              { value: 20000, name: "Investments", itemStyle: { color: "#10b981" } },
-              { value: detailedApplicant.expenses - 67300 > 0 ? detailedApplicant.expenses - 67300 : 8000, name: "Others", itemStyle: { color: "#64748b" } }
+              { value: 25000, name: "Rent/Housing", itemStyle: { color: "#176B55" } },
+              { value: 12000, name: "Debt Service", itemStyle: { color: "#AD493D" } },
+              { value: 5800, name: "Groceries", itemStyle: { color: "#b17c35" } },
+              { value: 4500, name: "Shopping", itemStyle: { color: "#287B86" } },
+              { value: 20000, name: "Investments", itemStyle: { color: "#286A4A" } },
+              { value: detailedApplicant.expenses - 67300 > 0 ? detailedApplicant.expenses - 67300 : 8000, name: "Others", itemStyle: { color: "#64716a" } }
             ]
           }
         ]
@@ -406,8 +406,8 @@ export default function ApplicantIntelligenceProfilePage() {
         xAxis: { type: "category", data: ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], axisLabel: { color: labelColor, fontSize: 9 } },
         yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 9 } },
         series: [
-          { name: "Projected Income", type: "bar", data: [detailedApplicant.income, detailedApplicant.income, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.05], itemStyle: { color: "#14b8a6" } },
-          { name: "EMI Obligations", type: "bar", data: [16500, 16500, 16500, 16500, 16500, 16500], itemStyle: { color: "#f43f5e" } }
+          { name: "Projected Income", type: "bar", data: [detailedApplicant.income, detailedApplicant.income, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.02, detailedApplicant.income * 1.05], itemStyle: { color: "#287B86" } },
+          { name: "EMI Obligations", type: "bar", data: [16500, 16500, 16500, 16500, 16500, 16500], itemStyle: { color: "#AD493D" } }
         ]
       });
     }
@@ -424,8 +424,8 @@ export default function ApplicantIntelligenceProfilePage() {
             type: "line",
             smooth: true,
             data: [12, 10, 15, 45, 14, detailedApplicant.id === "app4" ? 78 : detailedApplicant.id === "app3" ? 48 : 22],
-            itemStyle: { color: "#ef4444" },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: "rgba(239, 68, 68, 0.2)" }, { offset: 1, color: "rgba(239, 68, 68, 0)" }]) }
+            itemStyle: { color: "#AD493D" },
+            areaStyle: { color: "rgba(173, 73, 61, 0.10)" }
           }
         ]
       });
@@ -442,7 +442,7 @@ export default function ApplicantIntelligenceProfilePage() {
           max: 100,
           radius: "100%",
           center: ["50%", "85%"],
-          axisLine: { lineStyle: { width: 5, color: [[0.4, "#ef4444"], [0.7, "#f59e0b"], [1, "#22c55e"]] } },
+          axisLine: { lineStyle: { width: 5, color: [[0.4, "#AD493D"], [0.7, "#95651A"], [1, "#286A4A"]] } },
           pointer: { width: 2.5, length: "60%", itemStyle: { color: textColor } },
           axisTick: { show: false },
           splitLine: { show: false },
@@ -463,7 +463,7 @@ export default function ApplicantIntelligenceProfilePage() {
           max: 100,
           radius: "100%",
           center: ["50%", "85%"],
-          axisLine: { lineStyle: { width: 5, color: [[0.3, "#22c55e"], [0.6, "#f59e0b"], [1, "#ef4444"]] } },
+          axisLine: { lineStyle: { width: 5, color: [[0.3, "#286A4A"], [0.6, "#95651A"], [1, "#AD493D"]] } },
           pointer: { width: 2.5, length: "60%", itemStyle: { color: textColor } },
           axisTick: { show: false },
           splitLine: { show: false },
@@ -731,7 +731,7 @@ export default function ApplicantIntelligenceProfilePage() {
 
                 <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/30">
                   <TrendIndicator value={kpi.trend} className="text-[9px]" />
-                  <MiniSparkline values={kpi.values} stroke={kpi.trend > 0 ? "#22c55e" : "#ef4444"} />
+                  <MiniSparkline values={kpi.values} stroke={kpi.trend > 0 ? "#286A4A" : "#AD493D"} />
                 </div>
               </div>
             ))}

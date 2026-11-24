@@ -1,171 +1,107 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight, Activity } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Button } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/InputControls";
-import { AnimatePresence, motion } from "framer-motion";
-import { fadeIn } from "@/lib/animations";
 
 interface NavbarProps {
   onRequestDemo?: () => void;
 }
 
+const navLinks = [
+  { name: "Platform", href: "#platform" },
+  { name: "Solutions", href: "#solutions" },
+  { name: "Intelligence", href: "#intelligence" },
+  { name: "Security", href: "#security" },
+  { name: "Process", href: "#process" },
+];
+
 export function Navbar({ onRequestDemo }: NavbarProps) {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const navLinks = [
-    { name: "Platform", href: "#platform" },
-    { name: "Solutions", href: "#solutions" },
-    { name: "Intelligence", href: "#intelligence" },
-    { name: "Security", href: "#security" },
-    { name: "Process", href: "#process" },
-  ];
+  const prefersReducedMotion = useReducedMotion();
 
   return (
-    <>
-      <header
-        className={cn(
-          "fixed top-0 left-0 right-0 h-20 z-40 transition-all duration-300 select-none flex items-center",
-          scrolled 
-            ? "bg-background/80 backdrop-blur-xl border-b border-border/80 shadow-md shadow-black/5" 
-            : "bg-transparent border-b border-transparent"
-        )}
-      >
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="outline-none">
-            <AppLogo size="md" />
-          </Link>
+    <header className="sticky top-0 z-40 h-[72px] border-b border-border/70 bg-background/95 backdrop-blur-md">
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-5 sm:px-8 xl:px-10">
+        <Link href="/" aria-label="ArthDrishti home" className="shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+          <AppLogo size="md" />
+        </Link>
 
-          {/* Center Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="text-sm font-sans font-medium text-foreground-secondary hover:text-foreground hover:underline hover:underline-offset-4 transition-all focus-visible:outline-2"
-              >
-                {link.name}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Right Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className="text-sm font-sans font-medium text-foreground-secondary hover:text-foreground transition-colors px-3 py-2 outline-none focus-visible:outline-2"
-            >
-              Sign In
+        <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
+          {navLinks.map((link) => (
+            <Link key={link.name} href={link.href} className="text-[13px] font-medium text-foreground-secondary transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+              {link.name}
             </Link>
-            <Button variant="primary" size="sm" className="cursor-pointer gap-1.5" onClick={onRequestDemo}>
-              Request Demo
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+          ))}
+        </nav>
 
-          {/* Mobile Actions Toggle */}
-          <div className="flex md:hidden items-center gap-3">
-            <ThemeToggle />
-            {/* Compact CTA on mobile if space allows */}
-            <button
-              onClick={onRequestDemo}
-              className="text-xs font-sans font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-sm hover:bg-primary/20 transition-colors hidden sm:inline-flex items-center gap-1 cursor-pointer"
-            >
-              <span>Demo</span>
-              <ArrowRight className="h-3 w-3" />
-            </button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-foreground-secondary hover:text-foreground p-1.5 rounded-sm hover:bg-surface-hover transition-colors outline-none focus-visible:outline-2 cursor-pointer"
-              aria-label="Toggle navigation menu"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
+        <div className="hidden items-center gap-4 lg:flex">
+          <ThemeToggle className="h-11 w-11 lg:h-10 lg:w-10" />
+          <Link href="/login" className="px-2 py-2 text-[13px] font-medium text-foreground-secondary transition-colors hover:text-foreground">Sign in</Link>
+          <Button variant="primary" size="sm" onClick={onRequestDemo} className="h-10 rounded-full px-5 active:scale-[0.98]">
+            Request demo <ArrowRight className="ml-2 h-3.5 w-3.5" />
+          </Button>
         </div>
-      </header>
 
-      {/* Mobile Drawer Overlay */}
+        <div className="flex items-center gap-3 lg:hidden">
+          <ThemeToggle className="h-11 w-11" />
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            className="grid h-11 w-11 place-items-center rounded-full border border-border/80 text-foreground-secondary transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-30 md:hidden">
-            {/* Backdrop */}
-            <motion.div
-              variants={fadeIn}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close navigation menu"
+              initial={prefersReducedMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-background/90 backdrop-blur-md"
+              className="fixed inset-0 top-[72px] z-30 bg-foreground/20 lg:hidden"
             />
-
-            {/* Sliding Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } }}
-              exit={{ x: "100%", transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
-              className="fixed top-20 bottom-0 right-0 w-full max-w-sm bg-surface border-l border-border flex flex-col p-6 overflow-y-auto"
+            <motion.nav
+              aria-label="Mobile navigation"
+              initial={prefersReducedMotion ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
+              className="absolute inset-x-0 top-[72px] z-40 max-h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain border-b border-border bg-background px-5 pb-6 pt-3 shadow-lg sm:px-8 lg:hidden"
             >
-              <div className="flex flex-col gap-6 mt-4">
-                <nav className="flex flex-col gap-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-lg font-sans font-medium text-foreground-secondary py-2 border-b border-border/30"
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
-                </nav>
-
-                <div className="flex flex-col gap-4 pt-6 mt-auto">
-                  <Link
-                    href="/design-system"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 text-sm font-sans font-medium text-foreground-secondary hover:text-foreground py-2"
-                  >
-                    <Activity className="h-4 w-4 text-primary" />
-                    <span>Design System Showcase</span>
+              <div className="mx-auto flex max-w-7xl flex-col">
+                {navLinks.map((link) => (
+                  <Link key={link.name} href={link.href} onClick={() => setMobileMenuOpen(false)} className="border-b border-border/70 py-3.5 text-[15px] font-medium text-foreground-secondary hover:text-foreground">
+                    {link.name}
                   </Link>
-
-                  <Button variant="secondary" size="md" asChild onClick={() => setMobileMenuOpen(false)}>
-                    <Link href="/login">Sign In</Link>
+                ))}
+                <div className="grid grid-cols-2 gap-3 pt-5">
+                  <Button variant="outline" size="md" asChild className="rounded-full">
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Sign in</Link>
                   </Button>
-                  <Button variant="primary" size="md" onClick={() => { setMobileMenuOpen(false); onRequestDemo?.(); }}>
-                    <span className="flex items-center gap-2 justify-center">
-                      Request Demo
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
+                  <Button variant="primary" size="md" onClick={() => { setMobileMenuOpen(false); onRequestDemo?.(); }} className="rounded-full">
+                    Request demo
                   </Button>
                 </div>
               </div>
-            </motion.div>
-          </div>
+            </motion.nav>
+          </>
         )}
       </AnimatePresence>
-    </>
+    </header>
   );
 }
+
 export default Navbar;

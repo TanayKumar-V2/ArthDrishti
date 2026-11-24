@@ -91,14 +91,14 @@ import {
 
 // Custom theme colors
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function NotificationsCenterPage() {
@@ -1186,18 +1186,13 @@ export default function NotificationsCenterPage() {
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={ALERTS_TREND_DAILY} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.2}/>
-                              <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
+                          
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="time" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                           <YAxis stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                           <RechartsTooltip contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "4px", fontSize: "11px" }} />
                           <Legend wrapperStyle={{ fontSize: "10px" }} />
-                          <Area name="Alarms Count" type="monotone" dataKey="count" stroke={COLORS.primary} fillOpacity={1} fill="url(#colorCount)" strokeWidth={2} />
+                          <Area name="Alarms Count" type="monotone" dataKey="count" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.08} strokeWidth={2} />
                           <Line name="Resolved Count" type="monotone" dataKey="resolved" stroke={COLORS.positive} strokeWidth={2} dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>

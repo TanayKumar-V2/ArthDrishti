@@ -67,14 +67,14 @@ import { authApi, getStoredUser, AuthUser } from "@/lib/api";
 
 // HSL Color Maps from globals.css
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 // ==================================================
@@ -842,23 +842,14 @@ export default function EnterpriseAdminDashboardPage() {
                   <div className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={dynamicOverviewChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorPrimaryGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0}/>
-                          </linearGradient>
-                          <linearGradient id="colorSecondaryGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--ai)" stopOpacity={0.15}/>
-                            <stop offset="95%" stopColor="var(--ai)" stopOpacity={0.0}/>
-                          </linearGradient>
-                        </defs>
+                        
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
-                        <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "var(--foreground-muted)" }} />
-                        <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: "var(--foreground-muted)" }} />
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--foreground-muted)" }} />
+                        <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--foreground-muted)" }} />
                         <RechartsTooltip contentStyle={{ background: "var(--surface-elevated)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "10px", color: "var(--foreground)" }} />
-                        <Legend wrapperStyle={{ fontSize: 9, paddingTop: 10 }} />
-                        <Area name="Primary Telemetry" type="monotone" dataKey="Primary" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorPrimaryGrad)" />
-                        <Area name="Standard Variance" type="monotone" dataKey="Secondary" stroke="var(--ai)" strokeWidth={1.5} strokeDasharray="3 3" fillOpacity={1} fill="url(#colorSecondaryGrad)" />
+                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} />
+                        <Area name="Primary Telemetry" type="monotone" dataKey="Primary" stroke="var(--primary)" strokeWidth={2} fill={"var(--border)"} fillOpacity={0.08} />
+                        <Area name="Standard Variance" type="monotone" dataKey="Secondary" stroke="var(--ai)" strokeWidth={1.5} strokeDasharray="3 3" fill={"var(--ai)"} fillOpacity={0.08} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -1128,7 +1119,7 @@ export default function EnterpriseAdminDashboardPage() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={orgIndustryDistribution} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                           <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 7, fill: "var(--foreground-muted)" }} />
-                          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 8, fill: "var(--foreground-muted)" }} />
+                          <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "var(--foreground-muted)" }} />
                           <RechartsTooltip contentStyle={{ background: "var(--surface-elevated)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: "10px", color: "var(--foreground)" }} />
                           <Bar dataKey="value" fill="var(--primary)" opacity={0.8} radius={[2, 2, 0, 0]} />
                         </BarChart>

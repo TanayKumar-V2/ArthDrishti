@@ -72,7 +72,7 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
 
             {/* Glowing active line segment */}
             <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-gradient-to-r from-primary to-ai transition-all duration-500 ease-out -z-10" 
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] -z-10" 
               style={{ width: `${(currentStepIdx / (steps.length - 1)) * 100}%` }}
             />
 
@@ -126,7 +126,7 @@ export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
         <main className="w-full mt-6 sm:mt-8 flex flex-col flex-1 min-h-0">
           <div className="w-full bg-surface border border-border/80 rounded-md shadow-xl p-5 sm:p-8 md:p-10 flex flex-col min-h-0 relative overflow-hidden">
             {/* Aesthetic top boundary line */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-ai to-forecast" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-primary" />
             {children}
           </div>
         </main>

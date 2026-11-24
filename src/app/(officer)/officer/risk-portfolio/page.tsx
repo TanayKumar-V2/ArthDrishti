@@ -33,7 +33,7 @@ interface EnrichedApplicant extends ApplicantDetail {
 }
 
 // Sparkline SVG helper
-function Sparkline({ values, stroke = "#3b82f6" }: { values: number[]; stroke?: string }) {
+function Sparkline({ values, stroke = "#176B55" }: { values: number[]; stroke?: string }) {
   if (values.length < 2) return null;
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -342,7 +342,7 @@ export default function OfficerRiskPortfolioPage() {
 
     const chartInstances: echarts.ECharts[] = [];
     const isDark = document.documentElement.classList.contains("dark");
-    const labelColor = isDark ? "#94A3B8" : "#64748B";
+    const labelColor = isDark ? "#849087" : "#64716A";
     const gridLineColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
 
     const initChart = (ref: React.RefObject<HTMLDivElement | null>, option: echarts.EChartsOption) => {
@@ -376,22 +376,22 @@ export default function OfficerRiskPortfolioPage() {
     const overviewData = getTimeframeData();
     let overviewSeriesData: number[] = [];
     let overviewSeriesName = "Portfolio Value (₹M)";
-    let overviewSeriesColor = "#3b82f6";
+    let overviewSeriesColor = "#176B55";
     let isArea = true;
 
     if (activeOverviewTab === "risk") {
       overviewSeriesData = overviewData.risk;
       overviewSeriesName = "Avg Default Probability (%)";
-      overviewSeriesColor = "#f59e0b";
+      overviewSeriesColor = "#95651A";
       isArea = false;
     } else if (activeOverviewTab === "approval") {
       overviewSeriesData = overviewData.approval;
       overviewSeriesName = "Approval Rate (%)";
-      overviewSeriesColor = "#22c55e";
+      overviewSeriesColor = "#286A4A";
     } else if (activeOverviewTab === "health") {
       overviewSeriesData = overviewData.health;
       overviewSeriesName = "Avg Health Score Index";
-      overviewSeriesColor = "#8b5cf6";
+      overviewSeriesColor = "#5966A5";
     } else {
       overviewSeriesData = overviewData.value;
     }
@@ -399,8 +399,8 @@ export default function OfficerRiskPortfolioPage() {
     initChart(overviewChartRef, {
       tooltip: { trigger: "axis" },
       grid: { top: 25, bottom: 25, left: 45, right: 15 },
-      xAxis: { type: "category", data: overviewData.dates, axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: overviewData.dates, axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           name: overviewSeriesName,
@@ -409,12 +409,7 @@ export default function OfficerRiskPortfolioPage() {
           data: overviewSeriesData,
           itemStyle: { color: overviewSeriesColor },
           lineStyle: { width: 2 },
-          areaStyle: isArea ? {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: `${overviewSeriesColor}28` },
-              { offset: 1, color: `${overviewSeriesColor}00` }
-            ])
-          } : undefined
+          areaStyle: isArea ? { color: `${overviewSeriesColor}18` } : undefined
         }
       ]
     });
@@ -438,14 +433,14 @@ export default function OfficerRiskPortfolioPage() {
             show: true,
             position: "outside",
             formatter: "{b}: {c}",
-            fontSize: 8.5,
+            fontSize: 10,
             color: labelColor
           },
           data: [
-            { value: countLow, name: "Low Risk", itemStyle: { color: "#22c55e" } },
-            { value: countMed, name: "Medium Risk", itemStyle: { color: "#3b82f6" } },
-            { value: countHigh, name: "High Risk", itemStyle: { color: "#f59e0b" } },
-            { value: countCrit, name: "Critical Risk", itemStyle: { color: "#ef4444" } }
+            { value: countLow, name: "Low Risk", itemStyle: { color: "#286A4A" } },
+            { value: countMed, name: "Medium Risk", itemStyle: { color: "#176B55" } },
+            { value: countHigh, name: "High Risk", itemStyle: { color: "#95651A" } },
+            { value: countCrit, name: "Critical Risk", itemStyle: { color: "#AD493D" } }
           ]
         }
       ]
@@ -476,19 +471,19 @@ export default function OfficerRiskPortfolioPage() {
       xAxis: {
         type: "category",
         data: ["Critical", "Poor", "Average", "Good", "Excellent"],
-        axisLabel: { color: labelColor, fontSize: 8.5 }
+        axisLabel: { color: labelColor, fontSize: 10 }
       },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           name: "Applicants",
           type: "bar",
           data: [
-            { value: hCritical, itemStyle: { color: "#ef4444" } },
+            { value: hCritical, itemStyle: { color: "#AD493D" } },
             { value: hPoor, itemStyle: { color: "#f97316" } },
-            { value: hAverage, itemStyle: { color: "#f59e0b" } },
-            { value: hGood, itemStyle: { color: "#3b82f6" } },
-            { value: hExcellent, itemStyle: { color: "#22c55e" } }
+            { value: hAverage, itemStyle: { color: "#95651A" } },
+            { value: hGood, itemStyle: { color: "#176B55" } },
+            { value: hExcellent, itemStyle: { color: "#286A4A" } }
           ],
           barWidth: "45%"
         }
@@ -510,8 +505,8 @@ export default function OfficerRiskPortfolioPage() {
     initChart(heatmapRef, {
       tooltip: { position: "top" },
       grid: { top: 15, bottom: 25, left: 60, right: 15 },
-      xAxis: { type: "category", data: riskLevels, splitArea: { show: true }, axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "category", data: sizeBrackets, splitArea: { show: true }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: riskLevels, splitArea: { show: true }, axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "category", data: sizeBrackets, splitArea: { show: true }, axisLabel: { color: labelColor, fontSize: 10 } },
       visualMap: {
         min: 0,
         max: 8,
@@ -527,7 +522,7 @@ export default function OfficerRiskPortfolioPage() {
           name: "Applications Count",
           type: "heatmap",
           data: heatmapData,
-          label: { show: true, fontSize: 9, formatter: "{c} Files" }
+          label: { show: true, fontSize: 10, formatter: "{c} Files" }
         }
       ]
     });
@@ -541,17 +536,17 @@ export default function OfficerRiskPortfolioPage() {
     initChart(regionalChartRef, {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
       grid: { top: 15, bottom: 25, left: 35, right: 15 },
-      xAxis: { type: "category", data: ["North", "South", "East", "West"], axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: ["North", "South", "East", "West"], axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           name: "Applicants Count",
           type: "bar",
           data: [
-            { value: regNorth, itemStyle: { color: "#3b82f6" } },
-            { value: regSouth, itemStyle: { color: "#10b981" } },
-            { value: regEast, itemStyle: { color: "#a855f7" } },
-            { value: regWest, itemStyle: { color: "#f59e0b" } }
+            { value: regNorth, itemStyle: { color: "#176B55" } },
+            { value: regSouth, itemStyle: { color: "#286A4A" } },
+            { value: regEast, itemStyle: { color: "#5966A5" } },
+            { value: regWest, itemStyle: { color: "#95651A" } }
           ],
           barWidth: "45%"
         }
@@ -750,7 +745,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-foreground block">{portfolioKPIs.totalApps}</span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-positive font-bold flex items-center gap-0.5"><TrendingUp className="h-3 w-3" /> +12.4%</span>
-                  <Sparkline values={[12, 14, 18, 15, 20, portfolioKPIs.totalApps]} stroke="#3b82f6" />
+                  <Sparkline values={[12, 14, 18, 15, 20, portfolioKPIs.totalApps]} stroke="#176B55" />
                 </div>
               </CardContent>
             </Card>
@@ -762,7 +757,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-foreground block">₹{(portfolioKPIs.valueSum / 100000).toFixed(1)}L</span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-positive font-bold flex items-center gap-0.5"><TrendingUp className="h-3 w-3" /> +8.2%</span>
-                  <Sparkline values={[4.2, 4.5, 4.8, 5.1, 5.3, portfolioKPIs.valueSum / 100000]} stroke="#10b981" />
+                  <Sparkline values={[4.2, 4.5, 4.8, 5.1, 5.3, portfolioKPIs.valueSum / 100000]} stroke="#286A4A" />
                 </div>
               </CardContent>
             </Card>
@@ -774,7 +769,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-foreground block">{portfolioKPIs.avgHealth}<span className="text-xs text-foreground-muted">/100</span></span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-positive font-bold flex items-center gap-0.5"><TrendingUp className="h-3 w-3" /> +2.1%</span>
-                  <Sparkline values={[72, 74, 73, 75, 76, portfolioKPIs.avgHealth]} stroke="#8b5cf6" />
+                  <Sparkline values={[72, 74, 73, 75, 76, portfolioKPIs.avgHealth]} stroke="#5966A5" />
                 </div>
               </CardContent>
             </Card>
@@ -786,7 +781,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-foreground block">{portfolioKPIs.avgDefault}%</span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-positive font-bold flex items-center gap-0.5">-3.4% MoM</span>
-                  <Sparkline values={[34, 32, 31, 29, 28, portfolioKPIs.avgDefault]} stroke="#f59e0b" />
+                  <Sparkline values={[34, 32, 31, 29, 28, portfolioKPIs.avgDefault]} stroke="#95651A" />
                 </div>
               </CardContent>
             </Card>
@@ -798,7 +793,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-critical block">{portfolioKPIs.countHighRisk}</span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-critical font-bold">+1 new</span>
-                  <Sparkline values={[3, 4, 2, 3, 4, portfolioKPIs.countHighRisk]} stroke="#ef4444" />
+                  <Sparkline values={[3, 4, 2, 3, 4, portfolioKPIs.countHighRisk]} stroke="#AD493D" />
                 </div>
               </CardContent>
             </Card>
@@ -810,7 +805,7 @@ export default function OfficerRiskPortfolioPage() {
                 <span className="text-xl font-extrabold font-mono text-warning block">{portfolioKPIs.countPending}</span>
                 <div className="flex items-center justify-between mt-2.5">
                   <span className="text-[8.5px] text-positive font-bold">-4 days</span>
-                  <Sparkline values={[12, 10, 15, 14, 11, portfolioKPIs.countPending]} stroke="#ec4899" />
+                  <Sparkline values={[12, 10, 15, 14, 11, portfolioKPIs.countPending]} stroke="#287B86" />
                 </div>
               </CardContent>
             </Card>

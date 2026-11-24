@@ -24,7 +24,7 @@ export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           value={value}
           onChange={onChange}
           className={cn(
-            "w-full h-10 pl-10 pr-9 bg-surface-elevated border border-border text-foreground rounded-sm text-sm font-sans placeholder-foreground-muted focus:border-primary focus:outline-none transition-all",
+            "w-full h-10 pl-10 pr-9 bg-surface-elevated border border-border/80 text-foreground rounded-xl text-[13px] font-sans placeholder-foreground-muted focus:border-primary focus:outline-none transition-all",
             className
           )}
           {...props}
@@ -61,7 +61,7 @@ export function FilterChip({ label, selected = false, count, className, ...props
       className={cn(
         "inline-flex items-center gap-1.5 h-8 px-3.5 rounded-full border text-xs font-sans font-medium transition-all select-none cursor-pointer focus-visible:outline-2",
         selected
-          ? "bg-primary text-white border-primary shadow-xs"
+          ? "bg-primary text-primary-foreground border-primary"
           : "bg-surface-elevated text-foreground-secondary border-border hover:bg-surface-hover hover:border-border-strong",
         className
       )}
@@ -73,7 +73,7 @@ export function FilterChip({ label, selected = false, count, className, ...props
         <span
           className={cn(
             "inline-flex items-center justify-center px-1.5 py-0.25 rounded-full text-[10px] font-mono",
-            selected ? "bg-white/20 text-white" : "bg-surface text-foreground-muted border border-border/40"
+            selected ? "bg-black/10 text-current" : "bg-surface text-foreground-muted border border-border/40"
           )}
         >
           {count}
@@ -101,7 +101,7 @@ export function DateRangeControl({
   ...props
 }: DateRangeControlProps) {
   return (
-    <div className={cn("flex items-center gap-2 bg-surface-elevated border border-border rounded-sm h-10 px-3", className)} {...props}>
+    <div className={cn("flex items-center gap-2 bg-surface-elevated border border-border/80 rounded-xl h-10 px-3", className)} {...props}>
       <Calendar className="h-4 w-4 text-foreground-muted" />
       <select
         value={value}

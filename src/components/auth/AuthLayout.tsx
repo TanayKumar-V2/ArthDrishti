@@ -47,7 +47,6 @@ export function AuthLayout({ children, backLink }: AuthLayoutProps) {
           ========================================== */}
       <div className="w-[45%] hidden lg:flex flex-col bg-sidebar border-r border-border/60 relative p-12 justify-between overflow-hidden">
         {/* Spotlight top-left gradient overlay */}
-        <div className="absolute top-0 left-0 right-0 h-[400px] bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.06)_0%,transparent_60%)] pointer-events-none" />
         
         {/* Brand Logo Header */}
         <div className="relative z-10">

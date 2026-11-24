@@ -1,89 +1,51 @@
-"use client";
-
-import React from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Play, Shield, Cpu, RefreshCcw } from "lucide-react";
+import { ArrowDownRight, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { FinancialNetwork } from "./FinancialNetwork";
 
-interface HeroProps {
-  onViewDemo?: () => void;
-}
-
-export function Hero({ onViewDemo }: HeroProps) {
+export function Hero() {
   return (
-    <section className="relative min-h-[850px] flex items-center justify-center pt-28 pb-16 overflow-hidden bg-[radial-gradient(ellipse_at_top_right,var(--surface-elevated)_0%,transparent_60%)] select-none">
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Left Column - Core Pitch (48%) */}
-          <div className="lg:col-span-5 flex flex-col gap-6 text-center lg:text-left">
-            {/* Category Pill */}
-            <div className="inline-flex items-center justify-center lg:justify-start">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-sans font-bold tracking-widest text-primary bg-primary/10 border border-primary/20 rounded-full uppercase">
-                <Cpu className="h-3.5 w-3.5" />
-                AI-Powered Financial Intelligence
-              </span>
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-heading font-extrabold tracking-tight text-foreground leading-[1.08]">
-              Understand Risk. <br className="hidden sm:inline" />
-              Detect Fraud. <br />
-              <span className="text-primary">
-                {"Predict What's Next."}
-              </span>
-            </h1>
-
-            {/* Description */}
-            <p className="text-base sm:text-lg text-foreground-secondary font-sans leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Transform complex financial data into explainable risk intelligence, real-time fraud alerts, predictive cash forecasts, and actionable financial decisions.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-              <Button variant="primary" size="lg" asChild className="w-full sm:w-auto cursor-pointer">
-                <Link href="/dashboard" className="gap-2">
-                  Explore Platform
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="w-full sm:w-auto cursor-pointer gap-2"
-                onClick={onViewDemo}
-              >
-                <Play className="h-4 w-4 fill-current" />
-                View Live Demo
-              </Button>
-            </div>
-
-            {/* Trust Bullet Checkmarks */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-8 gap-y-3 pt-6 border-t border-border/40 text-xs font-sans font-semibold text-foreground-secondary uppercase tracking-wider">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
-                <span>Explainable AI</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <RefreshCcw className="h-4 w-4 text-forecast" />
-                <span>Real-Time Intelligence</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Cpu className="h-4 w-4 text-ai" />
-                <span>Enterprise Ready</span>
-              </div>
-            </div>
+    <section className="relative flex min-h-[calc(100dvh-72px)] items-center overflow-hidden bg-background pb-12 pt-20 sm:pb-14 sm:pt-20">
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 px-5 sm:px-8 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14 xl:px-10">
+        <div className="relative z-10 flex flex-col items-start gap-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Financial intelligence for lending teams</p>
+          <h1 className="max-w-[14ch] text-[2.8rem] font-semibold leading-[1.04] tracking-[-0.055em] text-foreground sm:text-5xl lg:text-[3.65rem]">
+            Clarity for every credit decision.
+          </h1>
+          <p className="max-w-[48ch] text-[15px] leading-7 text-foreground-secondary sm:text-base">
+            Credit risk, fraud signals, and cash flow forecasts, explained in one clear view.
+          </p>
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+            <Button variant="primary" size="lg" asChild className="group rounded-full px-6 active:scale-[0.98]">
+              <Link href="/dashboard" className="gap-2">
+                Explore the platform
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild className="rounded-full px-6 active:scale-[0.98]">
+              <Link href="#process" className="gap-2">
+                How it works
+                <ArrowDownRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
+        </div>
 
-          {/* Right Column - Custom Network Visual (52%) */}
-          <div className="lg:col-span-7 flex justify-center lg:justify-end">
-            <FinancialNetwork />
+        <div className="relative mx-auto w-full max-w-[650px] lg:ml-auto">
+          <div className="relative aspect-[1.08/1] overflow-hidden rounded-[1.35rem] border border-border/70 bg-surface-elevated sm:aspect-[1.22/1]">
+            <Image
+              src="https://images.unsplash.com/photo-1770626894265-bdb99db109f1"
+              alt="Business owner working at a laptop in a bright office"
+              fill
+              preload
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover object-center saturate-[0.82]"
+            />
           </div>
-
         </div>
       </div>
     </section>
   );
 }
+
 export default Hero;

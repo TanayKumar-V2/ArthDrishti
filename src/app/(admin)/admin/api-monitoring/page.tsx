@@ -69,14 +69,14 @@ import {
 
 // Custom theme mapping colors
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function APIOperationsCenterPage() {
@@ -644,24 +644,15 @@ export default function APIOperationsCenterPage() {
                   <div className="h-72 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={API_MONITORING_DB.overview[selectedTimeframe] || API_MONITORING_DB.overview["7 Days"]}>
-                        <defs>
-                          <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorLatency" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.ai} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={COLORS.ai} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
+                        
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                         <XAxis dataKey="time" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                         <YAxis yAxisId="left" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                         <YAxis yAxisId="right" orientation="right" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} domain={[90, 100]} />
                         <RechartsTooltip contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "4px", fontSize: "12px" }} />
                         <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "12px" }} />
-                        <Area yAxisId="left" name="Throughput (Requests)" type="monotone" dataKey="requests" stroke={COLORS.primary} fillOpacity={1} fill="url(#colorRequests)" strokeWidth={2} />
-                        <Area yAxisId="left" name="Latency (ms)" type="monotone" dataKey="latency" stroke={COLORS.ai} fillOpacity={1} fill="url(#colorLatency)" strokeWidth={2} />
+                        <Area yAxisId="left" name="Throughput (Requests)" type="monotone" dataKey="requests" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.08} strokeWidth={2} />
+                        <Area yAxisId="left" name="Latency (ms)" type="monotone" dataKey="latency" stroke={COLORS.ai} fill={COLORS.ai} fillOpacity={0.08} strokeWidth={2} />
                         <Line yAxisId="right" name="Availability (%)" type="monotone" dataKey="availability" stroke={COLORS.positive} strokeWidth={2.5} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -1204,10 +1195,9 @@ export default function APIOperationsCenterPage() {
                 {/* Premium SVG Node map */}
                 <div className="w-full h-full relative min-h-[220px]">
                   <svg viewBox="0 0 420 220" className="w-full h-full">
-                    {/* Definitions for arrow marker endpoints */}
                     <defs>
-                      <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--border-strong)" />
+                      <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                        <path d="M0,0 L6,3 L0,6 z" fill="var(--border-strong)" />
                       </marker>
                     </defs>
 

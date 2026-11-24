@@ -15,7 +15,6 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   AlertTriangle,
-  Info,
   CalendarCheck
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
@@ -47,7 +46,7 @@ interface CustomTooltipProps {
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-surface-elevated/95 backdrop-blur-md border border-border/80 p-3 rounded-sm shadow-xl font-sans text-xs space-y-1.5 min-w-[160px] select-none">
+      <div className="min-w-[160px] space-y-1.5 rounded-xl border border-border/80 bg-surface p-3 font-sans text-xs shadow-lg select-none">
         <span className="font-bold text-foreground-muted uppercase tracking-widest text-[9px] block border-b border-border/30 pb-1 mb-1">
           {label}
         </span>
@@ -140,28 +139,27 @@ export function ForecastShowcase() {
   }[activeRange];
 
   return (
-    <section id="solutions" className="py-24 bg-surface border-y border-border select-none">
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+    <section id="solutions" className="border-y border-border/70 bg-surface py-20 sm:py-24 select-none">
+      <div className="mx-auto w-full max-w-7xl space-y-10 px-5 sm:px-8 xl:px-10">
         
         {/* Header Block */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/40 pb-6">
-          <div className="space-y-2">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="max-w-2xl space-y-3">
             <div className="inline-flex items-center gap-2">
-              <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-forecast bg-forecast/10 border border-forecast/20 px-2 py-0.5 rounded-xs">
-                Liquidity Forecaster
+              <span className="rounded-full border border-border/70 bg-background px-3 py-1 text-[10px] font-sans font-medium text-foreground-muted">
+                Illustrative sample data
               </span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-heading font-bold tracking-tight text-foreground leading-snug">
-              See your financial future <br className="hidden sm:inline" />
-              before it happens.
+            <h2 className="text-3xl font-heading font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+              Plan ahead with a clearer view of cash flow.
             </h2>
-            <p className="text-sm text-foreground-secondary font-sans max-w-xl leading-relaxed">
-              ArthDrishti maps historical spending vectors against scheduled events to project cash runways with clear confidence bounds.
+            <p className="max-w-xl text-[14px] leading-6 text-foreground-secondary font-sans">
+              Compare historical balances with projected movement and expected account events.
             </p>
           </div>
           
           {/* Time range controller */}
-          <div className="flex items-center gap-1.5 bg-surface-elevated border border-border p-1 rounded-sm flex-shrink-0 self-start md:self-auto">
+          <div className="flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background p-1 self-start md:self-auto">
             {(["7D", "30D", "6M"] as const).map((r) => (
               <button
                 key={r}
@@ -169,7 +167,7 @@ export function ForecastShowcase() {
                   setActiveRange(r);
                   toast.info(`Switched cash forecast range to ${r}`);
                 }}
-                className={`px-4.5 py-1.5 rounded-xs text-xs font-sans font-semibold transition-all cursor-pointer ${
+                className={`h-11 rounded-full px-4 text-[11px] font-sans font-medium transition-colors cursor-pointer ${
                   activeRange === r 
                     ? "bg-primary text-white shadow-xs" 
                     : "text-foreground-secondary hover:text-foreground hover:bg-surface"
@@ -182,31 +180,25 @@ export function ForecastShowcase() {
         </div>
 
         {/* Dynamic Forecast Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[1.45fr_0.8fr] xl:gap-6">
           
           {/* Chart Card (8 Cols) */}
-          <Card className="lg:col-span-8 overflow-hidden h-full">
-            <CardHeader className="flex flex-row items-center justify-between border-b border-border/20 pb-4">
+          <Card className="h-full overflow-hidden rounded-[1.25rem] border-border/70 bg-surface">
+            <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
               <div>
-                <CardTitle className="text-base sm:text-lg">Predictive Liquidity Envelope</CardTitle>
-                <CardDescription>
-                  Dashed line shows expected balance; background bands show standard deviation envelope.
+                <CardTitle className="text-[15px] font-semibold sm:text-base">Projected cash balance</CardTitle>
+                <CardDescription className="mt-1 text-[12px] leading-5">
+                  Historical balance and modeled projection.
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="h-80 w-full min-h-[300px] pt-6">
+            <CardContent className="h-[330px] w-full min-h-[300px] pt-6 sm:h-[390px]">
               {mounted ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorConfidence" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--forecast)" stopOpacity={0.12} />
-                        <stop offset="95%" stopColor="var(--forecast)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 6, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.25} />
-                    <XAxis dataKey="label" stroke="var(--foreground-muted)" fontSize={11} tickLine={false} />
-                    <YAxis stroke="var(--foreground-muted)" fontSize={11} tickLine={false} domain={["dataMin - 5000", "dataMax + 5000"]} />
+                    <XAxis dataKey="label" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} minTickGap={10} interval="preserveStartEnd" />
+                    <YAxis stroke="var(--foreground-muted)" fontSize={10} tickLine={false} width={44} tickFormatter={(value: number) => `₹${Math.round(value / 1000)}k`} domain={["dataMin - 5000", "dataMax + 5000"]} />
                     <RechartsTooltip content={<CustomTooltip />} />
                     
                     {/* Confidence upper/lower limits area */}
@@ -214,7 +206,8 @@ export function ForecastShowcase() {
                       type="monotone" 
                       dataKey="confidenceUpper" 
                       stroke="transparent"
-                      fill="url(#colorConfidence)" 
+                      fill="var(--forecast)"
+                      fillOpacity={0.1}
                       connectNulls
                     />
                     <Area 
@@ -260,23 +253,23 @@ export function ForecastShowcase() {
           </Card>
 
           {/* Side stats and Event logs (4 Cols) */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {/* Summary metrics cells */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-elevated/80 border border-border/80 p-4 rounded-sm">
-                <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase tracking-wider block mb-1">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-4 rounded-[1.25rem] border border-border/70 bg-background p-5 sm:p-6">
+              <div>
+                <span className="mb-1 block text-[10px] font-sans font-medium text-foreground-muted uppercase tracking-[0.1em]">
                   Expected Inflow
                 </span>
                 <FinancialValue value={summary.In} currency="INR" notation="compact" className="text-lg font-bold font-mono" />
               </div>
-              <div className="bg-surface-elevated/80 border border-border/80 p-4 rounded-sm">
-                <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase tracking-wider block mb-1">
+              <div>
+                <span className="mb-1 block text-[10px] font-sans font-medium text-foreground-muted uppercase tracking-[0.1em]">
                   Projected Outflow
                 </span>
                 <FinancialValue value={summary.Out} currency="INR" notation="compact" className="text-lg font-bold font-mono" />
               </div>
-              <div className="bg-surface-elevated/80 border border-border/80 p-4 rounded-sm">
-                <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase tracking-wider block mb-1">
+              <div>
+                <span className="mb-1 block text-[10px] font-sans font-medium text-foreground-muted uppercase tracking-[0.1em]">
                   Net Savings
                 </span>
                 <div className="flex items-center gap-1">
@@ -284,8 +277,8 @@ export function ForecastShowcase() {
                   <FinancialValue value={summary.Saved} currency="INR" notation="compact" className="text-lg font-bold text-positive font-mono" />
                 </div>
               </div>
-              <div className="bg-surface-elevated/80 border border-border/80 p-4 rounded-sm">
-                <span className="text-[10px] font-sans font-bold text-foreground-secondary uppercase tracking-wider block mb-1">
+              <div>
+                <span className="mb-1 block text-[10px] font-sans font-medium text-foreground-muted uppercase tracking-[0.1em]">
                   Expected Low Point
                 </span>
                 <div className="flex items-center gap-1">
@@ -296,19 +289,17 @@ export function ForecastShowcase() {
             </div>
 
             {/* In-Line Scheduled events alerts */}
-            <div className="flex-1 bg-surface-elevated/40 border border-border rounded-md p-5 flex flex-col justify-between">
+            <div className="flex-1 rounded-[1.25rem] border border-border/70 bg-surface p-5 sm:p-6">
               <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-border/30 pb-2.5">
-                  <CalendarCheck className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-sans font-bold text-foreground uppercase tracking-wider">
-                    Calendar Event Logs
-                  </span>
+                <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+                  <span className="text-[13px] font-sans font-semibold text-foreground">Example events</span>
+                  <CalendarCheck className="h-4 w-4 text-foreground-muted" />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4 pt-4">
                   {events.map((evt, idx) => (
-                    <div key={`${evt.name}-${idx}`} className="flex items-start justify-between text-xs font-sans">
-                      <div className="flex gap-2">
+                    <div key={`${evt.name}-${idx}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 text-xs font-sans">
+                      <div className="flex min-w-0 gap-2">
                         {evt.type === "inflow" && (
                           <div className="h-5 w-5 rounded-xs bg-positive/10 border border-positive/20 flex items-center justify-center text-positive mt-0.5">
                             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -324,8 +315,8 @@ export function ForecastShowcase() {
                             <AlertTriangle className="h-3.5 w-3.5" />
                           </div>
                         )}
-                        <div>
-                          <span className="font-semibold text-foreground block">{evt.name}</span>
+                        <div className="min-w-0">
+                          <span className="block break-words font-semibold text-foreground">{evt.name}</span>
                           <span className="text-[10px] text-foreground-muted">{evt.day}</span>
                         </div>
                       </div>
@@ -333,7 +324,7 @@ export function ForecastShowcase() {
                         <FinancialValue value={evt.val} currency="INR" notation="compact" className="font-mono text-foreground font-semibold" />
                       )}
                       {evt.type === "warning" && (
-                        <span className="text-[10px] font-sans font-bold text-critical uppercase tracking-wider animate-pulse">
+                        <span className="max-w-[6.5rem] text-right text-[9px] font-sans font-semibold text-critical uppercase tracking-[0.06em] leading-4">
                           Warning active
                         </span>
                       )}
@@ -342,11 +333,8 @@ export function ForecastShowcase() {
                 </div>
               </div>
 
-              <div className="p-3 bg-forecast/5 border border-forecast/20 rounded-sm flex items-start gap-2 text-[11px] text-foreground-secondary leading-relaxed mt-4">
-                <Info className="h-3.5 w-3.5 text-forecast flex-shrink-0 mt-0.5" />
-                <span>
-                  Predictions sync with recurring Plaid APIs daily. Click <strong>Sync Ledger</strong> in dashboard to refresh bounds manually.
-                </span>
+              <div className="mt-5 border-t border-border/60 pt-4 text-[11px] leading-5 text-foreground-muted">
+                Sample values are illustrative. Forecast results depend on the financial data available.
               </div>
             </div>
           </div>

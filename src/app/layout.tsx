@@ -3,8 +3,8 @@ import { Providers } from "@/components/shared/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ArthDrishti | AI Financial Risk Intelligence",
-  description: "Complex financial intelligence presented with extreme simplicity. Real-time health scores, credit risk, fraud detection, and cash flow forecasting.",
+  title: "ArthDrishti | Financial Risk Intelligence",
+  description: "Understand credit risk, monitor transactions, and forecast cash flow with explainable financial intelligence for lending teams.",
 };
 
 export default function RootLayout({

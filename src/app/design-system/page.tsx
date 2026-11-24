@@ -123,42 +123,42 @@ export default function DesignSystemPage() {
                 <div className="h-16 w-full rounded-sm bg-primary flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-primary</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">Intel Blue (#4F7CFF)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Trust Jade (#176B55)</span>
               </div>
               {/* AI Violet */}
               <div className="flex flex-col gap-1.5">
                 <div className="h-16 w-full rounded-sm bg-ai flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-ai</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">AI Violet (#8B5CF6)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Insight Indigo (#5966A5)</span>
               </div>
               {/* Forecast Cyan */}
               <div className="flex flex-col gap-1.5">
                 <div className="h-16 w-full rounded-sm bg-forecast flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-forecast</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">Forecast Cyan (#06B6D4)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Forecast Teal (#287B86)</span>
               </div>
               {/* Success */}
               <div className="flex flex-col gap-1.5">
                 <div className="h-16 w-full rounded-sm bg-positive flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-positive</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">Positive (#10B981)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Positive (#286A4A)</span>
               </div>
               {/* Warning */}
               <div className="flex flex-col gap-1.5">
                 <div className="h-16 w-full rounded-sm bg-warning flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-warning</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">Warning (#F59E0B)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Warning (#95651A)</span>
               </div>
               {/* Critical */}
               <div className="flex flex-col gap-1.5">
                 <div className="h-16 w-full rounded-sm bg-critical flex items-end p-2">
                   <span className="text-[10px] font-mono text-white font-bold">bg-critical</span>
                 </div>
-                <span className="text-[11px] text-foreground-secondary font-medium">Critical (#EF4444)</span>
+                <span className="text-[11px] text-foreground-secondary font-medium">Critical (#AD493D)</span>
               </div>
               {/* Border */}
               <div className="flex flex-col gap-1.5">

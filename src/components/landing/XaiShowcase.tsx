@@ -1,242 +1,92 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Sliders, Info, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardContent } from "@/components/ui/Card";
-import { ModelConfidence } from "@/components/ui/ValueDisplay";
-import { RiskBadge } from "@/components/ui/Badge";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-interface FactorDetail {
-  name: string;
-  impact: number; // positive increases risk, negative decreases
-  current: string;
-  recommended: string;
-  details: string;
-  tip: string;
-}
+const factors = [
+  {
+    name: "Revolving credit use",
+    direction: "May increase risk",
+    detail: "High revolving balances can leave less room to absorb a change in income or expenses.",
+    positive: false,
+  },
+  {
+    name: "Payment history",
+    direction: "May increase risk",
+    detail: "Missed or irregular payments can indicate pressure on repayment capacity.",
+    positive: false,
+  },
+  {
+    name: "Income consistency",
+    direction: "Can support stability",
+    detail: "Regular income patterns can give reviewers useful context about repayment capacity.",
+    positive: true,
+  },
+];
 
 export function XaiShowcase() {
-  const [activeIdx, setActiveIdx] = useState<number>(0);
-
-  const factors: FactorDetail[] = [
-    {
-      name: "Debt-to-Income Ratio",
-      impact: 24,
-      current: "42.3%",
-      recommended: "Under 35.0%",
-      details: "High DTI triggers model alert variables, flagging leverage bounds.",
-      tip: "Refinancing the variable interest notes can drop this indicator below 34%."
-    },
-    {
-      name: "Late Payments (Historical)",
-      impact: 18,
-      current: "3 Occurrences (24mo)",
-      recommended: "0 Occurrences",
-      details: "Isolated billing lapses in Q3 2025 impact baseline payment velocity scores.",
-      tip: "Maintaining automated payments for 6 consecutive cycles reduces impact by half."
-    },
-    {
-      name: "Credit Limit Utilization",
-      impact: 15,
-      current: "58.2%",
-      recommended: "Under 30.0%",
-      details: "Intense near-term credit line draws flags liquidity warnings.",
-      tip: "Repaying $12K of the SaaS line drops utilization to a healthy 28%."
-    },
-    {
-      name: "Low Savings Buffer",
-      impact: 12,
-      current: "1.8 Months runway",
-      recommended: "Over 3.0 Months",
-      details: "Available liquid deposits show low coverage for recurring expenses.",
-      tip: "Diverting 8% of monthly income builds a 3.5 months buffer in 90 days."
-    },
-    {
-      name: "Stable Contract Salary",
-      impact: -8,
-      current: "Verified $12.5K recurring",
-      recommended: "Sustained contract base",
-      details: "Consistent monthly contract revenue reduces overall default probability.",
-      tip: "No action required. Current contract acts as a strong risk cushion."
-    }
-  ];
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = factors[activeIdx];
 
   return (
-    <section id="intelligence" className="py-24 bg-background select-none">
-      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Left Column - Explainability pitch */}
-          <div className="lg:col-span-5 flex flex-col gap-6 text-center lg:text-left">
-            <div className="inline-flex items-center justify-center lg:justify-start">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-sans font-bold tracking-widest text-ai bg-ai/10 border border-ai/20 rounded-full uppercase">
-                <Brain className="h-3.5 w-3.5" />
-                Explainable Risk Engine
-              </span>
-            </div>
-            
-            <h2 className="text-3xl sm:text-4xl font-heading font-bold tracking-tight text-foreground leading-snug">
-              Every prediction deserves <br />
-              an explanation.
-            </h2>
-            
-            <p className="text-sm sm:text-base text-foreground-secondary font-sans leading-relaxed max-w-lg mx-auto lg:mx-0">
-              ArthDrishti does not simply display a single risk rating. Our platform utilizes advanced SHAP attribution frameworks to map exactly which operational factors affected your financial evaluations, and how to improve them.
-            </p>
+    <section id="intelligence" className="bg-background py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8 xl:px-10">
+        <div className="max-w-2xl">
+          <h2 className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">A score is more useful when you can explain it.</h2>
+          <p className="mt-4 text-[14px] leading-6 text-foreground-secondary">Inspect the financial factors behind an assessment, then explore how a changed input could affect the result.</p>
+        </div>
 
-            <div className="pt-2 flex justify-center lg:justify-start">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="gap-2 cursor-pointer"
-                onClick={() => {
-                  toast.success("Simulation overlay activated. Navigating to stress simulator.");
-                  window.location.href = "/simulator";
-                }}
-              >
-                <Sliders className="h-4 w-4" />
-                Simulate Improvement
+        <div className="mt-10 grid grid-cols-1 gap-8 rounded-[1.25rem] border border-border/70 bg-surface p-5 sm:p-7 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:p-8">
+          <div>
+            <div className="flex items-center justify-between gap-4 border-b border-border/70 pb-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-foreground-muted">Illustrative example</p>
+                <h3 className="mt-1.5 text-[17px] font-semibold text-foreground">Model factors</h3>
+              </div>
+              <span className="rounded-full border border-border px-3 py-1 text-[10px] font-medium text-foreground-muted">Sample output</span>
+            </div>
+            <div className="divide-y divide-border/70">
+              {factors.map((factor, index) => (
+                <button
+                  key={factor.name}
+                  type="button"
+                  onClick={() => setActiveIdx(index)}
+                  aria-pressed={activeIdx === index}
+                  className={cn("flex w-full items-center gap-3 py-4 text-left transition-colors", activeIdx === index ? "text-foreground" : "text-foreground-secondary hover:text-foreground")}
+                >
+                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full border", factor.positive ? "border-primary/20 bg-primary/5 text-primary" : "border-border bg-surface-elevated text-foreground-muted")}>
+                    {factor.positive ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-medium">{factor.name}</span>
+                    <span className={cn("mt-1 block text-[11px]", factor.positive ? "text-primary" : "text-foreground-muted")}>{factor.direction}</span>
+                  </span>
+                  <ChevronRight className={cn("h-4 w-4 shrink-0", activeIdx === index ? "text-primary" : "text-foreground-muted")} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex min-h-[240px] flex-col justify-between rounded-xl bg-surface-elevated/70 p-5 sm:p-6">
+            <div>
+              <span className="text-[11px] font-medium text-foreground-muted">Why this matters</span>
+              <h3 className="mt-3 text-xl font-semibold tracking-[-0.025em] text-foreground">{active.name}</h3>
+              <p className="mt-3 max-w-lg text-[14px] leading-6 text-foreground-secondary">{active.detail}</p>
+            </div>
+            <div className="mt-8 border-t border-border/70 pt-4">
+              <p className="text-[11px] leading-5 text-foreground-muted">The example is illustrative. Actual outputs depend on the data available and the model in use.</p>
+              <Button variant="outline" size="sm" asChild className="group mt-4 rounded-full px-4">
+                <Link href="/simulator" className="gap-2">Try a scenario<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" /></Link>
               </Button>
             </div>
           </div>
-
-          {/* Right Column - Interactive Score Card & Hover Details */}
-          <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-            
-            {/* The main score sheet (7 Cols) */}
-            <Card className="md:col-span-7 border-critical/20 relative shadow-xl shadow-critical/2 flex flex-col h-full justify-between">
-              <CardHeader className="pb-3">
-                <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-foreground-muted">
-                  LOAN DEFAULT PROBABILITY
-                </span>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-3xl font-mono font-bold text-foreground">82%</span>
-                  <RiskBadge rating="High" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Progress confidence */}
-                <ModelConfidence value={94.2} />
-
-                <div className="h-px bg-border/40 my-2" />
-
-                {/* Factors List */}
-                <div className="space-y-2">
-                  <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-foreground-muted block mb-3">
-                    Risk Attributions (SHAP)
-                  </span>
-
-                  {factors.map((f, i) => {
-                    const isPositive = f.impact > 0;
-                    const isActive = activeIdx === i;
-                    
-                    return (
-                      <button
-                        type="button"
-                        key={f.name}
-                        onMouseEnter={() => setActiveIdx(i)}
-                        onFocus={() => setActiveIdx(i)}
-                        onClick={() => setActiveIdx(i)}
-                        aria-pressed={isActive}
-                        className={cn(
-                          "p-2.5 rounded-sm border cursor-pointer transition-all flex flex-col gap-1 select-none text-left",
-                          isActive
-                            ? "bg-surface-elevated border-border-strong shadow-xs"
-                            : "bg-transparent border-transparent hover:bg-surface-hover/50"
-                        )}
-                      >
-                        <div className="flex items-center justify-between text-xs font-sans">
-                          <span className="font-semibold text-foreground">{f.name}</span>
-                          <span className={cn("font-mono font-bold", isPositive ? "text-critical" : "text-positive")}>
-                            {isPositive ? "+" : ""}
-                            {f.impact}%
-                          </span>
-                        </div>
-                        {/* Contribution visual progress bar */}
-                        <div className="h-1 w-full bg-border/30 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.abs(f.impact) * 3}%` }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                            className={cn("h-full rounded-full", isPositive ? "bg-critical" : "bg-positive")} 
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Explanatory Overlay sidecard (5 Cols) */}
-            <div className="md:col-span-5 flex flex-col h-full justify-between">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeIdx}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.16 }}
-                  className="flex-1 bg-surface-elevated border border-border rounded-md p-5 flex flex-col gap-4 justify-between h-full shadow-lg shadow-black/5"
-                >
-                  <div className="space-y-3.5">
-                    <div className="flex items-center gap-1.5 text-xs text-foreground-secondary font-bold uppercase tracking-wider select-none border-b border-border/40 pb-2.5">
-                      <Info className="h-3.5 w-3.5 text-primary" />
-                      <span>Diagnostics</span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-sans font-bold text-foreground-muted uppercase tracking-wider block">
-                        Metric Scope
-                      </span>
-                      <h4 className="text-sm font-sans font-bold text-foreground leading-snug">
-                        {factors[activeIdx].name}
-                      </h4>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 pt-1">
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] font-sans text-foreground-muted uppercase block">Current</span>
-                        <span className="font-mono text-xs text-foreground font-semibold">
-                          {factors[activeIdx].current}
-                        </span>
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] font-sans text-foreground-muted uppercase block">Target</span>
-                        <span className="font-mono text-xs text-positive font-semibold">
-                          {factors[activeIdx].recommended}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1 pt-1.5">
-                      <span className="text-[9px] font-sans text-foreground-muted uppercase block">Model Impact</span>
-                      <p className="text-xs text-foreground-secondary font-sans leading-relaxed">
-                        {factors[activeIdx].details}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-sm flex items-start gap-2 text-xs text-foreground-secondary leading-relaxed mt-auto">
-                    <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-primary block mb-0.5">Action Plan</span>
-                      {factors[activeIdx].tip}
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-          </div>
-
         </div>
       </div>
     </section>
   );
 }
+
 export default XaiShowcase;

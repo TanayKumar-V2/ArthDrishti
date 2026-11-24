@@ -1,18 +1,45 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Brain, ReceiptText } from "lucide-react";
-import PageContainer from "@/components/ui/PageContainer";
+import { ArrowRight, Brain, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import PageContainer from "@/components/ui/PageContainer";
 
 export function UploadedSegmentReport({ segment, transactionCount }: { segment: any; transactionCount: number }) {
   const router = useRouter();
   const characteristics = segment?.characteristics && typeof segment.characteristics === "object" ? Object.entries(segment.characteristics) : [];
-  return <PageContainer className="pb-20">
-    <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-positive">Classified using your uploaded profile</p><h1 className="mt-2 text-3xl font-heading font-bold text-foreground">Customer segment</h1><p className="mt-2 text-sm text-foreground-secondary">The segment model assigned a cluster from financial features calculated over your statement.</p></div><Button variant="outline" onClick={() => router.push("/transactions")}>Review {transactionCount.toLocaleString()} transactions</Button></header>
-    <section className="mt-7 grid gap-4 md:grid-cols-[1fr_2fr]"><Card><CardContent className="p-6"><Brain className="h-5 w-5 text-primary"/><p className="mt-5 text-xs text-foreground-muted">Assigned segment</p><h2 className="mt-1 text-2xl font-bold text-foreground">{segment?.segment_name || segment?.cluster_id || "Segment unavailable"}</h2><p className="mt-3 text-xs text-foreground-secondary">Cluster ID: {segment?.cluster_id || "—"}</p></CardContent></Card>
-      <Card><CardHeader><CardTitle className="text-sm">Model characteristics</CardTitle></CardHeader><CardContent>{characteristics.length ? <dl className="grid gap-3 sm:grid-cols-2">{characteristics.map(([key, value]) => <div key={key} className="rounded-sm border border-border p-3"><dt className="text-[11px] capitalize text-foreground-muted">{key.replaceAll("_", " ")}</dt><dd className="mt-1 break-words text-sm font-semibold text-foreground">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd></div>)}</dl> : <p className="text-sm text-foreground-secondary">The model did not return descriptive characteristics for this cluster.</p>}</CardContent></Card></section>
-    <Card className="mt-5"><CardContent className="flex gap-3 p-4"><ReceiptText className="mt-0.5 h-4 w-4 shrink-0 text-foreground-muted"/><p className="text-xs leading-5 text-foreground-secondary">This is a model classification based on the uploaded transaction features. It does not show peer averages or individual customer positions; those require a real cohort dataset. Model version: {segment?.model_version || "not reported"}.</p></CardContent></Card>
-  </PageContainer>;
+
+  return (
+    <PageContainer className="gap-9 pb-20 sm:gap-11">
+      <header className="flex flex-col gap-5 border-b border-border/70 pb-7 sm:flex-row sm:items-end sm:justify-between">
+        <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Customer profile · model classification</p><h1 className="mt-3 text-4xl font-semibold text-foreground sm:text-[2.65rem]">Your customer segment</h1><p className="mt-3 max-w-2xl text-[14px] leading-6 text-foreground-secondary">A cluster assigned from financial features calculated across your uploaded transactions.</p></div>
+        <Button variant="outline" className="group rounded-full px-4" onClick={() => router.push("/transactions")}>Review {transactionCount.toLocaleString()} transactions<span className="ml-1 grid h-7 w-7 place-items-center rounded-full bg-primary/8 text-primary"><ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5" /></span></Button>
+      </header>
+
+      <section className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+        <Bezel>
+          <div className="flex h-full flex-col justify-between gap-12 p-6 sm:p-8">
+            <div className="flex items-center justify-between"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/8 text-primary"><Brain className="h-5 w-5" /></span><span className="rounded-full bg-surface-elevated px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground-muted">Assigned segment</span></div>
+            <div><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">Your profile cluster</p><h2 className="mt-3 break-words text-[2rem] font-semibold leading-tight tracking-[-0.045em] text-foreground">{segment?.segment_name || segment?.cluster_id || "Segment unavailable"}</h2><p className="mt-4 text-[12px] text-foreground-muted">Cluster ID <span className="ml-2 font-mono font-medium text-foreground-secondary">{segment?.cluster_id || "—"}</span></p></div>
+          </div>
+        </Bezel>
+
+        <Bezel>
+          <div className="p-6 sm:p-8">
+            <div className="mb-5"><p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground-muted">How the model describes it</p><h2 className="mt-2 text-xl font-semibold text-foreground">Segment characteristics</h2></div>
+            {characteristics.length ? <dl className="grid gap-x-8 sm:grid-cols-2">
+              {characteristics.map(([key, value]) => <div key={key} className="border-t border-border/70 py-4"><dt className="text-[11px] font-medium capitalize text-foreground-muted">{key.replaceAll("_", " ")}</dt><dd className="mt-1.5 break-words text-[14px] font-semibold text-foreground">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd></div>)}
+            </dl> : <p className="py-6 text-[13px] leading-6 text-foreground-secondary">The model did not return descriptive characteristics for this cluster.</p>}
+          </div>
+        </Bezel>
+      </section>
+
+      <div className="flex items-start gap-3 text-[12px] leading-5 text-foreground-muted"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface-elevated"><ReceiptText className="h-3 w-3" /></span><p>This classification uses features from your uploaded transactions. It does not show peer averages or individual customer positions because no cohort data is available. Model version: {segment?.model_version || "not reported"}.</p></div>
+    </PageContainer>
+  );
+}
+
+function Bezel({ children }: { children: ReactNode }) {
+  return <div className="rounded-[1.8rem] bg-surface-elevated p-1.5 ring-1 ring-border/70"><div className="h-full rounded-[calc(1.8rem-0.375rem)] bg-surface ring-1 ring-inset ring-black/[0.025] dark:ring-white/[0.04]">{children}</div></div>;
 }

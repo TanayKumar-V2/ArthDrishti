@@ -73,7 +73,7 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
 
   return (
     <RoleAccessGate expectedRole="loan_officer">
-    <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans text-xs select-none">
+    <div className="flex h-dvh min-h-[100dvh] bg-background text-foreground overflow-hidden font-sans text-xs select-none">
       
       {/* 1. SIDEBAR SHELL (DESKTOP - HIDDEN ON MOBILE) */}
       <aside
@@ -170,7 +170,7 @@ export default function OfficerLayout({ children }: { children: React.ReactNode 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         
         {/* TOPBAR HEADER */}
-        <header className="h-16 border-b border-border bg-surface flex items-center justify-between px-4 md:px-6 select-none shrink-0 z-25">
+        <header className="h-16 mx-3 mt-3 rounded-2xl border border-border/80 bg-surface/95 shadow-[0_4px_18px_rgba(24,39,31,0.045)] flex items-center justify-between px-3 md:px-5 select-none shrink-0 z-25">
           <div className="flex items-center gap-3">
             {/* Mobile menu toggle */}
             <button

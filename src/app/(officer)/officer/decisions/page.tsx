@@ -1279,7 +1279,7 @@ export default function DecisionsHistoryPage() {
 
     const chartInstances: echarts.ECharts[] = [];
     const isDark = document.documentElement.classList.contains("dark");
-    const labelColor = isDark ? "#94A3B8" : "#64748B";
+    const labelColor = isDark ? "#849087" : "#64716A";
     const gridLineColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
 
     const initChart = (ref: React.RefObject<HTMLDivElement | null>, option: echarts.EChartsOption) => {
@@ -1348,40 +1348,30 @@ export default function DecisionsHistoryPage() {
     initChart(chart1Ref, {
       tooltip: {
         trigger: "axis",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
-      legend: { textStyle: { color: labelColor, fontSize: 8.5 }, top: 0, right: 10 },
+      legend: { textStyle: { color: labelColor, fontSize: 10 }, top: 0, right: 10 },
       grid: { top: 30, bottom: 25, left: 35, right: 15 },
-      xAxis: { type: "category", data: timelineLabels, axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: timelineLabels, axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           name: "Approved",
           type: "line",
           smooth: true,
           data: approvalTrend,
-          itemStyle: { color: "#10B981" },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(16, 185, 129, 0.15)" },
-              { offset: 1, color: "rgba(16, 185, 129, 0)" }
-            ])
-          }
+          itemStyle: { color: "#286A4A" },
+          areaStyle: { color: "rgba(40, 106, 74, 0.10)" }
         },
         {
           name: "Rejected",
           type: "line",
           smooth: true,
           data: rejectionTrend,
-          itemStyle: { color: "#EF4444" },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(239, 68, 68, 0.15)" },
-              { offset: 1, color: "rgba(239, 68, 68, 0)" }
-            ])
-          }
+          itemStyle: { color: "#AD493D" },
+          areaStyle: { color: "rgba(173, 73, 61, 0.09)" }
         }
       ]
     });
@@ -1390,19 +1380,19 @@ export default function DecisionsHistoryPage() {
     initChart(chart2Ref, {
       tooltip: {
         trigger: "axis",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
       grid: { top: 20, bottom: 25, left: 35, right: 15 },
-      xAxis: { type: "category", data: monthlyLabels, axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: monthlyLabels, axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           type: "bar",
           data: monthlyCount,
           itemStyle: {
-            color: "#4F7CFF",
+            color: "#176B55",
             borderRadius: [2, 2, 0, 0]
           }
         }
@@ -1413,22 +1403,22 @@ export default function DecisionsHistoryPage() {
     initChart(chart3Ref, {
       tooltip: {
         trigger: "item",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
       series: [
         {
           type: "pie",
           radius: ["45%", "75%"],
           avoidLabelOverlap: false,
-          itemStyle: { borderRadius: 3, borderColor: isDark ? "#0E1421" : "#FFFFFF", borderWidth: 1.5 },
+          itemStyle: { borderRadius: 3, borderColor: isDark ? "#1c2420" : "#FFFFFF", borderWidth: 1.5 },
           label: { show: false },
           emphasis: { label: { show: false } },
           data: [
-            { value: approvedTotal, name: "Approved", itemStyle: { color: "#10B981" } },
-            { value: rejectedTotal, name: "Rejected", itemStyle: { color: "#EF4444" } },
-            { value: pendingTotal, name: "Pending", itemStyle: { color: "#F59E0B" } }
+            { value: approvedTotal, name: "Approved", itemStyle: { color: "#286A4A" } },
+            { value: rejectedTotal, name: "Rejected", itemStyle: { color: "#AD493D" } },
+            { value: pendingTotal, name: "Pending", itemStyle: { color: "#95651A" } }
           ]
         }
       ]
@@ -1438,15 +1428,15 @@ export default function DecisionsHistoryPage() {
     initChart(chart4Ref, {
       tooltip: {
         trigger: "axis",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
       grid: { top: 20, bottom: 25, left: 35, right: 15 },
-      xAxis: { type: "category", data: timelineLabels, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: timelineLabels, axisLabel: { color: labelColor, fontSize: 10 } },
       yAxis: {
         type: "value",
-        axisLabel: { formatter: "{value}h", color: labelColor, fontSize: 8.5 },
+        axisLabel: { formatter: "{value}h", color: labelColor, fontSize: 10 },
         splitLine: { lineStyle: { color: gridLineColor } }
       },
       series: [
@@ -1454,14 +1444,9 @@ export default function DecisionsHistoryPage() {
           type: "line",
           smooth: true,
           data: avgHoursTrend,
-          itemStyle: { color: "#8B5CF6" },
+          itemStyle: { color: "#5966A5" },
           lineStyle: { width: 2 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "rgba(139, 92, 246, 0.12)" },
-              { offset: 1, color: "rgba(139, 92, 246, 0)" }
-            ])
-          }
+          areaStyle: { color: "rgba(89, 102, 165, 0.09)" }
         }
       ]
     });
@@ -1470,22 +1455,22 @@ export default function DecisionsHistoryPage() {
     initChart(chart5Ref, {
       tooltip: {
         trigger: "item",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
       series: [
         {
           type: "pie",
           radius: "75%",
           data: [
-            { value: riskLow, name: "Low Risk", itemStyle: { color: "#10B981" } },
-            { value: riskMed, name: "Medium Risk", itemStyle: { color: "#F59E0B" } },
-            { value: riskHigh, name: "High Risk", itemStyle: { color: "#EF4444" } },
-            { value: riskCrit, name: "Critical Risk", itemStyle: { color: "#b91c1c" } }
+            { value: riskLow, name: "Low Risk", itemStyle: { color: "#286A4A" } },
+            { value: riskMed, name: "Medium Risk", itemStyle: { color: "#95651A" } },
+            { value: riskHigh, name: "High Risk", itemStyle: { color: "#AD493D" } },
+            { value: riskCrit, name: "Critical Risk", itemStyle: { color: "#AD493D" } }
           ],
           label: { show: false },
-          itemStyle: { borderRadius: 2, borderColor: isDark ? "#0E1421" : "#FFFFFF", borderWidth: 1.5 }
+          itemStyle: { borderRadius: 2, borderColor: isDark ? "#1c2420" : "#FFFFFF", borderWidth: 1.5 }
         }
       ]
     });
@@ -1494,19 +1479,19 @@ export default function DecisionsHistoryPage() {
     initChart(chart6Ref, {
       tooltip: {
         trigger: "axis",
-        backgroundColor: isDark ? "#0E1421" : "#FFFFFF",
-        borderColor: isDark ? "#1E293B" : "#E2E8F0",
-        textStyle: { color: isDark ? "#F8FAFC" : "#0F172A", fontSize: 9 }
+        backgroundColor: isDark ? "#1c2420" : "#FFFFFF",
+        borderColor: isDark ? "#303d36" : "#a7b2aa",
+        textStyle: { color: isDark ? "#edf1eb" : "#1B2622", fontSize: 9 }
       },
       grid: { top: 20, bottom: 25, left: 35, right: 15 },
-      xAxis: { type: "category", data: ["<50", "50-70", "70-85", "85-100"], axisLabel: { color: labelColor, fontSize: 8.5 } },
-      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 8.5 } },
+      xAxis: { type: "category", data: ["<50", "50-70", "70-85", "85-100"], axisLabel: { color: labelColor, fontSize: 10 } },
+      yAxis: { type: "value", splitLine: { lineStyle: { color: gridLineColor } }, axisLabel: { color: labelColor, fontSize: 10 } },
       series: [
         {
           type: "bar",
           data: [healthUnder50, health50to70, health70to85, health85to100],
           itemStyle: {
-            color: "#06B6D4",
+            color: "#287B86",
             borderRadius: [2, 2, 0, 0]
           }
         }

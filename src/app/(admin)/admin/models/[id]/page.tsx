@@ -84,14 +84,14 @@ import {
 
 // Custom color mappings matching admin dashboard styling
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 type TabType = "overview" | "performance" | "versions" | "deployment" | "explainability" | "training" | "monitoring" | "logs";
@@ -695,7 +695,7 @@ export default function AIModelDetailsPage(props: PageProps) {
                       <CardContent className="h-[250px] w-full pb-0 select-none">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={model.versions.slice().reverse().map((v, i) => ({ run: `Run ${i+1}`, acc: v.accuracy * 100, lat: v.latency }))} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="run" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
@@ -750,9 +750,9 @@ export default function AIModelDetailsPage(props: PageProps) {
                         {/* Custom SVG Drawing the ROC Curve */}
                         <svg className="w-full max-w-[280px] h-40 overflow-visible" viewBox="0 0 100 100">
                           {/* Grid lines */}
-                          <line x1="0" y1="0" x2="0" y2="100" stroke="#cbd5e1" strokeWidth="0.5" />
-                          <line x1="0" y1="100" x2="100" y2="100" stroke="#cbd5e1" strokeWidth="0.5" />
-                          <line x1="0" y1="100" x2="100" y2="0" stroke="#cbd5e1" strokeWidth="0.3" strokeDasharray="2 2" />
+                          <line x1="0" y1="0" x2="0" y2="100" stroke="#d5dbd1" strokeWidth="0.5" />
+                          <line x1="0" y1="100" x2="100" y2="100" stroke="#d5dbd1" strokeWidth="0.5" />
+                          <line x1="0" y1="100" x2="100" y2="0" stroke="#d5dbd1" strokeWidth="0.3" strokeDasharray="2 2" />
                           
                           {/* Curve line */}
                           <path
@@ -764,8 +764,8 @@ export default function AIModelDetailsPage(props: PageProps) {
                           <circle cx="10" cy="15" r="2" fill={COLORS.primary} />
                           
                           {/* Axis labels */}
-                          <text x="50" y="112" fontSize="6" textAnchor="middle" fill="#64748b" className="font-sans">False Positive Rate</text>
-                          <text x="-50" y="-8" fontSize="6" textAnchor="middle" transform="rotate(-90)" fill="#64748b" className="font-sans">True Positive Rate</text>
+                          <text x="50" y="112" fontSize="6" textAnchor="middle" fill="#64716a" className="font-sans">False Positive Rate</text>
+                          <text x="-50" y="-8" fontSize="6" textAnchor="middle" transform="rotate(-90)" fill="#64716a" className="font-sans">True Positive Rate</text>
                         </svg>
                       </CardContent>
                     </Card>
@@ -779,8 +779,8 @@ export default function AIModelDetailsPage(props: PageProps) {
                         {/* Custom SVG Drawing the PR Curve */}
                         <svg className="w-full max-w-[280px] h-40 overflow-visible" viewBox="0 0 100 100">
                           {/* Grid lines */}
-                          <line x1="0" y1="0" x2="0" y2="100" stroke="#cbd5e1" strokeWidth="0.5" />
-                          <line x1="0" y1="100" x2="100" y2="100" stroke="#cbd5e1" strokeWidth="0.5" />
+                          <line x1="0" y1="0" x2="0" y2="100" stroke="#d5dbd1" strokeWidth="0.5" />
+                          <line x1="0" y1="100" x2="100" y2="100" stroke="#d5dbd1" strokeWidth="0.5" />
                           
                           {/* Curve line */}
                           <path
@@ -792,8 +792,8 @@ export default function AIModelDetailsPage(props: PageProps) {
                           <circle cx="70" cy="10" r="2" fill={COLORS.ai} />
                           
                           {/* Axis labels */}
-                          <text x="50" y="112" fontSize="6" textAnchor="middle" fill="#64748b" className="font-sans">Recall Score</text>
-                          <text x="-50" y="-8" fontSize="6" textAnchor="middle" transform="rotate(-90)" fill="#64748b" className="font-sans">Precision Score</text>
+                          <text x="50" y="112" fontSize="6" textAnchor="middle" fill="#64716a" className="font-sans">Recall Score</text>
+                          <text x="-50" y="-8" fontSize="6" textAnchor="middle" transform="rotate(-90)" fill="#64716a" className="font-sans">Precision Score</text>
                         </svg>
                       </CardContent>
                     </Card>
@@ -987,7 +987,7 @@ export default function AIModelDetailsPage(props: PageProps) {
                           { name: "Quick Liquidity Ratio", shap: 0.12 },
                           { name: "Cash Reserve Cushion", shap: 0.08 }
                         ]} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.2} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#d5dbd1" opacity={0.2} />
                           <XAxis type="number" tick={{ fontSize: 9 }} />
                           <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={140} />
                           <RechartsTooltip />

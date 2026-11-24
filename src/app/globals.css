@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -9,79 +24,89 @@
   --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
-  
   --color-primary: var(--primary);
   --color-ai: var(--ai);
   --color-forecast: var(--forecast);
   --color-positive: var(--positive);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
-  
   --color-foreground-secondary: var(--foreground-secondary);
   --color-foreground-muted: var(--foreground-muted);
-
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-heading: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-sans: "Geist", "Segoe UI Variable", system-ui, sans-serif;
+  --font-heading: "Geist", "Segoe UI Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --radius-sm: 0.65rem;
+  --radius-md: 0.9rem;
+  --radius-lg: 1.2rem;
 }
 
 :root {
-  /* Light Theme */
-  --background: #F6F8FC;
-  --sidebar: #FFFFFF;
-  --surface: #FFFFFF;
-  --surface-elevated: #F8FAFC;
-  --surface-hover: #F1F5F9;
-  --border: #E2E8F0;
-  --border-strong: #CBD5E1;
-  --primary: #2856D8;
-  --primary-foreground: #FFFFFF;
-  --ai: #6D28D9;
-  --ai-foreground: #FFFFFF;
-  --forecast: #0E7490;
-  --forecast-foreground: #FFFFFF;
-  --positive: #047857;
-  --positive-foreground: #FFFFFF;
-  --warning: #A16207;
-  --warning-foreground: #FFFFFF;
-  --critical: #B91C1C;
-  --critical-foreground: #FFFFFF;
-  --foreground: #0F172A;
-  --foreground-secondary: #64748B;
-  --foreground-muted: #667085;
+  color-scheme: light;
+  --background: #f4f5f1;
+  --sidebar: #fbfcf9;
+  --surface: #ffffff;
+  --surface-elevated: #f7f8f4;
+  --surface-hover: #eff2ec;
+  --border: #e5e8e1;
+  --border-strong: #d5dbd1;
+  --primary: #176b55;
+  --primary-foreground: #ffffff;
+  --ai: #5966a5;
+  --ai-foreground: #ffffff;
+  --forecast: #287b86;
+  --forecast-foreground: #ffffff;
+  --positive: #286a4a;
+  --positive-foreground: #ffffff;
+  --warning: #95651a;
+  --warning-foreground: #ffffff;
+  --critical: #ad493d;
+  --critical-foreground: #ffffff;
+  --foreground: #1b2622;
+  --foreground-secondary: #64716a;
+  --foreground-muted: #849087;
+  --chart-1: #176b55;
+  --chart-2: #5966a5;
+  --chart-3: #b17c35;
+  --chart-4: #287b86;
+  --chart-5: #ad493d;
 }
 
 .dark {
-  /* Dark Theme */
-  --background: #070A12;
-  --sidebar: #090D17;
-  --surface: #0E1421;
-  --surface-elevated: #131B2B;
-  --surface-hover: #182235;
-  --border: #1E293B;
-  --border-strong: #334155;
-  --primary: #4F7CFF;
-  --primary-foreground: #050814;
-  --ai: #8B5CF6;
-  --ai-foreground: #050814;
-  --forecast: #06B6D4;
-  --forecast-foreground: #050814;
-  --positive: #10B981;
-  --positive-foreground: #050814;
-  --warning: #F59E0B;
-  --warning-foreground: #050814;
-  --critical: #EF4444;
-  --critical-foreground: #050814;
-  --foreground: #F8FAFC;
-  --foreground-secondary: #94A3B8;
-  --foreground-muted: #A5B4C8;
+  color-scheme: dark;
+  --background: #141a17;
+  --sidebar: #181f1b;
+  --surface: #1c2420;
+  --surface-elevated: #222c27;
+  --surface-hover: #29352f;
+  --border: #303d36;
+  --border-strong: #46564c;
+  --primary: #78bca4;
+  --primary-foreground: #15231d;
+  --ai: #a1a9dc;
+  --ai-foreground: #191d32;
+  --forecast: #80c2c8;
+  --forecast-foreground: #112327;
+  --positive: #83c39c;
+  --positive-foreground: #13251a;
+  --warning: #e2b66c;
+  --warning-foreground: #2b2111;
+  --critical: #e28b7f;
+  --critical-foreground: #2c1714;
+  --foreground: #edf1eb;
+  --foreground-secondary: #a7b2aa;
+  --foreground-muted: #829087;
+  --chart-1: #78bca4;
+  --chart-2: #a1a9dc;
+  --chart-3: #e2b66c;
+  --chart-4: #80c2c8;
+  --chart-5: #e28b7f;
 }
 
-/* Solid semantic fills use theme-aware foreground colors. */
 .bg-primary { color: var(--primary-foreground); }
 .bg-ai { color: var(--ai-foreground); }
 .bg-forecast { color: var(--forecast-foreground); }
@@ -89,58 +114,72 @@
 .bg-warning { color: var(--warning-foreground); }
 .bg-critical { color: var(--critical-foreground); }
 
-/* Base Body Styles */
+* { border-color: var(--border); }
+.rounded-xs { border-radius: 0.55rem !important; }
+.rounded-sm { border-radius: 0.7rem !important; }
+.shadow-md { box-shadow: 0 8px 24px rgba(24, 39, 31, 0.07) !important; }
+.shadow-lg { box-shadow: 0 12px 36px rgba(24, 39, 31, 0.09) !important; }
+.page-enter { animation: page-enter 560ms cubic-bezier(0.2, 0.75, 0.25, 1) both; }
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+html { scroll-behavior: smooth; }
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
   min-height: 100vh;
   overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" on, "cv11" on;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  text-wrap: balance;
+}
+h1 { letter-spacing: -0.045em; line-height: 1.08; }
+h2 { letter-spacing: -0.03em; line-height: 1.16; }
+h3 { letter-spacing: -0.02em; line-height: 1.22; }
 
-/* Custom Webkit Scrollbars for Premium Look */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+::selection { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border: 2px solid var(--background); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--foreground-muted); }
+*:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+svg.lucide { stroke-width: 1.7; }
+table { border-collapse: separate; border-spacing: 0; }
+table thead th {
+  color: var(--foreground-muted);
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
 }
+table tbody td { border-bottom: 1px solid var(--border); }
+table tbody tr { transition: background-color 180ms cubic-bezier(0.32, 0.72, 0, 1); }
+table tbody tr:hover { background-color: var(--surface-elevated); }
+.recharts-cartesian-grid line { stroke: var(--border) !important; stroke-dasharray: 2 6 !important; }
+.recharts-cartesian-axis-tick-value, .recharts-legend-item-text {
+  fill: var(--foreground-muted);
+  color: var(--foreground-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
-}
-
-/* Focus States for Keyboard Navigation Accessibility */
-*:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* Hide Spin Buttons in Number Input fields */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
+@media (prefers-reduced-motion: no-preference) {
+  a, button, [role="button"], input, select, textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 220ms;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse,
-  .animate-ping {
-    animation: none;
-  }
-
-  .animate-spin {
-    animation-duration: 1.5s;
-  }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .page-enter { animation: none; }
 }

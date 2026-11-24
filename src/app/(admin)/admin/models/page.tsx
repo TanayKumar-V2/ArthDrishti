@@ -99,14 +99,14 @@ import {
 
 // Custom color values matching theme variables
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function AIModelRegistryPage() {
@@ -1424,7 +1424,7 @@ export default function AIModelRegistryPage() {
                     <CardContent className="p-2 pt-0 h-48 select-none">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={selectedModel.sparkline.map((val, idx) => ({ epoch: `Ep-${idx+1}`, value: val }))} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                           <XAxis dataKey="epoch" tick={{ fontSize: 9 }} />
                           <YAxis domain={["dataMin - 1", "dataMax + 1"]} tick={{ fontSize: 9 }} />
                           <RechartsTooltip />

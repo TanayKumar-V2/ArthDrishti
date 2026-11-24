@@ -65,14 +65,14 @@ import {
 
 // Custom theme color maps matching css variables
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function AIModelDriftMonitoringPage() {
@@ -631,16 +631,7 @@ export default function AIModelDriftMonitoringPage() {
                   <div className="h-72 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={activeData.overview[selectedTimeframe] || activeData.overview["7 Days"]}>
-                        <defs>
-                          <linearGradient id="colorOverall" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorConcept" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.ai} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={COLORS.ai} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
+                        
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                         <XAxis 
                           dataKey="time" 
@@ -670,8 +661,7 @@ export default function AIModelDriftMonitoringPage() {
                           type="monotone" 
                           dataKey="overall" 
                           stroke={COLORS.primary} 
-                          fillOpacity={1} 
-                          fill="url(#colorOverall)" 
+                          fill={COLORS.primary} fillOpacity={0.08} 
                           strokeWidth={2}
                         />
                         <Area 
@@ -679,8 +669,7 @@ export default function AIModelDriftMonitoringPage() {
                           type="monotone" 
                           dataKey="concept" 
                           stroke={COLORS.ai} 
-                          fillOpacity={1} 
-                          fill="url(#colorConcept)" 
+                          fill={COLORS.ai} fillOpacity={0.08} 
                           strokeWidth={2}
                         />
                         <Line 

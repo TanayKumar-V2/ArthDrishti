@@ -135,7 +135,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
   return (
     <RoleAccessGate expectedRole="customer">
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-dvh min-h-[100dvh] bg-background overflow-hidden">
       {/* 1. Desktop Collapsible Sidebar (Hidden on Mobile) */}
       <div className="hidden md:block flex-shrink-0">
         <CustomerSidebar 
@@ -163,7 +163,7 @@ export default function CustomerLayout({ children }: { children: React.ReactNode
 
         {/* 3. Mobile Navigation Bar (Fixed bottom, hidden on Desktop) */}
         <nav 
-          className="fixed bottom-0 left-0 right-0 h-16 border-t border-border bg-surface flex md:hidden items-center justify-around px-2 z-35 shadow-lg select-none"
+          className="fixed bottom-0 left-0 right-0 h-16 border-t border-border/80 bg-surface/95 flex md:hidden items-center justify-around px-2 z-35 shadow-lg select-none"
           aria-label="Mobile Navigation"
         >
           {bottomNavItems.map((item) => {

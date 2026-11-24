@@ -90,7 +90,7 @@ export function AdminTopbar({ sidebarExpanded, setSidebarExpanded, onSearchClick
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="h-[72px] border-b border-border bg-surface flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 select-none">
+    <header className="h-16 mx-3 mt-3 rounded-2xl border border-border/80 bg-surface/95 shadow-[0_4px_18px_rgba(24,39,31,0.045)] flex items-center justify-between px-3 sm:px-5 sticky top-3 z-20 select-none">
       
       {/* Left section: Breadcrumbs & Mobile Logo Toggle */}
       <div className="flex items-center gap-3">

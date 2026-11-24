@@ -96,14 +96,14 @@ import {
 
 // Custom HSL Colors Matching Admin Theme
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function EnterpriseOrganizationsPage() {
@@ -1698,17 +1698,12 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={selectedOrg.metrics.predictionUsage} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                            <defs>
-                              <linearGradient id="colorPreds" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={COLORS.ai} stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor={COLORS.ai} stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
-                            <Area type="monotone" dataKey="value" stroke={COLORS.ai} fillOpacity={1} fill="url(#colorPreds)" strokeWidth={2} />
+                            <Area type="monotone" dataKey="value" stroke={COLORS.ai} fill={COLORS.ai} fillOpacity={0.08} strokeWidth={2} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </CardContent>
@@ -1722,7 +1717,7 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={selectedOrg.metrics.memberGrowth} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
@@ -1740,7 +1735,7 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={selectedOrg.metrics.monthlyActiveUsers} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
@@ -1758,17 +1753,12 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={selectedOrg.metrics.storageGrowth} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
-                            <defs>
-                              <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={COLORS.positive} stopOpacity={0.2}/>
-                                <stop offset="95%" stopColor={COLORS.positive} stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
-                            <Area type="monotone" dataKey="value" stroke={COLORS.positive} fillOpacity={1} fill="url(#colorStorage)" strokeWidth={2} />
+                            <Area type="monotone" dataKey="value" stroke={COLORS.positive} fill={COLORS.positive} fillOpacity={0.08} strokeWidth={2} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </CardContent>
@@ -1782,7 +1772,7 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={selectedOrg.metrics.apiUsage} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />
@@ -1800,7 +1790,7 @@ export default function EnterpriseOrganizationsPage() {
                       <CardContent className="p-2 pt-0 h-48">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={selectedOrg.metrics.revenueTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.3} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8e1" opacity={0.3} />
                             <XAxis dataKey="date" tick={{ fontSize: 9 }} />
                             <YAxis tick={{ fontSize: 9 }} />
                             <RechartsTooltip />

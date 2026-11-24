@@ -13,22 +13,22 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", asChild = false, loading = false, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     
-    const baseStyles = "inline-flex items-center justify-center font-sans font-medium rounded-sm transition-all focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+    const baseStyles = "inline-flex items-center justify-center font-sans font-medium rounded-xl transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
     
     const variants = {
-      primary: "bg-primary text-white hover:opacity-95 shadow-xs",
-      ai: "bg-ai text-white hover:opacity-95 shadow-xs",
-      forecast: "bg-forecast text-white hover:opacity-95 shadow-xs",
-      secondary: "bg-surface-elevated text-foreground border border-border hover:bg-surface-hover hover:border-border-strong",
-      outline: "bg-transparent text-foreground border border-border hover:bg-surface-hover hover:border-border-strong",
-      ghost: "bg-transparent text-foreground hover:bg-surface-hover",
-      destructive: "bg-critical text-white hover:opacity-95 shadow-xs",
+      primary: "bg-primary text-primary-foreground shadow-[0_2px_8px_color-mix(in_srgb,var(--primary)_18%,transparent)] hover:brightness-[0.96]",
+      ai: "bg-ai text-ai-foreground hover:brightness-[0.96]",
+      forecast: "bg-forecast text-forecast-foreground hover:brightness-[0.96]",
+      secondary: "bg-surface-elevated text-foreground border border-border/80 hover:bg-surface-hover hover:border-border-strong",
+      outline: "bg-transparent text-foreground border border-border-strong/80 hover:bg-surface-hover hover:border-border-strong",
+      ghost: "bg-transparent text-foreground-secondary hover:text-foreground hover:bg-surface-hover",
+      destructive: "bg-critical text-critical-foreground hover:brightness-[0.96]",
     };
 
     const sizes = {
-      sm: "h-9 px-4 text-xs gap-1.5",
-      md: "h-10 px-5 text-sm gap-2",
-      lg: "h-11 px-6 text-base gap-2.5",
+      sm: "h-9 px-3.5 text-xs gap-1.5",
+      md: "h-10 px-4.5 text-[13px] gap-2",
+      lg: "h-12 px-5.5 text-sm gap-2.5",
     };
 
     return (

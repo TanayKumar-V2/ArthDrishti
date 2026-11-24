@@ -149,22 +149,6 @@ export function FinancialNetwork() {
       >
         {/* Connection paths and animated pulses */}
         <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 800 480">
-          {/* Gradients */}
-          <defs>
-            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="var(--border)" stopOpacity={0.3} />
-              <stop offset="50%" stopColor="var(--primary)" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="var(--border-strong)" stopOpacity={0.3} />
-            </linearGradient>
-            <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="var(--ai)" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="var(--ai)" stopOpacity={0} />
-            </radialGradient>
-          </defs>
-
-          {/* Central AI Engine Glow */}
-          <circle cx={centerNode.x} cy={centerNode.y} r={120} fill="url(#glowGrad)" />
-
           {/* Static Connection Lines */}
           {inputs.map((inNode) => (
             <line
@@ -173,7 +157,8 @@ export function FinancialNetwork() {
               y1={inNode.pos.y}
               x2={centerNode.x}
               y2={centerNode.y}
-              stroke="url(#lineGrad)"
+              stroke="var(--border-strong)"
+              strokeOpacity={0.75}
               strokeWidth={1.5}
             />
           ))}
@@ -185,7 +170,8 @@ export function FinancialNetwork() {
               y1={centerNode.y}
               x2={outNode.pos.x}
               y2={outNode.pos.y}
-              stroke="url(#lineGrad)"
+              stroke="var(--border-strong)"
+              strokeOpacity={0.75}
               strokeWidth={1.5}
             />
           ))}

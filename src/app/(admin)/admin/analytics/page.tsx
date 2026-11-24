@@ -87,14 +87,14 @@ import {
 
 // Theme color map matching CSS variables
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function ExecutiveAnalyticsDashboardPage() {
@@ -507,18 +507,13 @@ export default function ExecutiveAnalyticsDashboardPage() {
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={activeTimeframeData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.25}/>
-                              <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
+                          
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                           <XAxis dataKey="name" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                           <YAxis stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                           <RechartsTooltip contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "4px", fontSize: "11px" }} />
                           <Legend wrapperStyle={{ fontSize: "10px" }} />
-                          <Area name="Prediction runs" type="monotone" dataKey="growth" stroke={COLORS.primary} fillOpacity={1} fill="url(#colorGrowth)" strokeWidth={2.5} />
+                          <Area name="Prediction runs" type="monotone" dataKey="growth" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.08} strokeWidth={2.5} />
                           <Line name="Approvals index" type="monotone" dataKey="approvals" stroke={COLORS.positive} strokeWidth={2} dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -811,18 +806,13 @@ export default function ExecutiveAnalyticsDashboardPage() {
                   <CardContent className="pt-6 h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={SYSTEM_CPU_MEM_QUEUES} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorCpu" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={COLORS.forecast} stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor={COLORS.forecast} stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
+                        
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                         <XAxis dataKey="name" stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                         <YAxis stroke="var(--foreground-muted)" fontSize={10} tickLine={false} />
                         <RechartsTooltip contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderRadius: "4px", fontSize: "11px" }} />
                         <Legend wrapperStyle={{ fontSize: "10px" }} />
-                        <Area name="CPU load (%)" type="monotone" dataKey="cpu" stroke={COLORS.forecast} fillOpacity={1} fill="url(#colorCpu)" strokeWidth={2} />
+                        <Area name="CPU load (%)" type="monotone" dataKey="cpu" stroke={COLORS.forecast} fill={COLORS.forecast} fillOpacity={0.08} strokeWidth={2} />
                         <Line name="Memory load (%)" type="monotone" dataKey="memory" stroke={COLORS.ai} strokeWidth={2} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>

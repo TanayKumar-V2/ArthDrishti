@@ -74,14 +74,14 @@ import {
 
 // Custom color mappings matching admin theme variables
 const COLORS = {
-  primary: "#4F7CFF",
-  ai: "#8B5CF6",
-  forecast: "#06B6D4",
-  positive: "#10B981",
-  warning: "#F59E0B",
-  critical: "#EF4444",
-  secondary: "#64748B",
-  muted: "#94A3B8"
+  primary: "#176B55",
+  ai: "#5966A5",
+  forecast: "#287B86",
+  positive: "#286A4A",
+  warning: "#95651A",
+  critical: "#AD493D",
+  secondary: "#64716A",
+  muted: "#849087"
 };
 
 export default function AIModelPerformanceDashboard() {
@@ -489,7 +489,7 @@ export default function AIModelPerformanceDashboard() {
               <CardContent className="h-[260px] p-2 select-none">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={metricsTimeSeries} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.2} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#d5dbd1" opacity={0.2} />
                     <XAxis dataKey="timestamp" tick={{ fontSize: 9 }} />
                     <YAxis domain={["auto", "auto"]} tick={{ fontSize: 9 }} />
                     <RechartsTooltip />
@@ -508,7 +508,7 @@ export default function AIModelPerformanceDashboard() {
               <CardContent className="h-[260px] p-2 select-none">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={confidenceHistogram} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.2} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#d5dbd1" opacity={0.2} />
                     <XAxis dataKey="bin" tick={{ fontSize: 9 }} />
                     <YAxis tick={{ fontSize: 9 }} />
                     <RechartsTooltip />
@@ -611,7 +611,7 @@ export default function AIModelPerformanceDashboard() {
               <CardContent className="h-[250px] p-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={metricsTimeSeries} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.2} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#d5dbd1" opacity={0.2} />
                     <XAxis dataKey="timestamp" tick={{ fontSize: 9 }} />
                     <YAxis tick={{ fontSize: 9 }} />
                     <RechartsTooltip />
@@ -640,7 +640,7 @@ export default function AIModelPerformanceDashboard() {
                     { subject: "ROC AUC", A: 96, fullMark: 100 },
                     { subject: "Confidence", A: 94, fullMark: 100 }
                   ]}>
-                    <PolarGrid stroke="#cbd5e1" opacity={0.3} />
+                    <PolarGrid stroke="#d5dbd1" opacity={0.3} />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
                     <Radar name="Active Model Metrics" dataKey="A" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.25} />
